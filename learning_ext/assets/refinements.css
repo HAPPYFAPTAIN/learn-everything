@@ -1,0 +1,54 @@
+
+.le-brand{padding:0!important;gap:0!important;min-width:0}
+.le-brand img{display:block;width:210px;height:auto;max-width:100%;object-fit:contain}
+.le-topbar{min-height:72px!important;background:#ffffffed!important;border-bottom:1px solid #dce2e9!important}
+.le-app-title{letter-spacing:-.02em}
+.le-home{max-width:1220px!important;margin-inline:auto!important}
+.le-home-intro{padding-top:clamp(16px,3vh,40px)!important;padding-bottom:32px!important}
+.le-home-card{border-radius:20px!important;padding:clamp(24px,3vw,40px)!important;min-height:300px!important;box-shadow:0 3px 8px #22384c05,0 14px 36px #22384c07!important;transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease!important}
+.le-home-card p{font-size:18px!important;line-height:1.8!important;max-width:44ch!important}
+.le-home-card h3{font-size:28px!important;line-height:1.4!important;letter-spacing:-.025em}
+.le-home-card>button{align-self:flex-start;border-radius:12px!important;min-height:50px!important}
+.le-home-path{border-radius:20px!important;box-shadow:0 5px 20px #22384c05!important}
+#le-left-col,#le-center-col,#le-quiz-settings{border-radius:18px!important}
+.gradio-container button.primary,.gradio-container button.secondary{border-radius:12px!important;transition:background .18s ease,border-color .18s ease,box-shadow .18s ease,transform .18s ease!important}
+.gradio-container button.primary:not(:disabled):active,.gradio-container button.secondary:not(:disabled):active{transform:translateY(1px)}
+#le-app-tabs>.tab-nav>button{transition:background .18s ease,color .18s ease,box-shadow .18s ease!important}
+#le-app-tabs>[role=tabpanel]:not([hidden]){animation:le-surface-enter .24s ease-out}
+#le-chat-history[open]>section,#le-answer-references[open]>#chat-info-panel{animation:le-surface-enter .18s ease-out}
+@keyframes le-surface-enter{from{opacity:.55;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+@media(hover:hover){.le-home-card:hover{transform:translateY(-3px);border-color:#aebed0!important;box-shadow:0 8px 18px #22384c08,0 20px 44px #22384c0c!important}}
+@media(max-width:800px){.le-brand img{width:162px}.le-home-card{min-height:260px!important}.le-home-card h3{font-size:25px!important}.le-topbar{min-height:64px!important}}
+@media(prefers-reduced-motion:reduce){#le-app-tabs>[role=tabpanel],.le-home-card,#le-chat-history[open]>section,#le-answer-references[open]>#chat-info-panel{animation:none!important;transition:none!important;transform:none!important}.gradio-container button.primary,.gradio-container button.secondary,#le-app-tabs>.tab-nav>button{transition:none!important}}
+
+#le-coach{max-width:1160px;margin:0 auto;padding:12px 0 40px;color:#243447}
+.coach-eyebrow{font-size:16px;color:#65768a}.coach-intro p{font-size:19px!important}.coach-intro h1{margin-top:12px!important}
+.coach-courses{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:28px 0 12px}
+#le-coach button{font:600 18px var(--le-font);border:1px solid #d6dfe8;border-radius:14px;padding:16px 20px;background:#fff;color:#34465b;cursor:pointer}
+.coach-courses button{text-align:left}.coach-courses span{display:block;font-size:16px;font-weight:400;color:#68788a;margin-top:8px}
+#le-coach .coach-courses [aria-pressed=true]{background:#edf2f8;border-color:#91a8c3;box-shadow:inset 0 0 0 1px #91a8c3}
+.coach-boundary{font-size:16px!important;color:#647286!important;margin:16px 0 26px!important}
+.coach-layout{display:grid;grid-template-columns:340px minmax(0,1fr);gap:24px;align-items:start}
+.coach-instruction,.coach-stage{border:1px solid #d8e1ea;border-radius:22px;background:#fff;box-shadow:0 8px 32px #23374d08;padding:28px;min-width:0}
+.coach-instruction{position:sticky;top:90px}.coach-progress span{font-size:16px;color:#64778e}.coach-progress progress{display:block;width:100%;height:5px;margin-top:14px;accent-color:#41658e}
+#le-coach h2{font-size:26px!important;line-height:1.5!important;margin-top:24px!important}#le-coach p{font-size:18px;line-height:1.8}
+.coach-instruction details{border-top:1px solid #e2e7ee;padding-top:18px;margin-top:22px}.coach-instruction summary{cursor:pointer;font-size:17px;color:#4a6280}
+#coach-feedback{min-height:58px;color:#385c53;font-weight:500}#le-coach #coach-check,#le-coach #coach-next{background:#365f98;color:white;border-color:#365f98;width:100%;min-height:54px}#le-coach .coach-quiet{border:0;background:transparent;width:100%;font-size:16px;margin-top:8px}
+#le-coach [hidden]{display:none!important}.coach-stage-head{display:flex;justify-content:space-between;font-size:16px;color:#718096;border-bottom:1px solid #e3e8ef;padding-bottom:20px;margin-bottom:24px}
+#coach-surface h3{font-size:22px!important}.coach-field{display:block;margin:22px 0;font-size:18px!important;padding:16px;border:2px solid transparent;border-radius:14px}
+.coach-field textarea{display:block;width:100%;min-height:100px;box-sizing:border-box;margin-top:12px}.coach-field input[type=range]{width:75%;accent-color:#365f98;margin:16px 16px 0 0}.coach-field output{font-size:18px}
+.coach-switch{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:18px;margin:22px 0;border:2px solid transparent;border-radius:14px;font-size:18px!important}
+#le-coach input[type=checkbox]{appearance:none;width:46px;height:26px;flex:0 0 46px;background:#bfc5cc;border-radius:20px;position:relative;cursor:pointer;border:0}
+#le-coach input[type=checkbox]:checked{background:#252a32}#le-coach input[type=checkbox]::before{content:'';position:absolute;width:20px;height:20px;border-radius:50%;top:3px;left:3px;background:white;transition:transform .18s ease}#le-coach input[type=checkbox]:checked::before{transform:translateX(20px)}
+#le-coach .coach-target{border-color:#88a3c4!important;background:#f4f7fb!important;box-shadow:0 0 0 4px #edf2f8}
+.coach-monitor{padding:40px;border:1px solid #dce3ec;border-radius:16px;margin-top:22px;font-size:42px;text-align:center;transition:background .18s}.coach-monitor span{display:block;font-size:18px;margin-top:12px}
+.coach-sheet{border-collapse:collapse;width:100%;font-size:18px;margin-top:24px}.coach-sheet caption{text-align:left;font-size:16px;margin-bottom:12px;color:#67778a}.coach-sheet td,.coach-sheet th{border:1px solid #d7e0ea;padding:14px;text-align:left}.coach-sheet th{background:#f3f6fa}.coach-sheet input{width:100%;box-sizing:border-box;min-width:0}.coach-sheet output{display:block;margin-top:14px;font-size:18px;color:#365f98}.coach-local-note{font-size:16px!important;color:#67778a!important}
+.coach-complete .coach-instruction{border-color:#93b5a5;background:#f4faf7}.coach-complete #coach-feedback{color:#2b6551}
+@media(max-width:1000px){.coach-layout{grid-template-columns:1fr}.coach-instruction{position:static}.coach-instruction p{margin:12px 0}.coach-courses{gap:8px}#le-coach .coach-courses button{padding:14px}}
+@media(max-width:600px){.coach-courses{grid-template-columns:1fr}.coach-courses span{margin-top:4px}.coach-instruction,.coach-stage{padding:20px}.coach-sheet td,.coach-sheet th{padding:8px}}
+@media(prefers-reduced-motion:reduce){#le-coach input[type=checkbox]::before,.coach-monitor{transition:none}}
+
+#learning-coach-tab-button{--le-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.6%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20x%3D%223%22%20y%3D%224%22%20width%3D%2218%22%20height%3D%2213%22%20rx%3D%222%22/%3E%3Cpath%20d%3D%22M8%2021h8M12%2017v4m-3-9%202%202%204-4%22/%3E%3C/svg%3E")}
+.coach-progress progress{appearance:none;border:0;border-radius:8px;overflow:hidden;background:#e4eaf1}.coach-progress progress::-webkit-progress-bar{background:#e4eaf1;border-radius:8px}.coach-progress progress::-webkit-progress-value{background:#41658e;border-radius:8px;transition:width .2s ease}.coach-progress progress::-moz-progress-bar{background:#41658e}
+#le-coach input.coach-target{border:2px solid #88a3c4!important;box-shadow:0 0 0 4px #edf2f8!important}
+@media(prefers-reduced-motion:reduce){.coach-progress progress::-webkit-progress-value{transition:none}}

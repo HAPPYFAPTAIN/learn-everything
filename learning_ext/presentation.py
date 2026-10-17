@@ -5,10 +5,11 @@ ASSETS = Path(__file__).parent / "assets"
 
 def presentation_css():
     css = (ASSETS / "workspace.css").read_text(encoding="utf-8")
+    css += "\n" + (ASSETS / "refinements.css").read_text(encoding="utf-8")
     return css.replace("__ASSETS__", "/file=" + ASSETS.as_posix())
 
 
-BRAND = """<header class="le-topbar"><div class="le-brand"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M16 3 28 10v13l-12 7-12-7V10Z" stroke="#76cadd" stroke-width="2"/><path d="m16 10 6 4v8l-6 3-6-3v-8Z" stroke="#76cadd" stroke-width="2"/></svg><span>以太智元<small>AETHERMIND</small></span></div><div class="le-app-title">Learn Everything <span>/ 学习工作台</span></div><span class="le-local">本地工作空间</span></header>"""
+BRAND = f"""<header class="le-topbar"><div class="le-brand"><img src="/file={ASSETS.as_posix()}/aethermind-logo.png" alt="以太智元 AetherMind" width="479" height="150" /></div><div class="le-app-title">Learn Everything <span>/ 学习工作台</span></div><span class="le-local">本地工作空间</span></header>"""
 
 
 def welcome_html():
