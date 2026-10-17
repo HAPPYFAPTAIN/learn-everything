@@ -49,8 +49,8 @@ class TestGradeAnswer:
         q = session.exec(
             select(QuizQuestion).where(QuizQuestion.quiz_id == quiz.id)
         ).first()
-        attempt = grade_answer(session, q.id, "我的答案", "default")
-        assert attempt.user_answer == "我的答案"
+        attempt = grade_answer(session, q.id, "A", "default")
+        assert attempt.user_answer == "A"
         assert attempt.is_correct is True  # mock 返回 correct
         assert attempt.feedback
 

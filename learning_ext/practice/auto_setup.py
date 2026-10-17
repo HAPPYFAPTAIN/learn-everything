@@ -63,10 +63,8 @@ def run_command_streaming(cmd: str) -> Iterator[str]:
     full_cmd = [
         "powershell",
         "-NoProfile",
-        "-ExecutionPolicy",
-        "Bypass",
         "-Command",
-        cmd,
+        "$ErrorActionPreference = 'Stop'; " + cmd + "; if ($LASTEXITCODE) { exit $LASTEXITCODE }",
     ]
     try:
         proc = subprocess.Popen(
@@ -78,6 +76,7 @@ def run_command_streaming(cmd: str) -> Iterator[str]:
             errors="replace",
             bufsize=1,
             env=os.environ.copy(),
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
         )
         assert proc.stdout is not None
         for line in proc.stdout:
@@ -96,9 +95,11 @@ def run_command_streaming(cmd: str) -> Iterator[str]:
         yield f"[错误] {e}\n"
 
 
-def run_all_commands(commands: list[dict]) -> Iterator[str]:
+def run_all_commands(commands: list[dict], *, outcome: dict | None = None) -> Iterator[str]:
     """流式执行多条命令，yield 带步骤标记的实时输出。"""
     total = len(commands)
+    if outcome is not None:
+        outcome.update(total=total, success=0, failed=0)
     if total == 0:
         yield "✅ 该学习主题无需配置环境，可直接开始学习。\n"
         return
@@ -107,8 +108,10 @@ def run_all_commands(commands: list[dict]) -> Iterator[str]:
     success = 0
     failed = 0
     for i, c in enumerate(commands, 1):
-        cmd = (c.get("cmd") or "").strip()
+        cmd = str(c.get("cmd") or "").strip() if isinstance(c, dict) else ""
         if not cmd:
+            failed += 1
+            yield f"[错误] 第 {i} 条配置命令无效，未执行。\n"
             continue
         desc = c.get("desc", "")
         danger = c.get("danger", "low")
@@ -129,6 +132,8 @@ def run_all_commands(commands: list[dict]) -> Iterator[str]:
             failed += 1
         yield "\n"
 
+    if outcome is not None:
+        outcome.update(success=success, failed=failed)
     yield f"━━━ 完成 ━━━\n✅ 成功 {success} | ⚠️ 失败/警告 {failed} | 共 {total}\n"
     if failed == 0:
         yield "\n🎉 环境配置完成！可以开始学习了。\n"

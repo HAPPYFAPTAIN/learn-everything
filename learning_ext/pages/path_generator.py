@@ -44,134 +44,121 @@ class PathGeneratorPage(BasePage):
 
     def on_building_ui(self):
         gr.Markdown(
-            "# 🎯 学习路线规划\n输入任意选题，AI 帮你拆解成**带依赖关系的分阶段学习路线**（知识图谱）。"
+            "# 建立学习路线\n先明确目标，再预览路线。确认合适后保存，进入学习工作台。"
         )
-        gr.Markdown(
-            "> 💡 **三步上手**：① 在「⚡模型配置」填好 API Key → ② 下方输入选题点「生成路线」→ "
-            "> ③ 满意后点「💾 保存并开始学习」，系统会**自动搜集资料、生成环境清单**，"
-            "> 然后去「📚 学习工作台」逐个知识点推进。"
-        )
-
-        with gr.Row():
-            with gr.Column(scale=3):
+        with gr.Row(elem_id="le-planner"):
+            with gr.Column(scale=2, min_width=300, elem_id="le-plan-input"):
+                gr.HTML('<div id="le-wizard-header"><div class="le-wizard-top"><span data-wizard-count>01 / 04</span><span>为你定制学习路线</span></div><div class="le-wizard-track"><i></i></div><h2 data-wizard-title>想学点什么？</h2><p data-wizard-hint>从一个想解决的问题开始，一句话就够。</p><div data-wizard-feedback role="status" aria-live="polite"></div></div>')
                 self.topic_input = gr.Textbox(
-                    label="选题",
-                    placeholder="例如：从零学习 Transformer 原理 / 学 Rust / 准备考研数学",
-                    lines=2,
+                    label="想学什么", elem_id="le-wizard-topic",
+                    placeholder="例如：从零理解 Transformer，并实现一个小型语言模型",
+                    lines=3,
                 )
-            with gr.Column(scale=2):
                 self.background_input = gr.Textbox(
-                    label="你的背景 (可选)",
-                    placeholder="如：有 Python 基础，懂基本神经网络",
+                    label="已有基础 · 可选", elem_id="le-wizard-background",
+                    placeholder="例如：熟悉 Python，了解基础线性代数",
                     lines=2,
                 )
+                self.goal_input = gr.Textbox(
+                    label="希望达到的目标 · 可选", elem_id="le-wizard-goal",
+                    placeholder="例如：读懂论文，并独立完成一次实验",
+                    lines=2,
+                )
+                self.hours_input = gr.Slider(
+                    label="每周投入 / 小时", elem_id="le-wizard-hours", minimum=1, maximum=40, value=10, step=1
+                )
+                gr.HTML('<div id="le-wizard-nav"><button data-wizard-back>返回</button><button data-wizard-next>继续 →</button></div>')
+                self.generate_btn = gr.Button("生成我的学习路线 →", variant="primary", elem_id="le-wizard-generate")
+                gr.Markdown(
+                    "首次使用需先在「模型配置」连接模型。完成这四步后，即可生成并预览路线。"
+                )
+            with gr.Column(scale=3, min_width=340, elem_id="le-plan-preview"):
+                gr.HTML('<div class="le-preview-heading"><button data-wizard-edit>← 修改学习偏好</button><h2>你的学习路线</h2><p>生成完成后，确认内容再保存。</p></div>')
+                self.roadmap_output = gr.Markdown(
+                    "**你的下一段学习，从这里展开。**\n\n生成后，在这里查看知识点、先后依赖与预估学时。也可以在下方调整路线。",
+                    elem_classes=["learning-roadmap", "le-route-result"],
+                )
+                self.save_btn = gr.Button(
+                    "保存路线，开始学习 →", variant="primary", interactive=False
+                )
+                gr.Markdown(
+                    "保存后会准备前几节课程与环境清单，其他内容在后台逐步生成。环境操作由你确认后执行。"
+                )
+                self.save_progress = gr.Markdown("")
 
-        with gr.Row():
-            self.goal_input = gr.Textbox(
-                label="学习目标 (可选)",
-                placeholder="如：能看懂论文、能自己实现一个小 GPT",
-                scale=2,
-            )
-            self.hours_input = gr.Slider(
-                label="每周可投入时间 (小时)",
-                minimum=1,
-                maximum=40,
-                value=10,
-                step=1,
-            )
-
-        with gr.Row():
-            self.generate_btn = gr.Button("🚀 生成学习路线", variant="primary")
-            self.regenerate_btn = gr.Button("🔄 重新生成")
-
-        # ===== 显眼的保存区 (生成后才会启用) =====
-        gr.Markdown("---\n### 💾 保存路线")
-        gr.Markdown(
-            '<span style="color:#6B7280;">生成路线后，点击下方按钮保存。保存时会自动：</span>'
-            '<br><span style="color:#6B7280;">① 为每个知识点搜集学习资料要点 ② 生成学习环境配置清单（需你确认后应用）</span>'
-        )
-        with gr.Row():
-            self.save_btn = gr.Button(
-                "💾 保存并开始学习（自动搜集资料 + 配置环境）",
-                variant="primary",
-                size="lg",
-            )
-        # 保存进度（搜集资料/环境时实时显示）
-        self.save_progress = gr.Markdown("")
-
-        # 路线展示区
-        self.roadmap_output = gr.Markdown(
-            label="学习路线",
-            value="*点击「生成学习路线」后，路线会显示在这里*",
-            elem_classes=["learning-roadmap"],
-        )
-
-        # 高级：原始 JSON + 调整
-        with gr.Accordion("🔧 高级：调整路线 / 查看 JSON", open=False):
+        with gr.Accordion("调整路线与重新规划", open=False):
+            self.regenerate_btn = gr.Button("重新规划", elem_id="le-route-regenerate")
             self.roadmap_json = gr.Code(language="json", label="路线 JSON")
             self.refine_input = gr.Textbox(
                 label="调整意见 (自然语言)",
                 placeholder="如：增加分布式训练的内容；删掉 RNN 部分；把难度调低",
             )
-            self.refine_btn = gr.Button("✏️ 按意见调整路线")
+            self.refine_btn = gr.Button("按意见调整路线", elem_id="le-route-refine")
 
-        gr.Markdown("---\n### 📂 我的学习项目")
-        self.project_list = gr.Dataframe(
-            headers=["ID", "标题", "选题", "进度", "状态", "创建时间"],
-            datatype=["number", "str", "str", "str", "str", "str"],
-            interactive=False,
-            value=[],
-        )
-        with gr.Row():
-            self.refresh_btn = gr.Button("🔄 刷新项目列表")
-            self.load_project_id = gr.Number(label="加载项目 ID", value=0, precision=0)
-            self.load_btn = gr.Button("📂 加载该项目路线")
-        with gr.Accordion("📦 导入 / 导出学习路线", open=False):
-            gr.Markdown(
-                "导出会生成格式化 JSON 文件，包含项目元信息和完整路线；导入会新建一个学习项目。"
+        with gr.Accordion("已有项目 · 查看、导入与管理", open=False):
+            self.project_list = gr.Dataframe(
+                headers=["ID", "标题", "选题", "进度", "状态", "创建时间"],
+                datatype=["number", "str", "str", "str", "str", "str"],
+                interactive=False,
+                value=[],
             )
             with gr.Row():
-                self.export_project_id = gr.Number(
-                    label="导出项目 ID", value=0, precision=0
+                self.refresh_btn = gr.Button("刷新项目列表")
+                self.load_project_id = gr.Number(
+                    label="加载项目 ID", value=0, precision=0
                 )
-                self.export_roadmap_btn = gr.Button("📤 导出学习路线")
-            self.export_roadmap_file = gr.File(
-                label="下载导出的学习路线 JSON", interactive=False
-            )
-            self.import_roadmap_file = gr.File(
-                label="导入学习路线 JSON", file_types=[".json"]
-            )
-            self.import_roadmap_btn = gr.Button("📥 导入学习路线", variant="primary")
-        with gr.Accordion("🧭 批量审计旧路线", open=False):
-            gr.Markdown(
-                "对已有项目执行路线完整性审计。系统会自动重写路线，并按新路线批量重新生成课程内容。"
-                "可输入单个 ID、多个 ID（逗号/空格分隔），或留空审计全部项目。"
-            )
-            with gr.Row():
-                self.audit_project_id = gr.Textbox(
-                    label="项目 ID（留空=全部）",
-                    placeholder="例如：3 或 3,5,8",
-                    lines=1,
+                self.load_btn = gr.Button("加载该项目路线", elem_id="le-route-load")
+            with gr.Accordion("导入 / 导出学习路线", open=False):
+                gr.Markdown(
+                    "导出会生成格式化 JSON 文件，包含项目元信息和完整路线；导入会新建一个学习项目。"
                 )
-                self.audit_project_btn = gr.Button(
-                    "🧭 审计并重生成该项目", variant="primary"
+                with gr.Row():
+                    self.export_project_id = gr.Number(
+                        label="导出项目 ID", value=0, precision=0
+                    )
+                    self.export_roadmap_btn = gr.Button("导出学习路线")
+                self.export_roadmap_file = gr.File(
+                    label="下载导出的学习路线 JSON", interactive=False
                 )
-            self.audit_project_output = gr.Markdown("")
-        with gr.Accordion("🗑 删除项目", open=False):
-            gr.Markdown("输入项目 ID，并输入 `DELETE` 确认后删除。")
-            with gr.Row():
-                self.delete_project_id = gr.Number(
-                    label="删除项目 ID", value=0, precision=0
+                self.import_roadmap_file = gr.File(
+                    label="导入学习路线 JSON", file_types=[".json"]
                 )
-                self.delete_confirm = gr.Textbox(
-                    label="确认文本", placeholder="DELETE", lines=1
+                self.import_roadmap_btn = gr.Button("导入学习路线", variant="primary")
+            with gr.Accordion("批量审计旧路线", open=False):
+                gr.Markdown(
+                    "对已有项目执行路线完整性审计。系统会自动重写路线，并按新路线批量重新生成课程内容。"
+                    "可输入单个 ID、多个 ID（逗号/空格分隔），或留空审计全部项目。"
                 )
-                self.delete_btn = gr.Button("删除项目", variant="stop")
+                with gr.Row():
+                    self.audit_project_id = gr.Textbox(
+                        label="项目 ID（留空=全部）",
+                        placeholder="例如：3 或 3,5,8",
+                        lines=1,
+                    )
+                    self.audit_project_btn = gr.Button(
+                        "审计并重生成该项目", variant="primary"
+                    )
+                self.audit_project_output = gr.Markdown("")
+            with gr.Accordion("删除项目", open=False):
+                gr.Markdown("输入项目 ID，并输入 `DELETE` 确认后删除。")
+                with gr.Row():
+                    self.delete_project_id = gr.Number(
+                        label="删除项目 ID", value=0, precision=0
+                    )
+                    self.delete_confirm = gr.Textbox(
+                        label="确认文本", placeholder="DELETE", lines=1
+                    )
+                    self.delete_btn = gr.Button("删除项目", variant="stop")
 
         self.status = gr.Markdown("")
 
     def on_register_events(self):
         """绑定按钮事件"""
+        self.roadmap_json.change(
+            fn=self._save_availability,
+            inputs=[self.roadmap_json],
+            outputs=[self.save_btn],
+        )
         self.generate_btn.click(
             fn=self._handle_generate,
             inputs=[
@@ -265,6 +252,14 @@ class PathGeneratorPage(BasePage):
         )
 
     # ---- 业务处理函数 ----
+
+    @staticmethod
+    def _save_availability(raw):
+        try:
+            valid = bool(json.loads(raw or "{}").get("nodes"))
+        except (ValueError, TypeError, AttributeError):
+            valid = False
+        return gr.update(interactive=valid)
 
     def _handle_generate(self, topic, background, goal, hours):
         """生成路线"""
@@ -479,7 +474,13 @@ class PathGeneratorPage(BasePage):
     def _handle_import_roadmap(self, file_obj):
         """导入格式化学习路线 JSON，创建新项目。"""
         if file_obj is None:
-            return self._refresh_projects(), gr.update(), gr.update(), None, "⚠️ 请先选择 JSON 文件"
+            return (
+                self._refresh_projects(),
+                gr.update(),
+                gr.update(),
+                None,
+                "⚠️ 请先选择 JSON 文件",
+            )
         try:
             path = getattr(file_obj, "name", None) or str(file_obj)
             payload = Path(path).read_text(encoding="utf-8")
@@ -496,7 +497,13 @@ class PathGeneratorPage(BasePage):
                 )
         except Exception as e:
             logger.exception("导入学习路线失败")
-            return self._refresh_projects(), gr.update(), gr.update(), None, f"❌ 导入失败: {e}"
+            return (
+                self._refresh_projects(),
+                gr.update(),
+                gr.update(),
+                None,
+                f"❌ 导入失败: {e}",
+            )
 
     def _handle_delete_project(self, project_id, confirm):
         """删除项目及其学习数据"""
@@ -594,7 +601,7 @@ class PathGeneratorPage(BasePage):
                 )
 
             total_queued = sum(r["queued"] for r in results)
-            summary_lines = ["## 🧭 批量路线审计结果"]
+            summary_lines = ["## 批量路线审计结果"]
             for result in results:
                 audit = result["audit"] or {}
                 summary_lines.append(
@@ -697,9 +704,9 @@ class PathGeneratorPage(BasePage):
     @staticmethod
     def _audit_to_markdown(audit: dict) -> str:
         if not audit:
-            return "## 🧭 路线审计\n\n*审计结果为空，已保留生成路线。*"
+            return "## 路线审计\n\n*审计结果为空，已保留生成路线。*"
         lines = [
-            "## 🧭 路线自动审计",
+            "## 路线自动审计",
             f"- **评分**：{audit.get('score', '未知')}",
             f"- **结论**：{audit.get('verdict', '未知')}",
         ]

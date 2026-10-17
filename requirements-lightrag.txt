@@ -1,0 +1,9 @@
+lightrag-hku==1.3.0
+aioboto3==15.5.0
+nano-vectordb==0.0.4.3
+ollama
+xxhash==4.0.1
+pipmaster==1.1.13
+graspologic==3.3.0
+umap-learn==0.5.5
+statsmodels==0.14.6

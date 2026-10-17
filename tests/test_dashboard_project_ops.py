@@ -126,9 +126,9 @@ def test_dashboard_page_seed_demo_data_outputs_dashboard(session, monkeypatch):
     assert project_update["choices"]
     assert "知识点总数" in metrics_html
     assert "已掌握" in status_md
-    assert fig.data
+    assert "le-activity-chart" in fig
     assert "今日学习日报" in report
-    assert "测试数据已生成" in status
+    assert "演示项目已创建" in status
 
 
 def test_dashboard_page_registers_no_arg_events_with_empty_inputs():
@@ -142,6 +142,10 @@ def test_dashboard_page_registers_no_arg_events_with_empty_inputs():
     page.metric_html = MagicMock()
     page.status_md = MagicMock()
     page.heatmap = MagicMock()
+    page.period = MagicMock()
+    page.export_btn = MagicMock()
+    page.export_file = MagicMock()
+    page.export_status = MagicMock()
     page.report = MagicMock()
     page.status = MagicMock()
 
@@ -149,3 +153,37 @@ def test_dashboard_page_registers_no_arg_events_with_empty_inputs():
 
     assert page.seed_btn.click.call_args.kwargs["inputs"] == []
     assert app.app.load.call_args.kwargs["inputs"] == []
+
+
+def test_activity_ranges_and_full_export(session, monkeypatch):
+    import csv
+    from datetime import datetime, timedelta
+    from pathlib import Path
+    import learning_ext.pages.dashboard as module
+    from learning_ext.db.models import LearningProject, ProgressRecord
+    monkeypatch.setattr(module, "engine", session.get_bind())
+    project = LearningProject(user_id="default", title="时长测试", topic="时长测试")
+    other = LearningProject(user_id="someone-else", title="其他", topic="其他")
+    session.add_all([project, other]); session.commit()
+    for ago, minutes in [(0, 7), (2, 11), (20, 13), (45, 17)]:
+        session.add(ProgressRecord(user_id="default", project_id=project.id, metric="study_minutes", value=minutes, recorded_at=datetime.utcnow()-timedelta(days=ago)))
+    session.add(ProgressRecord(user_id="default", project_id=project.id, metric="mastery", value=0.8))
+    session.commit()
+    page = module.DashboardPage(MagicMock())
+    three = page._activity_rows(session, project.id, 3)
+    thirty = page._activity_rows(session, project.id, 30)
+    assert len(three) == 3 and sum(x["minutes"] for x in three) == 18
+    assert len(thirty) == 30 and sum(x["minutes"] for x in thirty) == 31
+    assert not page._activity_records(session, other.id)
+    update, message = page._export_activity(str(project.id))
+    path = Path(update["value"])
+    try:
+        with path.open(encoding="utf-8-sig", newline="") as f:
+            rows = list(csv.reader(f))
+        assert len(rows) == 5
+        assert sum(float(row[4]) for row in rows[1:]) == 48
+        assert "4 条" in message
+    finally:
+        path.unlink(); path.parent.rmdir()
+    update, message = page._export_activity(str(other.id))
+    assert update["value"] is None and not update["visible"]

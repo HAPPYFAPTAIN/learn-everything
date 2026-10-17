@@ -14,9 +14,14 @@ import pytest
 
 
 @pytest.fixture
-def path_page():
+def path_page(session, monkeypatch):
     from learning_ext.pages.path_generator import PathGeneratorPage
 
+    import learning_ext.pages.path_generator as page_module
+    import learning_ext.progress.study as study
+    monkeypatch.setattr(page_module, "engine", session.get_bind())
+    monkeypatch.setattr(study, "generate_summaries_background", lambda *a, **k: None)
+    monkeypatch.setattr(study, "generate_node_summary_to_db", lambda *a, **k: True)
     app_mock = MagicMock()
     app_mock.f_user_management = False
     return PathGeneratorPage(app_mock)
@@ -224,32 +229,18 @@ class TestStudyWorkbenchPageLogic:
         import learning_ext.pages.study_workbench as wb
 
         monkeypatch.setattr(wb, "engine", session.get_bind())
+        monkeypatch.setattr(wb.StudyWorkbenchPage, "_ensure_resources_background", lambda *args: "")
         app_mock = MagicMock()
         app_mock.f_user_management = False
         return wb, wb.StudyWorkbenchPage(app_mock)
 
-    def test_workbench_css_keeps_center_column_content_in_flow(self):
-        import learning_ext.pages.study_workbench as wb
-
-        css = " ".join(wb.WORKBENCH_CSS.split())
-
+    def test_workbench_shared_layout_supports_reading_and_narrow_screens(self):
+        from learning_ext.presentation import presentation_css
+        css = presentation_css()
         assert "#le-workbench-row" in css
-        assert "flex-wrap: nowrap" in css
-        assert "#le-center-col > *" in css
-        assert "width: 100%" in css
-        assert "min-width: 0" in css
-
-    def test_workbench_layout_uses_full_width_and_wider_assistant_column(self):
-        import learning_ext.pages.study_workbench as wb
-
-        css = " ".join(wb.WORKBENCH_CSS.split())
-        source = inspect.getsource(wb.StudyWorkbenchPage.on_building_ui)
-
-        assert "#learning-workbench-tab" in css
-        assert "max-width: none" in css
-        assert "with gr.Column(scale=2, min_width=300" in source
-        assert "with gr.Column(scale=5, min_width=400" in source
-        assert "with gr.Column(scale=3, min_width=430" in source
+        assert "grid-template-columns" in css
+        assert "@media(max-width:800px)" in css
+        assert "overflow-y:auto" in css
 
     def test_workbench_exposes_practice_lesson_tab_and_button(self):
         import learning_ext.pages.study_workbench as wb
@@ -257,8 +248,8 @@ class TestStudyWorkbenchPageLogic:
         ui_source = inspect.getsource(wb.StudyWorkbenchPage.on_building_ui)
         event_source = inspect.getsource(wb.StudyWorkbenchPage.on_register_events)
 
-        assert "🧪 实操课程" in ui_source
-        assert "生成实操课程" in ui_source
+        assert 'elem_id="le-practice-zone"' in ui_source
+        assert "self.gen_practice_btn = gr.Button" in ui_source
         assert "self.gen_practice_btn.click" in event_source
 
     def test_word_lookup_js_is_event_handler_with_confirmation_popup(self):
@@ -285,8 +276,8 @@ class TestStudyWorkbenchPageLogic:
         css = " ".join(wb.WORKBENCH_CSS.split())
 
         assert "#le-selected-term" in css
-        assert "position: absolute" in css
-        assert "opacity: 0" in css
+        assert "position:absolute" in css.replace(" ", "")
+        assert "opacity:0" in css.replace(" ", "")
 
     def test_selected_term_change_does_not_use_word_lookup_js_preprocessor(self):
         import learning_ext.pages.study_workbench as wb

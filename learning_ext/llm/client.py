@@ -14,6 +14,7 @@ import json
 import os
 import re
 import time
+import threading
 from pathlib import Path
 from typing import Iterator, Optional
 
@@ -23,6 +24,7 @@ _ENV_FILE = Path(__file__).resolve().parent.parent.parent / "kotaemon" / ".env"
 # 配置缓存 (5 秒内复用，配置页保存后最多 5 秒生效)
 _cache: dict = {"ts": 0.0, "data": {}}
 _CACHE_TTL = 5.0
+_REQUEST_SLOT = threading.BoundedSemaphore(1)
 
 
 def invalidate_cache() -> None:
@@ -92,7 +94,15 @@ def _get_client():
             "未配置 API Key。请到「⚡ 模型配置」Tab 填入 API Key 并保存。"
         )
     # timeout: 连接 10s, 读取 120s (LLM 生成可能慢)
-    return OpenAI(api_key=cfg["api_key"], base_url=cfg["base_url"], timeout=120.0), cfg
+    return (
+        OpenAI(
+            api_key=cfg["api_key"],
+            base_url=cfg["base_url"],
+            timeout=120.0,
+            max_retries=0,
+        ),
+        cfg,
+    )
 
 
 def chat(
@@ -133,18 +143,30 @@ def chat(
         "messages": messages,
         "temperature": temperature,
     }
+    if model.lower().startswith("glm-5.3"):
+        kwargs["extra_body"] = {"reasoning_effort": "low"}
     if max_tokens:
         kwargs["max_tokens"] = max_tokens
+        if model.lower().startswith("glm-5"):
+            kwargs["max_tokens"] = max(8192, max_tokens * 3)
 
     if stream:
-        resp = client.chat.completions.create(stream=True, **kwargs)
-        return _stream_iter(resp)
+        def generate():
+            with _REQUEST_SLOT:
+                with client.chat.completions.create(stream=True, **kwargs) as response:
+                    yield from _stream_iter(response)
+        return generate()
 
     # 非流式: 带重试
     last_err: Exception | None = None
     for attempt in range(retries + 1):
         try:
-            resp = client.chat.completions.create(**kwargs)
+            with _REQUEST_SLOT:
+                resp = client.chat.completions.create(**kwargs)
+            if resp.choices[0].finish_reason == "length":
+                raise RuntimeError(
+                    "模型输出达到长度上限，内容尚未完整生成。请减少本次任务范围或提高输出额度后重试。"
+                )
             content = resp.choices[0].message.content or ""
             if not content.strip():
                 raise RuntimeError(
@@ -171,7 +193,7 @@ def chat(
             )
             if not retryable or attempt == retries:
                 raise
-            wait = 2**attempt  # 1s, 2s, 4s
+            wait = (5 if "ratelimit" in err_type.lower() else 1) * 2**attempt
             log.warning(
                 f"LLM 调用失败 ({err_type}), {wait}s 后重试 ({attempt + 1}/{retries}): {e}"
             )
@@ -181,6 +203,8 @@ def chat(
 
 def _stream_iter(resp) -> Iterator[str]:
     for chunk in resp:
+        if chunk.choices and chunk.choices[0].finish_reason == "length":
+            raise RuntimeError("模型输出达到长度上限，请缩小问题范围后重试。")
         if chunk.choices and chunk.choices[0].delta.content:
             yield chunk.choices[0].delta.content
 

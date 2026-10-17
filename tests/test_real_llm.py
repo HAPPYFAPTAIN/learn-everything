@@ -22,7 +22,7 @@ def llm_ready():
     from learning_ext.llm import chat
 
     try:
-        r = chat("只回复两个字:你好", max_tokens=20)
+        r = chat("只回复两个字:你好", max_tokens=4096)
         assert r and len(r) > 0
         return True
     except Exception as e:
@@ -33,7 +33,7 @@ class TestRealLLM:
     def test_chat_returns_meaningful(self, llm_ready):
         from learning_ext.llm import chat
 
-        r = chat("1+1等于几? 只回复数字", max_tokens=10)
+        r = chat("1+1等于几? 只回复数字", max_tokens=4096)
         assert "2" in r
 
     def test_chat_json_returns_valid(self, llm_ready):
@@ -141,3 +141,22 @@ class TestRealLLM:
         for c in cards:
             assert c.front
             assert c.back
+
+
+    def test_quiz_and_grade_real(self, llm_ready, session):
+        from sqlmodel import select
+        from learning_ext.db.models import KnowledgeNode, LearningProject, QuizQuestion
+        from learning_ext.quiz import generate_quiz, grade_answer
+        project = LearningProject(user_id="default", topic="Python basics", title="API verification")
+        session.add(project)
+        session.commit()
+        nodes = [KnowledgeNode(project_id=project.id, code="1.1", title="Python variables"), KnowledgeNode(project_id=project.id, code="1.2", title="Python lists")]
+        session.add_all(nodes)
+        session.commit()
+        quiz = generate_quiz(session, "default", [n.id for n in nodes], project_id=project.id, count=2, qtype="short")
+        questions = session.exec(select(QuizQuestion).where(QuizQuestion.quiz_id == quiz.id)).all()
+        assert len(questions) == 2
+        assert all(q.node_id in [n.id for n in nodes] for q in questions)
+        attempt = grade_answer(session, questions[0].id, questions[0].answer)
+        assert attempt.is_correct is True
+        assert attempt.feedback

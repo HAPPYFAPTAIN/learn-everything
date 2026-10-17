@@ -63,11 +63,11 @@
         "overflow:auto",
         "padding:14px",
         "border:1px solid #E5E7EB",
-        "border-radius:10px",
+        "border-radius:16px",
         "background:#FFFFFF",
         "color:#111827",
         "box-shadow:0 12px 28px rgba(0,0,0,0.18)",
-        "font:14px/1.55 -apple-system,BlinkMacSystemFont,\"Microsoft YaHei\",sans-serif",
+        "font:18px/1.65 -apple-system,BlinkMacSystemFont,\"Microsoft YaHei\",sans-serif",
       ].join(";");
       document.body.appendChild(popup);
       return popup;
@@ -86,7 +86,7 @@
       var popup = ensurePopup();
       popup.innerHTML = ""
         + '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px;">'
-        + '<div style="font-weight:800;font-size:15px;">' + title + "</div>"
+        + '<div style="font-weight:800;font-size:20px;">' + title + "</div>"
         + '<button type="button" data-le-lookup-close="1" aria-label="关闭" style="border:0;background:transparent;color:#6B7280;font-size:18px;line-height:1;cursor:pointer;padding:0 2px;">×</button>'
         + "</div>"
         + '<div id="' + popupBodyId + '">' + bodyHtml + "</div>"
@@ -127,15 +127,7 @@
     }
 
     function renderResultPopup(html) {
-      var popup = ensurePopup();
-      var body = document.getElementById(popupBodyId);
-      if (!body || popup.style.display === "none") {
-        popup = renderPopupFrame("AI 解释", "", "");
-        body = document.getElementById(popupBodyId);
-      }
-      if (body) {
-        body.innerHTML = '<div class="le-lookup-result" style="font-size:14px;">' + html + "</div>";
-      }
+      var popup = renderPopupFrame("名词解释", '<div class="le-lookup-result" style="font-size:18px;">' + html + "</div>", "");
       popup.style.display = "block";
     }
 
@@ -160,6 +152,7 @@
     }
 
     function hidePopup() {
+      activeTerm = "";
       var popup = document.getElementById(popupId);
       if (popup) popup.style.display = "none";
     }
@@ -170,12 +163,14 @@
       output.__leLookupObserved = true;
       var lastHtml = "";
       var observer = new MutationObserver(function () {
-        var html = output.innerHTML.trim();
-        var text = output.textContent.trim();
+        var content = output.querySelector('[data-testid="markdown"]');
+        if (!content || output.querySelector(".wrap:not(.hide)")) return;
+        var html = content.innerHTML.trim();
+        var text = content.textContent.trim();
         if (!html || !text || html === lastHtml) return;
         lastHtml = html;
         var popup = document.getElementById(popupId);
-        if (activeTerm || (popup && popup.style.display !== "none")) {
+        if (activeTerm) {
           renderResultPopup(html);
         }
       });
@@ -191,6 +186,8 @@
     });
 
     document.addEventListener("mouseup", function (event) {
+      var existingPopup = document.getElementById(popupId);
+      if (existingPopup && event.composedPath().includes(existingPopup)) return;
       window.setTimeout(function () {
         var current = normalizeSelection();
         if (

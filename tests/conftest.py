@@ -143,6 +143,7 @@ def mock_llm(monkeypatch):
                 {
                     "qtype": "choice",
                     "stem": "题1?",
+                    "node_code": "1.1",
                     "options": ["A", "B", "C", "D"],
                     "answer": "A",
                     "explanation": "因为",

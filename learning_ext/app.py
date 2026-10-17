@@ -18,283 +18,26 @@ logger = logging.getLogger(__name__)
 KH_DEMO_MODE = getattr(flowsettings, "KH_DEMO_MODE", False)
 KH_SSO_ENABLED = getattr(flowsettings, "KH_SSO_ENABLED", False)
 
-# 大幅增强美化 CSS
-BEAUTIFY_CSS = """
-<style>
-:root {
-    --le-primary: #4F46E5;
-    --le-primary-light: #818CF8;
-    --le-primary-dark: #3730A3;
-    --le-bg: #F3F4F6;
-    --le-card: #FFFFFF;
-    --le-border: #E5E7EB;
-    --le-text: #111827;
-    --le-text-muted: #6B7280;
-    --le-success: #10B981;
-    --le-warning: #F59E0B;
-    --le-danger: #EF4444;
-    --le-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-    --le-shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -2px rgba(0,0,0,0.05);
-    --le-radius: 12px;
-}
-
-/* ===== 全局字体 ===== */
-html, body, .gradio-container, .gradio-container * {
-    font-family: -apple-system, BlinkMacSystemFont, "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", "Segoe UI", Roboto, sans-serif !important;
-}
-
-/* ===== 主容器 ===== */
-.gradio-container {
-    max-width: 100% !important;
-    padding: 0 !important;
-    background: var(--le-bg) !important;
-    min-height: 100vh;
-}
-footer {display:none !important;}
-
-/* ===== Tab 导航条 (顶部) ===== */
-#tabs > .tab-nav {
-    background: var(--le-card) !important;
-    border-bottom: 1px solid var(--le-border) !important;
-    padding: 0 8px !important;
-    position: sticky !important;
-    top: 0 !important;
-    z-index: 1000 !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    overflow-x: auto !important;
-    scrollbar-width: thin;
-}
-#tabs > .tab-nav::-webkit-scrollbar {height: 4px;}
-#tabs > .tab-nav::-webkit-scrollbar-thumb {background: #D1D5DB; border-radius:2px;}
-#tabs > .tab-nav > button {
-    font-size: 14px !important;
-    font-weight: 600 !important;
-    padding: 16px 16px !important;
-    border: none !important;
-    border-bottom: 3px solid transparent !important;
-    border-radius: 0 !important;
-    background: transparent !important;
-    color: var(--le-text-muted) !important;
-    transition: all 0.2s ease !important;
-    white-space: nowrap !important;
-    margin: 0 !important;
-}
-#tabs > .tab-nav > button:hover {
-    color: var(--le-primary) !important;
-    background: rgba(79,70,229,0.06) !important;
-}
-#tabs > .tab-nav > button.selected {
-    color: var(--le-primary) !important;
-    border-bottom-color: var(--le-primary) !important;
-    background: transparent !important;
-    font-weight: 700 !important;
-}
-
-/* ===== 内容区域 ===== */
-.tabitem {
-    padding: 24px 32px !important;
-    max-width: 1400px;
-    margin: 0 auto;
-}
-
-/* ===== 卡片/区块 ===== */
-.gradio-container .form,
-.gradio-container .gr-block,
-.gradio-container .gr-box,
-.gradio-container .gradio-accordion,
-.gradio-container .gr-form,
-.gradio-container .wrap:not(.tab-nav):not(.gap) {
-    border-radius: var(--le-radius) !important;
-    border: 1px solid var(--le-border) !important;
-    background: var(--le-card) !important;
-    box-shadow: var(--le-shadow) !important;
-}
-.gradio-container .gradio-accordion {
-    overflow: hidden;
-}
-
-/* ===== 输入框 ===== */
-.gradio-container input[type="text"],
-.gradio-container input[type="password"],
-.gradio-container input[type="number"],
-.gradio-container textarea,
-.gradio-container select {
-    border-radius: 8px !important;
-    border: 1px solid var(--le-border) !important;
-    font-size: 14px !important;
-    transition: all 0.2s !important;
-}
-.gradio-container input[type="text"]:focus,
-.gradio-container input[type="password"]:focus,
-.gradio-container textarea:focus,
-.gradio-container select:focus {
-    border-color: var(--le-primary-light) !important;
-    box-shadow: 0 0 0 3px rgba(79,70,229,0.12) !important;
-}
-
-/* ===== 按钮 ===== */
-.gradio-container button.primary,
-.gradio-container button[data-testid="submit-button"] {
-    background: linear-gradient(135deg, var(--le-primary) 0%, var(--le-primary-light) 100%) !important;
-    border: none !important;
-    border-radius: 8px !important;
-    font-weight: 600 !important;
-    color: white !important;
-    padding: 10px 20px !important;
-    box-shadow: 0 2px 8px rgba(79,70,229,0.25) !important;
-    transition: all 0.2s !important;
-    font-size: 14px !important;
-}
-.gradio-container button.primary:hover {
-    transform: translateY(-1px) !important;
-    box-shadow: 0 4px 14px rgba(79,70,229,0.35) !important;
-}
-.gradio-container button.primary:active {
-    transform: translateY(0) !important;
-}
-/* stop/危险按钮 */
-.gradio-container button[variant="stop"],
-.gradio-container .stop {
-    background: var(--le-danger) !important;
-    color: white !important;
-}
-/* 次按钮 */
-.gradio-container button:not(.primary):not([variant="stop"]):not(.tool):not(.icon-button) {
-    border-radius: 8px !important;
-    border: 1px solid var(--le-border) !important;
-    background: var(--le-card) !important;
-    color: var(--le-text) !important;
-    font-weight: 500 !important;
-    padding: 10px 20px !important;
-    transition: all 0.2s !important;
-    font-size: 14px !important;
-}
-.gradio-container button:not(.primary):not([variant="stop"]):not(.tool):not(.icon-button):hover {
-    border-color: var(--le-primary-light) !important;
-    color: var(--le-primary) !important;
-    background: rgba(79,70,229,0.04) !important;
-}
-
-/* ===== Markdown 渲染 ===== */
-.gradio-container .prose, .gradio-container .md {
-    font-size: 14.5px !important;
-    line-height: 1.7 !important;
-    color: var(--le-text) !important;
-    max-width: none !important;
-}
-.gradio-container h1 {
-    color: var(--le-text) !important;
-    font-weight: 700 !important;
-    font-size: 26px !important;
-    margin-top: 0 !important;
-    padding-bottom: 10px !important;
-    border-bottom: 2px solid var(--le-primary) !important;
-}
-.gradio-container h2 {
-    color: var(--le-text) !important;
-    font-weight: 700 !important;
-    font-size: 20px !important;
-    border-left: 4px solid var(--le-primary) !important;
-    padding-left: 12px !important;
-}
-.gradio-container h3 {
-    color: var(--le-text) !important;
-    font-weight: 600 !important;
-    font-size: 17px !important;
-}
-.gradio-container blockquote {
-    background: #EEF2FF !important;
-    border-left: 4px solid var(--le-primary) !important;
-    padding: 12px 16px !important;
-    border-radius: 0 8px 8px 0 !important;
-    color: var(--le-text) !important;
-    margin: 12px 0 !important;
-}
-.gradio-container blockquote p {margin: 0 !important;}
-.gradio-container code {
-    background: #F3F4F6 !important;
-    color: var(--le-primary-dark) !important;
-    padding: 2px 6px !important;
-    border-radius: 4px !important;
-    font-size: 13px !important;
-    font-family: "JetBrains Mono", Consolas, Monaco, monospace !important;
-}
-.gradio-container pre {
-    border-radius: 8px !important;
-    border: 1px solid var(--le-border) !important;
-}
-.gradio-container ul, .gradio-container ol {padding-left: 24px !important;}
-.gradio-container li {margin: 4px 0 !important;}
-
-/* ===== 表格/Dataframe ===== */
-.gradio-container table, .gradio-container .gradio-dataframe {
-    border-radius: 8px !important;
-    overflow: hidden !important;
-}
-.gradio-container table thead {
-    background: var(--le-primary) !important;
-    color: white !important;
-}
-.gradio-container table th {
-    color: white !important;
-    font-weight: 600 !important;
-}
-.gradio-container table tr:nth-child(even) {
-    background: #F9FAFB !important;
-}
-
-/* ===== 指标卡片 ===== */
-.le-metric {
-    display: inline-block;
-    background: var(--le-card);
-    border: 1px solid var(--le-border);
-    border-radius: var(--le-radius);
-    padding: 20px 28px;
-    margin: 6px;
-    text-align: center;
-    box-shadow: var(--le-shadow);
-    min-width: 120px;
-}
-.le-metric .val {
-    font-size: 32px;
-    font-weight: 800;
-    color: var(--le-primary);
-    display: block;
-    line-height: 1.2;
-}
-.le-metric .lbl {
-    font-size: 13px;
-    color: var(--le-text-muted);
-    margin-top: 6px;
-}
-
-/* ===== 标签页内的滚动 ===== */
-.scrollable {max-height: calc(100vh - 70px) !important; overflow-y: auto !important;}
-
-/* ===== 滚动条 ===== */
-.gradio-container ::-webkit-scrollbar {width: 8px; height: 8px;}
-.gradio-container ::-webkit-scrollbar-track {background: transparent;}
-.gradio-container ::-webkit-scrollbar-thumb {background: #D1D5DB; border-radius: 4px;}
-.gradio-container ::-webkit-scrollbar-thumb:hover {background: #9CA3AF;}
-
-/* ===== 隐藏一些 Kotaemon 默认丑陋元素 ===== */
-.gradio-container .tooltip {display: none !important;}
-
-/* ===== 状态提示美化 ===== */
-.gradio-container .prose p:first-child:empty {display: none;}
-</style>
-"""
+from learning_ext.presentation import (
+    BRAND,
+    presentation_css,
+    welcome_html,
+    polish_chat_ui,
+)
 
 
 class LearningApp(KotaemonApp):
-
     """带学习特化功能的 Kotaemon App"""
 
     public_events = []
 
     def __init__(self):
+        from learning_ext.optional_reranking import configure_optional_reranking
+
+        from learning_ext.rag_requests import configure_rag_requests
+
+        configure_rag_requests()
+        configure_optional_reranking()
         super().__init__()
         try:
             from learning_ext.bootstrap import init_learning_ext
@@ -305,7 +48,7 @@ class LearningApp(KotaemonApp):
 
     def _inject_css(self):
         try:
-            gr.HTML(BEAUTIFY_CSS)
+            gr.HTML("<style>" + presentation_css() + "</style>")
         except Exception:
             pass
 
@@ -325,18 +68,17 @@ class LearningApp(KotaemonApp):
             "src='https://cdn.skypack.dev/pdfjs-viewer-element'>"
             "</script>"
             "<script type='module' "
-            "src='https://cdnjs.cloudflare.com/ajax/libs/tributejs/5.1.3/tribute.min.js'>"
+            "src='https://cdnjs.cloudflare.com/ajax/libs/tributejs/5.1.3/tribute.min.js'></script>"
             f"{markmap_js}"
             "<script src='https://cdn.jsdelivr.net/npm/markmap-autoloader@0.16'></script>"
             "<script src='https://cdn.jsdelivr.net/npm/minisearch@7.1.1/dist/umd/index.min.js'></script>"
-            "</script>"
             "<link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/tributejs/5.1.3/tribute.css'/>"
         )
 
         with gr.Blocks(
             theme=self._theme,
-            css=self._css,
-            title=self.app_name,
+            css=self._css + "\n" + presentation_css(),
+            title="Learn Everything · 以太智元",
             analytics_enabled=False,
             js=self._js,
             head=external_js,
@@ -361,7 +103,7 @@ class LearningApp(KotaemonApp):
         from learning_ext.pages import QuickSetupPage
 
         with gr.Tab(
-            "⚡ 模型配置",
+            "模型配置",
             elem_id="quick-setup-tab",
             id="quick-setup-tab",
             visible=visible,
@@ -380,7 +122,7 @@ class LearningApp(KotaemonApp):
         )
 
         with gr.Tab(
-            "🎯 学习路线",
+            "学习路线",
             elem_id="learning-path-tab",
             id="learning-path-tab",
             visible=visible,
@@ -390,7 +132,7 @@ class LearningApp(KotaemonApp):
             self.learning_path_page.on_building_ui()
 
         with gr.Tab(
-            "📚 学习工作台",
+            "学习工作台",
             elem_id="learning-workbench-tab",
             id="learning-workbench-tab",
             visible=visible,
@@ -400,7 +142,7 @@ class LearningApp(KotaemonApp):
             self.learning_workbench_page.on_building_ui()
 
         with gr.Tab(
-            "🔄 间隔复习",
+            "间隔复习",
             elem_id="learning-review-tab",
             id="learning-review-tab",
             visible=visible,
@@ -410,7 +152,7 @@ class LearningApp(KotaemonApp):
             self.learning_review_page.on_building_ui()
 
         with gr.Tab(
-            "📝 查漏测验",
+            "查漏测验",
             elem_id="learning-quiz-tab",
             id="learning-quiz-tab",
             visible=visible,
@@ -420,7 +162,7 @@ class LearningApp(KotaemonApp):
             self.learning_quiz_page.on_building_ui()
 
         with gr.Tab(
-            "📊 学习看板",
+            "学习看板",
             elem_id="learning-dashboard-tab",
             id="learning-dashboard-tab",
             visible=visible,
@@ -433,13 +175,14 @@ class LearningApp(KotaemonApp):
         from learning_ext.guide import GUIDE_MARKDOWN
 
         with gr.Tab(
-            "📖 使用指南",
+            "学习首页",
             elem_id="learning-guide-tab",
             id="learning-guide-tab",
             visible=visible,
             elem_classes=["fill-main-area-height", "scrollable"],
         ) as self._tabs["learning-guide-tab"]:
-            gr.Markdown(GUIDE_MARKDOWN)
+            gr.HTML(welcome_html())
+            gr.HTML('<section class="le-start-guide"><div><h2>第一次用？跟着做就好。</h2><p>4 步认识学习流程，每次只看一步。</p></div><button data-le-tour-start>带我开始 →</button></section>')
 
     def _register_extra_events(self):
         for page_attr in (
@@ -472,7 +215,8 @@ class LearningApp(KotaemonApp):
 
         self._tabs = {}
 
-        with gr.Tabs() as self.tabs:
+        gr.HTML(BRAND, elem_id="le-brand-bar")
+        with gr.Tabs(elem_id="le-app-tabs") as self.tabs:
             self._inject_css()
 
             vis = True
@@ -480,23 +224,25 @@ class LearningApp(KotaemonApp):
             # 1. 使用指南 (最先)
             self._build_guide_tab(visible=vis)
             # 2. 极简模型配置 (替换 Resources)
-            self._build_quick_setup_tab(visible=vis)
+            self._build_learning_tabs(visible=vis)
             # 3. 知识问答
             with gr.Tab(
-                "💬 知识问答",
+                "知识问答",
                 elem_id="chat-tab",
                 id="chat-tab",
                 visible=vis,
                 elem_classes=["fill-main-area-height", "scrollable"],
             ) as self._tabs["chat-tab"]:
+                gr.HTML(
+                    '<div class="le-page-heading"><div><p class="le-kicker">KNOWLEDGE / ASK</p><h1>知识问答</h1><p>带着问题阅读资料，找到有依据的答案。</p></div><div class="le-chat-tools"><button data-le-chat-panel="sources" aria-expanded="false">会话与资料</button><button data-le-chat-panel="evidence" aria-expanded="false">引用与来源</button></div></div>'
+                )
                 self.chat_page = ChatPage(self)
-            # 4-7. 学习特化
-            self._build_learning_tabs(visible=vis)
+                polish_chat_ui(self)
             # 8. 资料库
             if len(self.index_manager.indices) == 1:
                 for index in self.index_manager.indices:
                     with gr.Tab(
-                        "📁 资料库",
+                        "资料库",
                         elem_id="indices-tab",
                         elem_classes=[
                             "fill-main-area-height",
@@ -509,7 +255,7 @@ class LearningApp(KotaemonApp):
                         setattr(self, f"_index_{index.id}", index.get_index_page_ui())
             elif len(self.index_manager.indices) > 1:
                 with gr.Tab(
-                    "📁 资料库",
+                    "资料库",
                     elem_id="indices-tab",
                     elem_classes=["fill-main-area-height", "scrollable", "indices-tab"],
                     id="indices-tab",
@@ -519,18 +265,30 @@ class LearningApp(KotaemonApp):
                         with gr.Tab(
                             index.name, elem_id=f"{index.id}-tab"
                         ) as self._tabs[f"{index.id}-tab"]:
+                            from importlib.util import find_spec
+                            if type(index).__name__ == "GraphRAGIndex" and find_spec("graphrag") is None:
+                                gr.Markdown("### 图谱资料暂不可用\n这个可选扩展的旧版依赖与当前环境不兼容。请使用「文件资料」进行资料问答，或使用已配置的「关联资料」建立知识关联。已有资料不会被删除。")
                             setattr(
                                 self, f"_index_{index.id}", index.get_index_page_ui()
                             )
+            from learning_ext.library_ui import polish_library_ui
+
+            polish_library_ui(self)
+            self._build_quick_setup_tab(visible=vis)
             # 9. 帮助
             with gr.Tab(
-                "❓ 帮助",
+                "帮助",
                 elem_id="help-tab",
                 id="help-tab",
                 visible=vis,
                 elem_classes=["fill-main-area-height", "scrollable"],
             ) as self._tabs["help-tab"]:
-                self.help_page = HelpPage(self)
+                gr.HTML('<section class="le-start-guide"><div><h2>你想完成哪件事？</h2><p>选一个目标，跟着高亮区域操作。随时可以退出。</p></div><div class="le-guide-choices"><button data-le-tour-start="learning">创建路线与上课</button><button data-le-tour-start="review">复习、测验与进展</button><button data-le-tour-start="documents">上传资料并提问</button></div></section>')
+                from learning_ext.guide import GUIDE_MARKDOWN
+                with gr.Accordion("常见问题 · 需要时再看", open=False):
+                    gr.Markdown(GUIDE_MARKDOWN)
+                with gr.Accordion("关于与开源信息", open=False):
+                    gr.Markdown("Learn Everything · 以太智元学习工作台。基于 [Kotaemon](https://github.com/Cinnamon/kotaemon) 构建资料问答，使用 FSRS 安排间隔复习。")
 
             if KH_ENABLE_FIRST_SETUP_local:
                 with gr.Column(visible=False) as self.setup_page_wrapper:

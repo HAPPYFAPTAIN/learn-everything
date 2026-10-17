@@ -12,6 +12,7 @@
 from __future__ import annotations
 
 import logging
+from learning_ext.presentation import project_display_name, project_choices, clean_heading_icons
 
 import gradio as gr
 from ktem.app import BasePage
@@ -56,13 +57,13 @@ from learning_ext.progress.audit import audit_node_content
 logger = logging.getLogger(__name__)
 
 STATUS_LABEL = {
-    STATUS_PENDING: "⏳待学",
-    STATUS_LEARNING: "📖学习中",
-    STATUS_MASTERED: "✅已掌握",
-    "weak": "⚠️薄弱",
-    STATUS_SKIPPED: "⏭跳过",
+    STATUS_PENDING: "待学",
+    STATUS_LEARNING: "学习中",
+    STATUS_MASTERED: "已掌握",
+    "weak": "薄弱",
+    STATUS_SKIPPED: "已跳过",
 }
-STAGE_NAMES = {"base": "🌱 基础", "strengthen": "💪 强化", "sprint": "🔥 冲刺"}
+STAGE_NAMES = {"base": "基础", "strengthen": "强化", "sprint": "冲刺"}
 
 RESOURCE_ICON = {
     "doc": "📄",
@@ -89,75 +90,9 @@ function(...args){
 
 WORKBENCH_CSS = """
 <style>
-#learning-workbench-tab {
-    max-width: none !important;
-    width: 100% !important;
-}
-#learning-workbench-tab > .tabitem {
-    max-width: none !important;
-    width: 100% !important;
-}
-#le-workbench-row {
-    display: flex !important;
-    align-items: stretch !important;
-    gap: 12px !important;
-    flex-wrap: nowrap !important;
-    overflow-x: hidden !important;
-}
-#le-left-col, #le-center-col, #le-right-col {
-    height: calc(100vh - 160px) !important;
-    max-height: calc(100vh - 160px) !important;
-    min-height: 500px !important;
-    min-width: 0 !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    padding-right: 4px !important;
-    flex-wrap: nowrap !important;
-    align-content: stretch !important;
-}
-#le-left-col {
-    min-width: 300px !important;
-}
-#le-center-col {
-    flex-direction: column !important;
-    min-width: 400px !important;
-}
-#le-right-col {
-    min-width: 430px !important;
-}
-#le-center-col > * {
-    flex: 0 0 auto !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-}
-#le-content-tabs, #le-guide-md {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-}
-#le-term-result {
-    display: none !important;
-}
-#le-guide-md {
-    overflow-wrap: anywhere !important;
-    word-break: break-word !important;
-}
-#le-selected-term {
-    position: absolute !important;
-    width: 1px !important;
-    height: 1px !important;
-    opacity: 0 !important;
-    overflow: hidden !important;
-    pointer-events: none !important;
-}
-#le-left-col::-webkit-scrollbar, #le-center-col::-webkit-scrollbar, #le-right-col::-webkit-scrollbar {
-    width: 6px;
-}
-#le-left-col::-webkit-scrollbar-thumb, #le-center-col::-webkit-scrollbar-thumb, #le-right-col::-webkit-scrollbar-thumb {
-    background: #D1D5DB;
-    border-radius: 3px;
-}
+#le-selected-term {position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;overflow:hidden!important;pointer-events:none!important;}
+#le-term-result {display:none!important;}
+#le-guide-md {overflow-wrap:anywhere;word-break:break-word;}
 </style>
 """
 
@@ -176,234 +111,163 @@ class StudyWorkbenchPage(BasePage):
 
     def on_building_ui(self):
         gr.HTML(WORKBENCH_CSS)
-        gr.Markdown("# 📚 学习工作台")
-
-        with gr.Row(equal_height=True, elem_id="le-workbench-row"):
-            # ============ 左列: 项目 + 课程列表 ============
-            with gr.Column(scale=2, min_width=300, elem_id="le-left-col"):
-                gr.Markdown("### 📂 项目")
-                with gr.Row():
-                    self.project_id = gr.Dropdown(
-                        label="",
-                        choices=[],
-                        value=None,
-                        scale=3,
-                        interactive=True,
-                        show_label=False,
-                    )
-                    self.refresh_btn = gr.Button("🔄", scale=1, size="sm")
-
-                self.progress_display = gr.Markdown("", elem_classes=["le-progress"])
-
-                with gr.Accordion("🔧 环境配置", open=False):
-                    self.env_status = gr.Markdown("")
-                    with gr.Row():
-                        self.auto_setup_btn = gr.Button("🤖自动配置", size="sm")
-                        self.apply_env_btn = gr.Button("✅已配好", size="sm")
-                    self.auto_setup_output = gr.Code(
-                        label="执行日志",
-                        language="shell",
-                        visible=False,
-                        interactive=False,
-                    )
-
-                with gr.Accordion("🛠️ 内容管理", open=False):
-                    self.regen_all_btn = gr.Button("📦 补全缺失内容", size="sm")
-                    self.regen_all_force_btn = gr.Button(
-                        "🔄 强制重生成全部", size="sm", variant="stop"
-                    )
-                    self.regen_all_status = gr.Markdown("")
-
-                gr.Markdown("### 📋 课程列表")
-                self.course_drop = gr.Dropdown(
-                    label="选择知识点（按阶段分组）",
-                    choices=[],
-                    value=None,
-                    interactive=True,
+        gr.HTML(
+            '<div class="le-page-heading"><div><p class="le-kicker">LEARNING / 02</p><h1>学习工作台</h1><p>一次专注一个知识点。阅读、实践，再用自己的话理解它。</p></div><button class="le-assistant-toggle" data-le-assistant-toggle aria-expanded="false" aria-controls="le-right-col">询问助教 <span>↗</span></button></div>'
+        )
+        with gr.Row(elem_id="le-workbench-row"):
+            with gr.Column(scale=1, min_width=200, elem_id="le-left-col"):
+                gr.Markdown("### 我的课程")
+                self.project_id = gr.Dropdown(
+                    label="学习项目", choices=[], value=None, interactive=True, elem_id="le-project-picker"
                 )
-                self.view_btn = gr.Button("📖 查看课程", variant="primary", size="sm")
-                self.load_list_btn = gr.Button("🔁 刷新列表", size="sm")
-
-                # ===== 添加课程 =====
-                with gr.Accordion("➕ 添加课程", open=False):
-                    self.add_title = gr.Textbox(
-                        label="课程标题",
-                        placeholder="如：分布式训练进阶",
-                        show_label=True,
-                        lines=1,
-                    )
+                self.progress_display = gr.Markdown("", elem_classes=["le-progress"], elem_id="le-course-progress")
+                self.course_drop = gr.Dropdown(
+                    label="当前课程", choices=[], value=None, interactive=True, elem_id="le-course-picker"
+                )
+                gr.Markdown(
+                    "选择课程后自动打开。完成阅读后，可在正文下方标记掌握情况。",
+                    elem_classes=["le-caption"], elem_id="le-course-hint",
+                )
+                with gr.Accordion("项目与课程管理", open=False, elem_id="le-course-admin"):
                     with gr.Row():
+                        self.refresh_btn = gr.Button("刷新项目", size="sm")
+                        self.load_list_btn = gr.Button("刷新课程", size="sm")
+                    self.view_btn = gr.Button("重新载入当前课程", size="sm")
+                    with gr.Accordion("内容维护", open=False):
+                        self.regen_all_btn = gr.Button("补全缺失内容", size="sm")
+                        self.regen_all_force_btn = gr.Button(
+                            "重新生成全部内容", size="sm", variant="stop"
+                        )
+                        self.regen_all_status = gr.Markdown("")
+                    with gr.Accordion("添加课程", open=False):
+                        self.add_title = gr.Textbox(
+                            label="课程标题", placeholder="例如：分布式训练进阶"
+                        )
                         self.add_stage = gr.Dropdown(
                             label="阶段",
                             choices=[
-                                ("🌱 基础", "base"),
-                                ("💪 强化", "strengthen"),
-                                ("🔥 冲刺", "sprint"),
+                                ("基础", "base"),
+                                ("强化", "strengthen"),
+                                ("冲刺", "sprint"),
                             ],
                             value="base",
-                            show_label=True,
                         )
                         self.add_code = gr.Textbox(
-                            label="编号(可选)",
-                            placeholder="如：1.6",
-                            show_label=True,
-                            lines=1,
+                            label="编号 · 可选", placeholder="例如：1.6"
                         )
-                    with gr.Row():
                         self.add_difficulty = gr.Slider(
-                            label="难度",
-                            minimum=1,
-                            maximum=5,
-                            value=3,
-                            step=1,
+                            label="难度", minimum=1, maximum=5, value=3, step=1
                         )
                         self.add_hours = gr.Number(
                             label="预估学时", value=2, precision=0
                         )
-                    self.add_desc = gr.Textbox(
-                        label="课程描述/说明",
-                        placeholder="这个课程要学什么...",
-                        show_label=True,
-                        lines=2,
-                    )
-                    with gr.Row():
-                        self.add_ai_btn = gr.Button(
-                            "🤖 AI生成教学内容", variant="secondary", size="sm"
-                        )
-                        self.add_btn = gr.Button(
-                            "💾 添加课程", variant="primary", size="sm"
-                        )
-                    self.add_status = gr.Markdown("")
-
-            # ============ 中列: 学习内容 ============
-            with gr.Column(scale=5, min_width=400, elem_id="le-center-col"):
-                # 划词解释隐藏输入框 + 浮窗触发
+                        self.add_desc = gr.Textbox(label="课程说明", lines=2)
+                        self.add_ai_btn = gr.Button("AI 生成并添加", size="sm")
+                        self.add_btn = gr.Button("添加课程", size="sm")
+                        self.add_status = gr.Markdown("")
+            with gr.Column(scale=4, min_width=320, elem_id="le-center-col"):
                 self.selected_term = gr.Textbox(
                     elem_id="le-selected-term",
                     visible=True,
                     interactive=True,
                     show_label=False,
                 )
-
-                gr.Markdown("### 📖 当前知识点")
                 self.node_header = gr.Markdown(
-                    "*选择左侧课程即可加载*", elem_id="le-center-content"
+                    "选择左侧课程，开始阅读。", elem_id="le-center-content"
                 )
-
+                with gr.Accordion("环境配置", open=False, elem_id="le-env-setup"):
+                    self.env_status = gr.Markdown("")
+                    self.auto_setup_plan = gr.State(value=None)
+                    self.auto_setup_btn = gr.Button("生成配置方案", size="sm")
+                    self.execute_setup_btn = gr.Button("执行这份配置方案", size="sm", visible=False)
+                    self.apply_env_btn = gr.Button("已完成配置", size="sm")
+                    self.auto_setup_output = gr.Code(
+                        label="配置方案与执行记录",
+                        language="shell",
+                        visible=False,
+                        interactive=False,
+                    )
                 with gr.Tabs(elem_id="le-content-tabs"):
-                    with gr.TabItem("📋 教学内容", elem_id="le-lookup-zone"):
+                    with gr.TabItem("阅读", elem_id="le-lookup-zone"):
                         self.node_guide = gr.Markdown(
                             "", elem_id="le-guide-md", elem_classes=["le-lookup-zone"]
                         )
-                        with gr.Row():
-                            self.regen_node_btn = gr.Button("🔄 重新生成本节", size="sm")
-                            self.audit_node_btn = gr.Button(
-                                "🧭 审计本节完整性", size="sm"
-                            )
-                        self.regen_node_status = gr.Markdown("")
-                        with gr.Accordion("🧭 完整性审计报告", open=False):
+                        with gr.Accordion("课程内容工具", open=False):
+                            with gr.Row():
+                                self.regen_node_btn = gr.Button(
+                                    "重新生成本节", size="sm"
+                                )
+                                self.audit_node_btn = gr.Button(
+                                    "检查内容完整性", size="sm"
+                                )
+                            self.regen_node_status = gr.Markdown("")
                             self.audit_node_output = gr.Markdown(
-                                "*点击「审计本节完整性」，让 AI 检查本节是否讲全、讲深、是否需要拆分或补充。*"
+                                "检查本节内容的完整性、深度与结构。"
                             )
-
-                    with gr.TabItem("🧪 实操课程", elem_id="le-practice-zone"):
-                        gr.Markdown(
-                            "> 高难度或偏实操课程会自动生成流程、代码、验收标准和排错清单。"
-                        )
-                        with gr.Row():
-                            self.gen_practice_btn = gr.Button(
-                                "🧪 生成实操课程", size="sm"
-                            )
-                            self.gen_practice_status = gr.Markdown("")
+                    with gr.TabItem("实践", elem_id="le-practice-zone"):
                         self.practice_md = gr.Markdown(
-                            "*本节暂无实操课程。高难/实操内容会自动生成，也可以点击按钮手动生成。*"
+                            "本节暂无实践内容，可生成操作步骤、代码与验收清单。"
                         )
-
-                    with gr.TabItem("📝 我的笔记", elem_id="le-note-zone"):
-                        gr.Markdown(
-                            "> 记录笔记, 会自动保存到当前知识点。支持 Markdown。"
-                        )
+                        self.gen_practice_btn = gr.Button("准备实践内容", size="sm")
+                        self.gen_practice_status = gr.Markdown("")
+                    with gr.TabItem("笔记", elem_id="le-note-zone"):
                         self.note_input = gr.Textbox(
-                            label="笔记",
-                            placeholder="记录理解、疑问、总结...",
+                            label="我的理解",
+                            placeholder="用自己的话，记下这一节最重要的内容…",
                             lines=12,
-                            show_label=False,
                         )
-                        with gr.Row():
-                            self.save_note_btn = gr.Button(
-                                "💾 保存笔记", variant="primary", size="sm"
-                            )
-                            self.note_status = gr.Markdown("")
-
-                    with gr.TabItem("📚 参考资料", elem_id="le-resource-zone"):
-                        gr.Markdown(
-                            "> AI 会拉取本节正文用到的参考来源，优先保存 PDF，其次保存网页 HTML。"
+                        self.save_note_btn = gr.Button(
+                            "保存笔记", variant="primary", size="sm"
                         )
-                        with gr.Row():
-                            self.gen_resources_btn = gr.Button(
-                                "🤖 拉取参考资料", size="sm"
-                            )
-                            self.gen_resources_status = gr.Markdown("")
-                        self.resources_md = gr.Markdown(
-                            RESOURCE_EMPTY_MD
+                        self.note_status = gr.Markdown("")
+                    with gr.TabItem("参考", elem_id="le-resource-zone"):
+                        self.resources_md = gr.Markdown(RESOURCE_EMPTY_MD)
+                        self.gen_resources_btn = gr.Button(
+                            "整理本节参考资料", size="sm"
                         )
-                        with gr.Accordion("手动抓取单个 URL", open=False):
+                        self.gen_resources_status = gr.Markdown("")
+                        with gr.Accordion("添加参考链接", open=False):
                             self.resource_preview_url = gr.Textbox(
-                                label="URL",
-                                placeholder="https://...",
-                                scale=3,
-                                show_label=False,
+                                label="网址", placeholder="https://..."
                             )
-                            self.preview_btn = gr.Button(
-                                "👁 抓取正文", scale=1, size="sm"
-                            )
+                            self.preview_btn = gr.Button("读取正文", size="sm")
                             self.resource_preview = gr.Markdown("")
-
-                with gr.Accordion(
-                    "🔍 划词解释结果", open=False, elem_id="le-term-result"
-                ):
-                    gr.Markdown(
-                        '<span style="color:#6B7280;">在教学内容中选中名词, 会出现「🔍 AI 解释」浮窗。</span>'
-                    )
-                    self.term_explain_btn = gr.Button("🔍 解释选中词汇", size="sm")
+                with gr.Accordion("划词解释结果", open=False, elem_id="le-term-result"):
+                    self.term_explain_btn = gr.Button("解释选中词汇", size="sm")
                     self.term_explain_output = gr.Markdown("", elem_id="le-term-output")
-
-                gr.Markdown("---")
-                with gr.Row():
-                    self.start_btn = gr.Button(
-                        "🚀 学习中", variant="secondary", size="sm"
-                    )
+                with gr.Row(elem_id="le-lesson-actions"):
+                    with gr.Accordion("调整学习状态", open=False):
+                        self.start_btn = gr.Button("标记为学习中", size="sm")
+                        self.skip_btn = gr.Button("跳过本节", size="sm")
                     self.master_btn = gr.Button(
-                        "✅ 已掌握", variant="primary", size="sm"
+                        "已掌握本节 ✓", variant="primary", size="sm"
                     )
-                    self.skip_btn = gr.Button("⏭ 跳过", size="sm")
                 self.action_status = gr.Markdown("")
-
-            # ============ 右列: AI 助教对话 ============
-            with gr.Column(scale=3, min_width=430, elem_id="le-right-col"):
-                gr.Markdown(
-                    "### 💬 AI 助教\n"
-                    '<span style="color:#6B7280;font-size:12px;">深入探讨、纠正教学内容、补充知识。</span>'
+            with gr.Column(scale=2, min_width=280, elem_id="le-right-col"):
+                gr.HTML(
+                    '<div class="le-assistant-heading"><div><span class="le-kicker">STUDY COMPANION</span><h3>AI 助教</h3></div><button data-le-assistant-close aria-label="关闭助教">×</button></div>'
                 )
+                gr.Markdown("围绕当前课程提问。", elem_classes=["le-caption"])
                 self.chatbot = gr.Chatbot(
-                    label="",
-                    height=480,
-                    show_label=False,
-                    type="messages",
+                    label="", height=340, show_label=False, type="messages"
                 )
-                self.chat_input = gr.Textbox(
-                    label="",
-                    placeholder="基于当前知识点提问...",
-                    show_label=False,
-                    lines=2,
-                )
-                with gr.Row():
-                    self.chat_send_btn = gr.Button("发送", variant="primary", size="sm")
-                    self.chat_clear_btn = gr.Button("清空", size="sm")
-                self.append_chat_to_lesson_btn = gr.Button(
-                    "➕ 并入本节正文", variant="secondary", size="sm"
-                )
-                self.append_chat_status = gr.Markdown("")
+                with gr.Row(elem_id="le-chat-compose"):
+                    self.chat_input = gr.Textbox(
+                        label="向助教提问",
+                        placeholder="哪里还不明白？",
+                        show_label=False,
+                        lines=2,
+                        scale=4,
+                    )
+                    self.chat_send_btn = gr.Button(
+                        "发送", variant="primary", size="sm", scale=0, min_width=64
+                    )
+                with gr.Accordion("对话操作", open=False):
+                    self.append_chat_to_lesson_btn = gr.Button(
+                        "将最近回复加入课程", size="sm"
+                    )
+                    self.chat_clear_btn = gr.Button("清空对话", size="sm")
+                    self.append_chat_status = gr.Markdown("")
 
     # ==================== 事件绑定 ====================
 
@@ -415,7 +279,7 @@ class StudyWorkbenchPage(BasePage):
             self.current_project_id,
             self.env_status,
         ]
-        self.project_id.change(
+        self.project_id.input(
             fn=self._on_project_change,
             inputs=[self.project_id],
             outputs=project_outputs,
@@ -458,9 +322,14 @@ class StudyWorkbenchPage(BasePage):
 
         # 环境配置
         self.auto_setup_btn.click(
-            fn=self._auto_setup,
+            fn=self._prepare_setup,
             inputs=[self.current_project_id],
-            outputs=[self.auto_setup_output, self.env_status],
+            outputs=[self.auto_setup_output, self.env_status, self.auto_setup_plan, self.execute_setup_btn],
+        )
+        self.execute_setup_btn.click(
+            fn=self._execute_setup,
+            inputs=[self.current_project_id, self.auto_setup_plan],
+            outputs=[self.auto_setup_output, self.env_status, self.auto_setup_plan, self.execute_setup_btn],
         )
         self.apply_env_btn.click(
             fn=self._apply_env,
@@ -589,17 +458,17 @@ class StudyWorkbenchPage(BasePage):
             fn=lambda nid: self._set_status(nid, STATUS_LEARNING),
             inputs=[self.current_node_id],
             outputs=status_outputs,
-        )
+        ).then(self._refresh_node_header, inputs=[self.current_node_id], outputs=[self.node_header])
         self.master_btn.click(
             fn=lambda nid: self._set_status(nid, STATUS_MASTERED),
             inputs=[self.current_node_id],
             outputs=status_outputs,
-        )
+        ).then(self._refresh_node_header, inputs=[self.current_node_id], outputs=[self.node_header])
         self.skip_btn.click(
             fn=lambda nid: self._set_status(nid, STATUS_SKIPPED),
             inputs=[self.current_node_id],
             outputs=status_outputs,
-        )
+        ).then(self._refresh_node_header, inputs=[self.current_node_id], outputs=[self.node_header])
 
         # 页面加载后自动初始化: 填充项目+课程+预加载第一节内容
         load_outputs = [
@@ -638,13 +507,12 @@ class StudyWorkbenchPage(BasePage):
     def _build_progress_md(self, prog):
         return (
             f"**进度**: {prog['done']}/{prog['total']} ({prog['pct']}%)\n\n"
-            f"✅已掌握 {prog['done']} · 📖学习中 {prog['learning']} · ⏳待学 {prog['pending']}"
+            f"已掌握 {prog['done']} · 学习中 {prog['learning']} · 待学 {prog['pending']}"
         )
 
     def _build_nodes_data(self, session, pid):
         nodes = session.exec(
-            select(KnowledgeNode)
-            .where(KnowledgeNode.project_id == pid)
+            select(KnowledgeNode).where(KnowledgeNode.project_id == pid)
         ).all()
         learnable_ids = {n.id for n in get_next_learnable_nodes(session, pid, limit=50)}
         done_statuses = {STATUS_MASTERED, STATUS_SKIPPED}
@@ -682,16 +550,12 @@ class StudyWorkbenchPage(BasePage):
                 status = n.get("status", STATUS_PENDING)
                 has_content = n.get("has_content", False)
                 learnable = n.get("learnable", False)
-                icon = {
-                    STATUS_MASTERED: "✅",
-                    STATUS_LEARNING: "📖",
-                    STATUS_SKIPPED: "⏭",
-                    STATUS_PENDING: "🔓" if learnable else "🔒",
-                }.get(status, "🔓")
-                content_mark = "📝" if has_content else "⏳"
-                label = (
-                    f"  {icon}{content_mark} [{n.get('code', '')}] {n.get('title', '')}"
-                )
+                state = STATUS_LABEL.get(status, "待学")
+                if status == STATUS_PENDING and not learnable:
+                    state = "待解锁"
+                elif not has_content and status == STATUS_PENDING:
+                    state = "待生成"
+                label = f"{n.get('code', '')} {n.get('title', '')} · {state}"
                 choices.append((label, str(n.get("id", 0))))
         return choices
 
@@ -711,7 +575,7 @@ class StudyWorkbenchPage(BasePage):
             if r.rtype == "summary":
                 continue
             icon = RESOURCE_ICON.get(r.rtype, "📄")
-            lines.append(f"### {icon} {r.title}")
+            lines.append(f"### {r.title}")
             lines.append(f"\n类型：`{(r.rtype or 'html').upper()}`")
             if r.description:
                 lines.append(f"\n{r.description}")
@@ -755,7 +619,7 @@ class StudyWorkbenchPage(BasePage):
                     ]
                 pid = projs[0].id
                 dd_update = gr.update(
-                    choices=[(f"#{p.id} {p.title[:30]}", str(p.id)) for p in projs],
+                    choices=project_choices(projs),
                     value=str(pid),
                 )
                 prog = get_project_progress(s, pid)
@@ -844,7 +708,7 @@ class StudyWorkbenchPage(BasePage):
                 projects = session.exec(
                     select(LearningProject).order_by(LearningProject.id.desc())
                 ).all()
-                choices = [(f"#{p.id} {p.title[:30]}", str(p.id)) for p in projects]
+                choices = project_choices(projects)
                 cur = str(projects[0].id) if projects else None
                 return gr.update(choices=choices, value=cur)
         except Exception:
@@ -865,7 +729,9 @@ class StudyWorkbenchPage(BasePage):
         course_c = self._build_drop_choices(nodes_data)
         return (
             progress_md,
-            gr.update(choices=course_c, value=None),
+            gr.update(
+                choices=course_c, value=str(nodes_data[0]["id"]) if nodes_data else None
+            ),
             pid,
             env_status,
         )
@@ -966,12 +832,30 @@ class StudyWorkbenchPage(BasePage):
         try:
             nid = int(node_id)
         except (ValueError, TypeError):
-            return None, "*ID无效*", "", "*本节暂无实操课程。*", "", RESOURCE_EMPTY_MD, [], []
+            return (
+                None,
+                "*ID无效*",
+                "",
+                "*本节暂无实操课程。*",
+                "",
+                RESOURCE_EMPTY_MD,
+                [],
+                [],
+            )
 
         with Session(engine) as session:
             node = session.get(KnowledgeNode, nid)
             if not node:
-                return None, "*知识点不存在*", "", "*本节暂无实操课程。*", "", RESOURCE_EMPTY_MD, [], []
+                return (
+                    None,
+                    "*知识点不存在*",
+                    "",
+                    "*本节暂无实操课程。*",
+                    "",
+                    RESOURCE_EMPTY_MD,
+                    [],
+                    [],
+                )
             proj = session.get(LearningProject, node.project_id)
             header = self._build_node_header(node, proj)
             guide = node.description or ""
@@ -1002,7 +886,9 @@ class StudyWorkbenchPage(BasePage):
             return tuple(gr.update() for _ in range(8))
         return self._on_node_select(node_id)
 
-    def _ensure_course_content(self, node_id: int, topic: str, guide: str | None) -> str:
+    def _ensure_course_content(
+        self, node_id: int, topic: str, guide: str | None
+    ) -> str:
         current = guide or ""
         if is_content_valid(current):
             return current
@@ -1033,6 +919,7 @@ class StudyWorkbenchPage(BasePage):
 
     def _truncate_guide(self, guide: str, max_chars: int = 15000) -> str:
         """截断超长教学内容, 在章节边界截断并提示剩余可看。"""
+        guide = clean_heading_icons(guide)
         if len(guide) <= max_chars:
             return guide
         # 在 max_chars 附近找最后一个 ## 标题边界
@@ -1221,7 +1108,9 @@ class StudyWorkbenchPage(BasePage):
                 if not node:
                     return gr.update(), "⚠️ 知识点不存在"
                 current = (node.description or "").rstrip()
-                node.description = f"{current}\n\n{supplement}" if current else supplement
+                node.description = (
+                    f"{current}\n\n{supplement}" if current else supplement
+                )
                 s.add(node)
                 s.commit()
                 updated = node.description
@@ -1242,46 +1131,62 @@ class StudyWorkbenchPage(BasePage):
         return "\n".join(lines)
 
     # ---- 环境配置 (generator: 流式显示命令输出) ----
-    def _auto_setup(self, project_id):
-        if not project_id:
-            yield gr.update(visible=False), "⚠️ 请先选择项目"
-            return
+    def _prepare_setup(self, project_id):
+        from learning_ext.practice.auto_setup import generate_install_commands
+        import hashlib
+
+        hidden = gr.update(visible=False)
         try:
             pid = int(project_id)
-        except (ValueError, TypeError):
-            yield gr.update(visible=False), "⚠️ ID无效"
-            return
-        with Session(engine) as s:
-            proj = s.get(LearningProject, pid)
-            env_task = s.exec(
-                select(Task)
-                .where(Task.project_id == pid)
-                .where(Task.task_type == "env")
-            ).first()
-            if not proj or not env_task or not env_task.description:
-                yield gr.update(visible=False), "⚠️ 无环境清单"
+            with Session(engine) as session:
+                project = session.get(LearningProject, pid)
+                task = session.exec(select(Task).where(Task.project_id == pid, Task.task_type == "env")).first()
+                if not project or not task or not task.description:
+                    yield hidden, "当前项目还没有环境配置清单。", None, hidden
+                    return
+                description, background = task.description, project.background or ""
+            yield gr.update(visible=True, value="正在整理配置方案，尚未执行任何命令。"), "正在生成方案…", None, hidden
+            commands = generate_install_commands(description, background)
+            if not commands:
+                yield gr.update(visible=True, value="这份清单无需自动配置。"), "可按课程说明直接开始学习。", None, hidden
                 return
-            env_md = env_task.description
-            bg = proj.background or ""
-        yield gr.update(visible=True, value="⏳ 生成命令中..."), "⏳"
-        from learning_ext.practice.auto_setup import (
-            generate_install_commands,
-            run_all_commands,
-        )
+            if not isinstance(commands, list) or any(not isinstance(c, dict) or not str(c.get("cmd") or "").strip() for c in commands):
+                raise ValueError("生成的配置命令不完整，请重新生成。")
+            preview = "\n\n".join(f"# {i}. {c.get('desc', '配置步骤')}\n{c['cmd']}" for i, c in enumerate(commands, 1))
+            plan = {"project_id": pid, "fingerprint": hashlib.sha256(description.encode()).hexdigest(), "commands": commands}
+            yield gr.update(visible=True, value=preview), "请检查上方方案。点击执行后，才会在本机安装软件或修改配置。", plan, gr.update(visible=True)
+        except (TypeError, ValueError) as exc:
+            yield hidden, str(exc) if project_id else "请先选择学习项目。", None, hidden
+        except Exception:
+            logger.exception("Failed to prepare environment setup")
+            yield hidden, "配置方案生成失败，请检查模型连接后重试。", None, hidden
 
+    def _execute_setup(self, project_id, plan):
+        import hashlib
+        from learning_ext.practice.auto_setup import run_all_commands
+
+        hidden = gr.update(visible=False)
         try:
-            commands = generate_install_commands(env_md, bg)
-        except Exception as e:
-            yield gr.update(visible=True, value=f"❌ {e}"), f"❌ {e}"
+            pid = int(project_id)
+            if not isinstance(plan, dict) or plan.get("project_id") != pid or not plan.get("commands"):
+                yield gr.update(), "请先为当前项目生成配置方案。", None, hidden
+                return
+            with Session(engine) as session:
+                task = session.exec(select(Task).where(Task.project_id == pid, Task.task_type == "env")).first()
+                fingerprint = hashlib.sha256((task.description or "").encode()).hexdigest() if task else None
+            if fingerprint != plan.get("fingerprint"):
+                yield gr.update(), "环境清单已更新，请重新生成方案。", None, hidden
+                return
+        except (TypeError, ValueError):
+            yield gr.update(), "请先选择学习项目。", None, hidden
             return
-        if not commands:
-            yield gr.update(visible=True, value="✅ 无需配置"), "✅"
-            return
-        log_lines = []
-        for chunk in run_all_commands(commands):
-            log_lines.append(chunk.rstrip("\n"))
-            yield gr.update(visible=True, value="\n".join(log_lines)), "⏳ 执行中..."
-        yield gr.update(visible=True, value="\n".join(log_lines)), "✅ 完成"
+        yield gr.update(visible=True, value="开始执行已确认的配置方案…"), "正在执行…", None, hidden
+        lines, outcome = [], {}
+        for chunk in run_all_commands(plan["commands"], outcome=outcome):
+            lines.append(chunk.rstrip("\n"))
+            yield gr.update(visible=True, value="\n".join(lines)), "正在执行…", None, hidden
+        status = ("部分配置失败，请查看执行记录。" if outcome.get("failed") else "命令执行成功，请验证环境后点击「已完成配置」。")
+        yield gr.update(visible=True, value="\n".join(lines)), status, None, hidden
 
     def _apply_env(self, project_id):
         if not project_id:
@@ -1293,6 +1198,8 @@ class StudyWorkbenchPage(BasePage):
                     .where(Task.project_id == int(project_id))
                     .where(Task.task_type == "env")
                 ).first()
+                if not t:
+                    return "当前项目还没有环境配置清单。"
                 if t:
                     t.status = "done"
                     s.add(t)
@@ -1344,6 +1251,16 @@ class StudyWorkbenchPage(BasePage):
             return f"❌ {e}"
 
     # ---- 状态 ----
+    def _refresh_node_header(self, node_id):
+        if not node_id:
+            return gr.update()
+        with Session(engine) as session:
+            node = session.get(KnowledgeNode, int(node_id))
+            if node is None:
+                return gr.update()
+            project = session.get(LearningProject, node.project_id)
+            return self._build_node_header(node, project)
+
     def _set_status(self, node_id, status):
         if not node_id:
             return (
