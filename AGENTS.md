@@ -31,6 +31,12 @@ pack_portable.bat  # 组装完整便携版
 # 停止: 关闭桌面窗口或 Ctrl+C
 ```
 
+## Git 远端
+- `origin` = redmaplewww/learn-everything（公开库）：当前 gh 账号 HAPPYFAPTAIN **只有 pull 权限，推不上去**。本地 main 跟踪它，别往这推
+- `personal` = HAPPYFAPTAIN/learn-everything（私有库，有 admin）：**唯一的推送目标**，`git push personal main`
+- 提交身份已写入仓库级 config：`HAPPYFAPTAIN <HAPPYFAPTAIN@users.noreply.github.com>`
+- `kotaemon/` 是子模块且只读，不要改动或提交其内部文件（当前仅有未跟踪的 `.tmp/`，属正常）
+
 ## 代码约定
 - 学习特化模块全部放 `learning_ext/`，不修改 `kotaemon/` 底座
 - service 函数第一参数恒为 `session: Session`
