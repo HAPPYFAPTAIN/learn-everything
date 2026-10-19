@@ -1,13 +1,4 @@
-"""学习工作台 (从零重写, 干净可靠版)。
-
-设计原则：
-    1. 全部事件用普通函数 return (不用 generator, 不用 @gr.render)
-    2. UI 组件只创建一次, 事件绑定到 UI 中的组件实例
-    3. demo.load() 在页面加载后自动填充项目下拉框
-    4. 三栏布局: 左(项目+课程) / 中(内容+笔记+资料) / 右(AI对话)
-
-三栏每列内部独立滚动, 高度限制为视窗高度。
-"""
+"""学习工作台：顶部选课、章节导航、阅读内容与独立助教侧窗。"""
 
 from __future__ import annotations
 
@@ -112,11 +103,11 @@ class StudyWorkbenchPage(BasePage):
     def on_building_ui(self):
         gr.HTML(WORKBENCH_CSS)
         gr.HTML(
-            '<div class="le-page-heading"><div><p class="le-kicker">LEARNING / 02</p><h1>学习工作台</h1><p>一次专注一个知识点。阅读、实践，再用自己的话理解它。</p></div><button class="le-assistant-toggle" data-le-assistant-toggle aria-expanded="false" aria-controls="le-right-col">询问助教 <span>↗</span></button></div>'
+            '<div class="le-page-heading"><div><h1>学习工作台</h1><p>一次专注一个知识点。阅读、实践，再用自己的话理解它。</p></div><button class="le-assistant-toggle" data-le-assistant-toggle aria-expanded="false" aria-controls="le-right-col">询问助教 <span>↗</span></button></div>'
         )
         with gr.Row(elem_id="le-workbench-row"):
             with gr.Column(scale=1, min_width=200, elem_id="le-left-col"):
-                gr.Markdown("### 我的课程")
+                gr.HTML('<div class="le-course-strip-heading"><strong>当前学习</strong><span>选择项目和课程，继续你的进度</span></div>')
                 self.project_id = gr.Dropdown(
                     label="学习项目", choices=[], value=None, interactive=True, elem_id="le-project-picker"
                 )
@@ -133,6 +124,18 @@ class StudyWorkbenchPage(BasePage):
                         self.refresh_btn = gr.Button("刷新项目", size="sm")
                         self.load_list_btn = gr.Button("刷新课程", size="sm")
                     self.view_btn = gr.Button("重新载入当前课程", size="sm")
+                    with gr.Accordion("环境配置", open=False, elem_id="le-env-setup"):
+                        self.env_status = gr.Markdown("")
+                        self.auto_setup_plan = gr.State(value=None)
+                        self.auto_setup_btn = gr.Button("生成配置方案", size="sm")
+                        self.execute_setup_btn = gr.Button("执行这份配置方案", size="sm", visible=False)
+                        self.apply_env_btn = gr.Button("已完成配置", size="sm")
+                        self.auto_setup_output = gr.Code(
+                            label="配置方案与执行记录",
+                            language="shell",
+                            visible=False,
+                            interactive=False,
+                        )
                     with gr.Accordion("内容维护", open=False):
                         self.regen_all_btn = gr.Button("补全缺失内容", size="sm")
                         self.regen_all_force_btn = gr.Button(
@@ -173,20 +176,8 @@ class StudyWorkbenchPage(BasePage):
                     show_label=False,
                 )
                 self.node_header = gr.Markdown(
-                    "选择左侧课程，开始阅读。", elem_id="le-center-content"
+                    "选择上方课程，开始阅读。", elem_id="le-center-content"
                 )
-                with gr.Accordion("环境配置", open=False, elem_id="le-env-setup"):
-                    self.env_status = gr.Markdown("")
-                    self.auto_setup_plan = gr.State(value=None)
-                    self.auto_setup_btn = gr.Button("生成配置方案", size="sm")
-                    self.execute_setup_btn = gr.Button("执行这份配置方案", size="sm", visible=False)
-                    self.apply_env_btn = gr.Button("已完成配置", size="sm")
-                    self.auto_setup_output = gr.Code(
-                        label="配置方案与执行记录",
-                        language="shell",
-                        visible=False,
-                        interactive=False,
-                    )
                 with gr.Tabs(elem_id="le-content-tabs"):
                     with gr.TabItem("阅读", elem_id="le-lookup-zone"):
                         self.node_guide = gr.Markdown(

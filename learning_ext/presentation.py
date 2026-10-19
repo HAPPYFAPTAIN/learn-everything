@@ -6,6 +6,7 @@ ASSETS = Path(__file__).parent / "assets"
 def presentation_css():
     css = (ASSETS / "workspace.css").read_text(encoding="utf-8")
     css += "\n" + (ASSETS / "refinements.css").read_text(encoding="utf-8")
+    css += "\n" + (ASSETS / "workbench.css").read_text(encoding="utf-8")
     return css.replace("__ASSETS__", "/file=" + ASSETS.as_posix())
 
 

@@ -66,6 +66,7 @@ def _patch_gradio_template_for_learning_assets():
         word_lookup_js = Path(_HERE, script_path).read_text(encoding="utf-8")
         workspace_js = Path(_HERE, "learning_ext/assets/workspace.js").read_text(encoding="utf-8")
         workspace_js += "\n" + Path(_HERE, "learning_ext/assets/coach.js").read_text(encoding="utf-8")
+        workspace_js += "\n" + Path(_HERE, "learning_ext/assets/workbench.js").read_text(encoding="utf-8")
         script_tag = f"<script>\n{word_lookup_js}\n</script>"
         script_tag = f"<script>\n{workspace_js}\n</script>" + script_tag
         template_root = Path(gradio_routes.STATIC_TEMPLATE_LIB)
