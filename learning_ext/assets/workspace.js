@@ -1,13 +1,5 @@
 (() => {
   document.documentElement.classList.remove('dark');
-  function setAssistant(open) {
-    const row = document.getElementById('le-workbench-row');
-    if (!row) return;
-    row.classList.toggle('le-assistant-open', open);
-    document.querySelectorAll('[data-le-assistant-toggle]').forEach(b => b.setAttribute('aria-expanded', String(open)));
-    if (open) document.querySelector('#le-chat-compose textarea')?.focus();
-    else document.querySelector('[data-le-assistant-toggle]')?.focus();
-  }
   function boot() {
     document.body.classList.remove('dark');
     document.addEventListener('click', event => {
@@ -24,15 +16,12 @@
         chatPanel.setAttribute('aria-expanded', String(Boolean(isOpen)));
       }
       if (event.target.closest('#le-app-tabs > .tab-nav > button')) window.scrollTo({top:0,behavior:'instant'});
-      if (event.target.closest('[data-le-assistant-toggle]')) setAssistant(!document.getElementById('le-workbench-row')?.classList.contains('le-assistant-open'));
-      if (event.target.closest('[data-le-assistant-close]')) setAssistant(false);
     });
     document.addEventListener('keydown', event => {
       if (event.key === 'Escape') {
         document.getElementById('chat-tab')?.classList.remove('le-chat-sources-open','le-chat-evidence-open');
         document.querySelectorAll('[data-le-chat-panel]').forEach(b=>b.setAttribute('aria-expanded','false'));
       }
-      if (event.key === 'Escape' && document.getElementById('le-workbench-row')?.classList.contains('le-assistant-open')) setAssistant(false);
     });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded',boot,{once:true}); else boot();
@@ -44,7 +33,7 @@
     {tab:'quick-setup-tab',target:'#le-settings-form',title:'先让 AI 连上',body:'选择服务商，填好模型和密钥。点「测试连接」，成功后「保存并启用」。已经配好可以直接下一步。'},
     {tab:'learning-path-tab',target:'#le-plan-input',title:'写一句你想学什么',body:'填写一个学习方向，点「继续」逐步选择基础、目标和节奏；可选内容可以跳过。最后点「生成我的学习路线」。'},
     {tab:'learning-path-tab',target:'#le-plan-preview',title:'看一眼路线，再保存',body:'等路线生成后，确认内容合适后点「保存路线，开始学习」。保存完成后再进入下一步。'},
-    {tab:'learning-workbench-tab',target:'#le-left-col',title:'选一节，开始学',body:'选中刚保存的项目和第一节课，在右侧阅读。不懂就点「询问助教」，学会后点「已掌握本节」。'}
+    {tab:'learning-workbench-tab',target:'#le-left-col',title:'选一节，开始学',body:'选中刚保存的项目和第一节课，在右侧阅读。不懂就点右下角的助教悬浮球，对话框可以随意拖动和缩放。学会后点「已掌握本节」。'}
   ];
   const tours = {
     learning: learningSteps,

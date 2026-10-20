@@ -1,0 +1,149 @@
+/* 左侧栏整合：品牌行 + 菜单栏合并为一个连续面板，并支持折叠。
+   仅在桌面布局（>1100px）启用，窄屏维持原有的横向导航。
+
+   注意：本文件经 gr.Blocks(css=...) 注入，Gradio 4 会给每条规则自动加
+   `.gradio-container.xxx .contain` 前缀。因此这里不能用 `html.xxx`
+   这类以 html 打头的选择器（会被改写后失配），折叠态一律用 CSS 变量驱动。 */
+
+#le-nav-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid #dbe2ea;
+  border-radius: 7px;
+  background: #fff;
+  color: #4a6584;
+  cursor: pointer;
+  z-index: 3;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+#le-nav-toggle:hover {
+  background: #f3f6fa;
+  color: #365f98;
+  border-color: #c6d3e2;
+}
+#le-nav-toggle:focus-visible {
+  outline: 2px solid #7e9fc9;
+  outline-offset: 1px;
+}
+#le-nav-toggle svg {
+  width: 13px;
+  height: 13px;
+  display: block;
+  transform: rotate(var(--le-toggle-rot, 0deg));
+  transition: transform .2s ease;
+}
+
+@media (max-width: 800px) {
+  #le-nav-toggle { display: none !important; }
+}
+
+@media (min-width: 801px) {
+  /* 顶栏：整行固定，底部分隔线从侧栏右缘起笔 */
+  #le-brand-bar {
+    height: 64px !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    position: relative;
+    z-index: 60;
+  }
+  .le-topbar {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 64px !important;
+    min-height: 64px !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    background: #fff !important;
+    border-bottom: 0 !important;
+    z-index: 60;
+  }
+  .le-topbar::after {
+    content: '';
+    position: absolute;
+    left: var(--le-nav-w, 216px);
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: #dfe5ed;
+    transition: left .2s ease;
+  }
+
+  /* 品牌格：与侧栏同宽，右侧竖向分隔线向上贯通到窗口顶端 */
+  .le-brand {
+    position: relative;
+    width: var(--le-brand-w, 216px) !important;
+    height: 64px;
+    flex: none;
+    display: flex;
+    align-items: center;
+    padding: 0 14px 0 var(--le-brand-pl, 16px) !important;
+    box-sizing: border-box;
+    gap: 0 !important;
+    transition: width .2s ease, padding-left .2s ease;
+  }
+  .le-brand::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: #dfe5ed;
+    opacity: var(--le-divider-o, 1);
+    transition: opacity .2s ease;
+  }
+  .le-brand img {
+    width: var(--le-brand-img, 148px) !important;
+    height: auto;
+    transition: width .2s ease;
+  }
+  .le-app-title {
+    margin-left: 22px;
+  }
+  .le-local {
+    margin-left: auto;
+    margin-right: 18px;
+  }
+
+  /* 菜单栏：紧接品牌行，共用同一条右侧分隔线 */
+  #le-app-tabs > .tab-nav {
+    top: 64px !important;
+    padding: 16px 12px 24px !important;
+    border-right: 1px solid #dfe5ed !important;
+    background: #fff !important;
+    z-index: 55;
+    transform: translateX(calc(-1 * var(--le-nav-x, 0px)));
+    transition: transform .2s ease;
+  }
+  #le-app-tabs > .tabitem {
+    margin-left: var(--le-nav-w, 216px) !important;
+    width: calc(100% - var(--le-nav-w, 216px)) !important;
+    transition: margin-left .2s ease, width .2s ease;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #le-app-tabs > .tab-nav,
+  #le-app-tabs > .tabitem,
+  .le-brand,
+  .le-brand img,
+  .le-topbar::after,
+  #le-nav-toggle,
+  #le-nav-toggle svg {
+    transition: none !important;
+  }
+}

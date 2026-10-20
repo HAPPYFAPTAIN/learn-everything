@@ -1,0 +1,15 @@
+{
+  "_说明": "把下面 mcpServers 里的例子复制到 mcp.json 即可启用。改完不用重启，下一次对话会自动读（缓存 2 分钟）。",
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "C:\\Users"],
+      "env": {}
+    },
+    "example-http-server": {
+      "command": "uvx",
+      "args": ["mcp-server-fetch"],
+      "env": {}
+    }
+  }
+}

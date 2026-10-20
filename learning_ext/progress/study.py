@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import re
+import threading
 from typing import List, Optional
 
 from sqlmodel import Session, select
@@ -15,6 +16,9 @@ from learning_ext.db.models import (
     Task,
 )
 from learning_ext.llm import chat
+
+# 备课队列会并发跑多个生成任务，SQLite 写入必须串行，否则容易 database is locked
+_WRITE_LOCK = threading.Lock()
 
 logger = logging.getLogger(__name__)
 
@@ -235,7 +239,13 @@ def generate_node_summary(
 （用简洁的 bullet 把本节**必须记住**的要点列出来，5-8 条，方便复习）
 
 ## 📝 自测练习
-（出 3-5 道题让学习者自测，题型：选择/填空/简答/实操 混合。附上答案或解题思路，用折叠或单独段落给出）
+（出 3-5 道题让学习者自测，题型：选择/填空/简答/实操 混合。**答案必须折叠**，不要直接露出来：每题后面紧跟一个 HTML 折叠块，格式严格照抄，不要用引用块 `>` 代替，不要改写 summary 文字）
+
+<details><summary>点击查看答案</summary>
+
+答案：……
+
+</details>
 
 ## 🚀 拓展提升
 （对想深入的学习者，推荐 2-3 个进阶方向、扩展阅读、关联知识点）
@@ -266,7 +276,9 @@ def generate_node_summary(
         ),
         model_name=model_name,
         temperature=0.5,
-        max_tokens=4000,
+        # 提示词要求 2000-4000 字，中文 1 字约 1 token，再算上 markdown 开销，
+        # 4000 会稳定截断（旧值就是 4000，导致长课节一直"生成不成功"）。
+        max_tokens=8000,
     )
 
 
@@ -360,7 +372,7 @@ def generate_practice_lesson(
         system="你是资深工程实践导师，会把抽象课程转成可执行项目、流程代码和验收标准。",
         model_name=model_name,
         temperature=0.35,
-        max_tokens=3500,
+        max_tokens=8000,
     )
 
 
@@ -574,18 +586,19 @@ def generate_node_summary_to_db(
                 environment_context=environment_context,
             )
             node.description = summary
-            s.add(node)
-            s.commit()
-            if is_practice_heavy_node(node, project_topic):
-                try:
-                    generate_practice_lesson_to_db(
-                        node.id,
-                        project_topic,
-                        learning_goal=learning_goal,
-                        environment_context=environment_context,
-                    )
-                except Exception as e:
-                    logger.warning(f"自动生成实操课程失败 (node {node_id}): {e}")
+            with _WRITE_LOCK:
+                s.add(node)
+                s.commit()
+                if is_practice_heavy_node(node, project_topic):
+                    try:
+                        generate_practice_lesson_to_db(
+                            node.id,
+                            project_topic,
+                            learning_goal=learning_goal,
+                            environment_context=environment_context,
+                        )
+                    except Exception as e:
+                        logger.warning(f"自动生成实操课程失败 (node {node_id}): {e}")
         return True
     except Exception as e:
         logger.warning(f"后台生成教学内容失败 (node {node_id}): {e}")

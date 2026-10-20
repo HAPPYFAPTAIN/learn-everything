@@ -1,0 +1,190 @@
+/* AI 助教：可拖动悬浮球 + 可拖动、可缩放的全局浮层对话框。
+   面板挂在应用根级（不在任何标签容器内），所以切页时对话和内容都不会丢；
+   几何位置全部走 CSS 变量（由 assistant.js 写入 documentElement），
+   避免与其它固定定位规则硬碰。 */
+
+/* ---------- 悬浮球 ---------- */
+#le-assistant-fab {
+  position: fixed;
+  right: 28px;
+  bottom: 28px;
+  width: 58px;
+  height: 58px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #365f98;
+  color: #fff;
+  font: 500 16px/1 var(--le-font);
+  letter-spacing: .06em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  z-index: 70;
+  box-shadow: 0 10px 26px #1d355829;
+  touch-action: none;
+  transition: background .16s ease, transform .2s ease, box-shadow .16s ease, opacity .2s ease;
+}
+#le-assistant-fab:hover {
+  background: #2f5588;
+  transform: translateY(-1px);
+  box-shadow: 0 12px 30px #1d355833;
+}
+#le-assistant-fab:focus-visible {
+  outline: 2px solid #7e9fc9;
+  outline-offset: 2px;
+}
+#le-assistant-fab.le-dragging {
+  cursor: grabbing;
+  transform: none;
+  transition: none;
+}
+#le-assistant-fab[aria-expanded="true"] {
+  background: #2b4f80;
+}
+
+/* 对话框打开时淡出并不可点（对话内容不受影响） */
+#le-assistant-fab.le-fab-hidden {
+  opacity: 0;
+  transform: scale(.72);
+  pointer-events: none;
+  visibility: hidden;
+  transition: background .16s ease, transform .2s ease, box-shadow .16s ease,
+    opacity .2s ease, visibility 0s linear .2s;
+}
+/* 不在允许出现助教的页面时彻底收起 */
+#le-assistant-fab.le-fab-off {
+  display: none !important;
+}
+
+/* ---------- 对话框（全局浮层） ---------- */
+#le-global-assistant {
+  position: fixed !important;
+  left: var(--le-dlg-x, auto) !important;
+  top: var(--le-dlg-y, 96px) !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: var(--le-dlg-w, 420px) !important;
+  height: var(--le-dlg-h, 560px) !important;
+  max-height: none !important;
+  overflow: hidden !important;
+  display: none !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+  padding: 0 !important;
+  border: 1px solid #d5dfe9 !important;
+  border-radius: 14px !important;
+  background: #fff !important;
+  box-shadow: 0 20px 60px #172b4d26 !important;
+  z-index: 70 !important;
+}
+body.le-assistant-open #le-global-assistant {
+  display: flex !important;
+}
+
+/* 标题栏＝拖动把手 */
+#le-global-assistant .le-assistant-heading {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 12px 11px 16px;
+  border-bottom: 1px solid #e6ebf2;
+  background: #fff;
+  border-radius: 14px 14px 0 0;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+#le-global-assistant .le-assistant-heading h3 {
+  margin: 0 !important;
+  font-size: 15px !important;
+  color: #2b3b4e;
+}
+#le-global-assistant .le-assistant-heading .le-kicker {
+  display: none;
+}
+#le-global-assistant .le-assistant-heading button {
+  border: 0;
+  background: none;
+  color: #7c8b9d;
+  font-size: 22px;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+#le-global-assistant .le-assistant-heading button:hover {
+  background: #f1f5fa;
+  color: #365f98;
+}
+#le-global-assistant .le-assistant-heading.le-dragging {
+  cursor: grabbing;
+}
+
+/* 只留对话框本身：说明文案与折叠的对话操作藏起来 */
+#le-global-assistant .le-caption,
+#le-global-assistant #le-assistant-ops {
+  display: none !important;
+}
+
+/* 消息区撑满，输入区固定在下 */
+#le-global-assistant #le-assistant-chat {
+  flex: 1 1 auto !important;
+  min-height: 140px !important;
+  height: auto !important;
+  margin: 10px 12px 0 !important;
+  border: 1px solid #e3e7ec !important;
+  border-radius: 10px !important;
+  background: #f8fafc !important;
+  overflow: hidden !important;
+}
+#le-global-assistant #le-assistant-chat > .bubble-wrap {
+  height: 100% !important;
+  max-height: none !important;
+}
+#le-global-assistant #le-chat-compose {
+  flex: none;
+  padding: 10px 12px 12px;
+}
+
+/* 右下角缩放手柄 */
+#le-assistant-resize {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 20px;
+  height: 20px;
+  cursor: nwse-resize;
+  touch-action: none;
+  z-index: 4;
+}
+#le-assistant-resize::after {
+  content: '';
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid #b6c3d4;
+  border-bottom: 2px solid #b6c3d4;
+  border-radius: 0 0 3px 0;
+}
+#le-assistant-resize:hover::after {
+  border-color: #6f87a6;
+}
+
+@media (max-width: 800px) {
+  #le-assistant-fab {
+    right: 16px;
+    bottom: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #le-assistant-fab {
+    transition: none !important;
+  }
+}

@@ -1,0 +1,159 @@
+/* 学习工作台的目录（本节目录）交互：
+   吸顶 / 可拖拽调宽 / 正文滚动指示 / 可收起。
+   仅桌面宽度生效，窄屏沿用 workbench.css 里的堆叠布局。 */
+
+/* 窄屏不显示这条 gutter（JS 会一直把它建出来） */
+#le-toc-gutter {
+  display: none;
+}
+
+@media (min-width: 1001px) {
+  /* Gradio 给行容器的直接子元素加了 min-width:min(160px,100%)，
+     会把这条窄 gutter 挤宽，必须压掉 */
+  #le-toc-gutter,
+  #le-lesson-outline {
+    min-width: 0 !important;
+  }
+
+  /* 目录列宽由变量驱动（由 outline.js 拖拽写入并持久化） */
+  #le-workbench-row,
+  #le-workbench-row.le-assistant-open {
+    grid-template-columns: var(--le-toc-w, 220px) minmax(0, 1fr) !important;
+  }
+
+  /* 目录真正吸顶。自身滚动条隐藏，滚动位置改由右侧指示条体现。 */
+  #le-lesson-outline {
+    grid-column: 1;
+    grid-row: 2;
+    position: sticky;
+    top: 88px;
+    align-self: start;
+    max-height: calc(100vh - 116px);
+    overflow: auto;
+    scrollbar-width: none;
+  }
+  #le-lesson-outline::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+
+  /* 目录与正文之间的竖条：骑在 28px 的 gap 中间 */
+  #le-toc-gutter {
+    display: block;
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: end;
+    align-self: start;
+    position: sticky;
+    top: 88px;
+    width: 20px;
+    height: calc(100vh - 116px);
+    margin-right: -24px;
+    z-index: 6;
+    touch-action: none;
+  }
+
+  /* 分隔线＝拖拽改宽度的命中区 */
+  #le-toc-resizer {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 12px;
+    cursor: col-resize;
+  }
+  #le-toc-resizer::before {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    border-radius: 2px;
+    background: #e4e9f0;
+    transition: background .16s ease;
+  }
+  #le-toc-gutter:hover #le-toc-resizer::before {
+    background: #b9c7d8;
+  }
+
+  /* 正文滚动指示：轨道 + 滑块 */
+  #le-scroll-rail {
+    position: absolute;
+    right: 2px;
+    top: 36px;
+    bottom: 0;
+    width: 6px;
+    border-radius: 3px;
+  }
+  #le-scroll-thumb {
+    position: absolute;
+    left: 1px;
+    width: 4px;
+    min-height: 32px;
+    border-radius: 3px;
+    background: #c6d0dc;
+    cursor: grab;
+    transition: background .16s ease;
+  }
+  #le-scroll-thumb:hover {
+    background: #93a6bc;
+  }
+  #le-scroll-thumb.le-dragging {
+    background: #6385b0;
+    cursor: grabbing;
+  }
+
+  /* 收起 / 展开角标 */
+  #le-toc-toggle {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    transform: translateX(-50%);
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 1px solid #d8e1eb;
+    border-radius: 7px;
+    background: #fff;
+    color: #6b7c92;
+    font: 600 13px/1 var(--le-font);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 2;
+    box-shadow: 0 1px 4px #20324b12;
+  }
+  #le-toc-toggle:hover {
+    color: #365f98;
+    border-color: #bcccdd;
+  }
+
+  /* 收起态：目录压成窄条 */
+  #le-workbench-row.le-toc-collapsed {
+    grid-template-columns: 30px minmax(0, 1fr) !important;
+  }
+  #le-workbench-row.le-toc-collapsed #le-lesson-outline {
+    overflow: hidden;
+    padding: 18px 0;
+    background: #f4f7fb;
+    border-radius: 10px;
+  }
+  #le-workbench-row.le-toc-collapsed #le-lesson-outline summary,
+  #le-workbench-row.le-toc-collapsed #le-lesson-outline nav,
+  #le-workbench-row.le-toc-collapsed #le-lesson-outline p {
+    display: none !important;
+  }
+  #le-workbench-row.le-toc-collapsed #le-lesson-outline::after {
+    content: '目录';
+    position: absolute;
+    left: 50%;
+    top: 44px;
+    transform: translateX(-50%);
+    writing-mode: vertical-rl;
+    font-size: 12px;
+    letter-spacing: .22em;
+    color: #8a97a6;
+  }
+}

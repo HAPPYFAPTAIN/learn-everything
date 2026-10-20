@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import html
+import json
 import logging
+import re
 from learning_ext.presentation import project_display_name, project_choices, clean_heading_icons
 
 import gradio as gr
@@ -96,14 +99,19 @@ class StudyWorkbenchPage(BasePage):
         # 仅声明 gr.State, 业务函数都是普通函数
         self.current_node_id = gr.State(None)
         self.current_project_id = gr.State(None)
-        self._chat_history = gr.State([])
+        # 正在等备课结果的节点 -> 占位内容
+        self._pending_nodes: dict[int, str] = {}
+        # 界面当前显示占位的那一节（定时器据此判断要不要替换）
+        self._pending_node: int | None = None
+        # 已经为哪个项目排过整项目备课（避免反复扫描）
+        self._prep_kicked: set[int] = set()
 
     # ==================== UI 构建 ====================
 
     def on_building_ui(self):
         gr.HTML(WORKBENCH_CSS)
         gr.HTML(
-            '<div class="le-page-heading"><div><h1>学习工作台</h1><p>一次专注一个知识点。阅读、实践，再用自己的话理解它。</p></div><button class="le-assistant-toggle" data-le-assistant-toggle aria-expanded="false" aria-controls="le-right-col">询问助教 <span>↗</span></button></div>'
+            '<div class="le-page-heading"><div><h1>学习工作台</h1><p>一次专注一个知识点。阅读、实践，再用自己的话理解它。</p></div></div>'
         )
         with gr.Row(elem_id="le-workbench-row"):
             with gr.Column(scale=1, min_width=200, elem_id="le-left-col"):
@@ -175,9 +183,6 @@ class StudyWorkbenchPage(BasePage):
                     interactive=True,
                     show_label=False,
                 )
-                self.node_header = gr.Markdown(
-                    "选择上方课程，开始阅读。", elem_id="le-center-content"
-                )
                 with gr.Tabs(elem_id="le-content-tabs"):
                     with gr.TabItem("阅读", elem_id="le-lookup-zone"):
                         self.node_guide = gr.Markdown(
@@ -223,6 +228,10 @@ class StudyWorkbenchPage(BasePage):
                             )
                             self.preview_btn = gr.Button("读取正文", size="sm")
                             self.resource_preview = gr.Markdown("")
+                # 标题放在标签栏之下：标签栏吸顶后，标题与正文一起从下方穿过
+                self.node_header = gr.Markdown(
+                    "选择上方课程，开始阅读。", elem_id="le-center-content"
+                )
                 with gr.Accordion("划词解释结果", open=False, elem_id="le-term-result"):
                     self.term_explain_btn = gr.Button("解释选中词汇", size="sm")
                     self.term_explain_output = gr.Markdown("", elem_id="le-term-output")
@@ -234,31 +243,18 @@ class StudyWorkbenchPage(BasePage):
                         "已掌握本节 ✓", variant="primary", size="sm"
                     )
                 self.action_status = gr.Markdown("")
-            with gr.Column(scale=2, min_width=280, elem_id="le-right-col"):
-                gr.HTML(
-                    '<div class="le-assistant-heading"><div><span class="le-kicker">STUDY COMPANION</span><h3>AI 助教</h3></div><button data-le-assistant-close aria-label="关闭助教">×</button></div>'
-                )
-                gr.Markdown("围绕当前课程提问。", elem_classes=["le-caption"])
-                self.chatbot = gr.Chatbot(
-                    label="", height=340, show_label=False, type="messages"
-                )
-                with gr.Row(elem_id="le-chat-compose"):
-                    self.chat_input = gr.Textbox(
-                        label="向助教提问",
-                        placeholder="哪里还不明白？",
-                        show_label=False,
-                        lines=2,
-                        scale=4,
-                    )
-                    self.chat_send_btn = gr.Button(
-                        "发送", variant="primary", size="sm", scale=0, min_width=64
-                    )
-                with gr.Accordion("对话操作", open=False):
-                    self.append_chat_to_lesson_btn = gr.Button(
-                        "将最近回复加入课程", size="sm"
-                    )
-                    self.chat_clear_btn = gr.Button("清空对话", size="sm")
-                    self.append_chat_status = gr.Markdown("")
+        # 选段改写的桥：前端把「选中了哪句话、要怎么改」写进这个隐藏输入框，
+        # 再点一下隐藏按钮触发事件。Gradio 4.44 没有 visible="hidden"，
+        # 所以用 CSS 把这一行挪出可视区（元素仍在 DOM 里，脚本才够得着）。
+        with gr.Row(elem_id="le-rewrite-bridge"):
+            self.rewrite_payload = gr.Textbox(
+                value="", show_label=False, container=False, elem_id="le-rewrite-payload"
+            )
+            self.rewrite_trigger = gr.Button("改写", elem_id="le-rewrite-trigger")
+        # 提示条必须放在隐藏行外面：那行是 opacity:0，放里面会跟着一起透明
+        self.rewrite_note = gr.HTML("", elem_id="le-rewrite-note")
+        # 备课轮询：正文还在写时，写好了自动替换，用户不用点任何按钮
+        self.prep_timer = gr.Timer(3.0, active=True)
 
     # ==================== 事件绑定 ====================
 
@@ -297,8 +293,6 @@ class StudyWorkbenchPage(BasePage):
             self.practice_md,
             self.note_input,
             self.resources_md,
-            self.chatbot,
-            self._chat_history,
         ]
         self.view_btn.click(
             fn=self._on_node_select,
@@ -309,6 +303,21 @@ class StudyWorkbenchPage(BasePage):
             fn=self._on_course_change,
             inputs=[self.course_drop],
             outputs=view_outputs,
+        )
+
+        # 备课轮询：正文还在写 → 写好了自动替换（无需用户点按钮）
+        # 注意：gr.Timer 的 tick 不会给事件传输入，所以这里不留 inputs，
+        # 由页面自己记住「当前在等哪一节」。
+        self.prep_timer.tick(
+            fn=self._poll_writing,
+            outputs=[self.node_guide, self.practice_md],
+        )
+
+        # 选段改写：前端把请求写进隐藏输入框后点这个按钮
+        self.rewrite_trigger.click(
+            fn=self._on_rewrite,
+            inputs=[self.current_node_id, self.rewrite_payload],
+            outputs=[self.node_guide, self.rewrite_note],
         )
 
         # 环境配置
@@ -388,27 +397,6 @@ class StudyWorkbenchPage(BasePage):
             outputs=[self.term_explain_output],
         )
 
-        # AI 对话 (用 generator: 先显示用户消息, 再流式回复)
-        self.chat_send_btn.click(
-            fn=self._chat_send,
-            inputs=[self.chat_input, self.current_node_id, self._chat_history],
-            outputs=[self.chatbot, self._chat_history, self.chat_input],
-        )
-        self.chat_input.submit(
-            fn=self._chat_send,
-            inputs=[self.chat_input, self.current_node_id, self._chat_history],
-            outputs=[self.chatbot, self._chat_history, self.chat_input],
-        )
-        self.chat_clear_btn.click(
-            fn=lambda: ([], [], ""),
-            outputs=[self.chatbot, self._chat_history, self.chat_input],
-        )
-        self.append_chat_to_lesson_btn.click(
-            fn=self._append_last_assistant_to_node,
-            inputs=[self.current_node_id, self._chat_history],
-            outputs=[self.node_guide, self.append_chat_status],
-        )
-
         # 添加课程
         add_outputs = [self.add_status, self.course_drop, self.progress_display]
         self.add_btn.click(
@@ -474,8 +462,6 @@ class StudyWorkbenchPage(BasePage):
             self.practice_md,  # 8: 实操课程
             self.note_input,  # 9: 笔记
             self.resources_md,  # 10: 参考资料
-            self.chatbot,  # 11
-            self._chat_history,  # 12
         ]
         try:
             self._app.app.load(
@@ -605,8 +591,6 @@ class StudyWorkbenchPage(BasePage):
                         "*本节暂无实操课程。*",
                         "",
                         RESOURCE_EMPTY_MD,
-                        [],
-                        [],
                     ]
                 pid = projs[0].id
                 dd_update = gr.update(
@@ -619,7 +603,9 @@ class StudyWorkbenchPage(BasePage):
                 nodes_data = self._build_nodes_data(s, pid)
                 course_c = self._build_drop_choices(nodes_data)
 
-                # 预加载第一个节点的内容
+                # 没备课的章节直接丢后台，用户什么都不用点
+                proj0 = s.get(LearningProject, pid)
+                self._kick_project_prep(pid, proj0.topic if proj0 else "")
                 first_node_id = None
                 header = "*选择课程开始学习*"
                 guide = ""
@@ -671,8 +657,6 @@ class StudyWorkbenchPage(BasePage):
                     practice_md,  # 8: 实操课程
                     note_content,  # 9: 笔记
                     res_md,  # 10: 参考资料
-                    [],  # 11: chatbot
-                    [],  # 12: chat history
                 ]
         except Exception as e:
             logger.exception("_auto_init 失败")
@@ -688,8 +672,6 @@ class StudyWorkbenchPage(BasePage):
                 "*本节暂无实操课程。*",
                 "",
                 RESOURCE_EMPTY_MD,
-                [],
-                [],
             ]
 
     # ---- 项目相关 ----
@@ -717,6 +699,9 @@ class StudyWorkbenchPage(BasePage):
             progress_md = self._build_progress_md(prog)
             env_md, env_status = self._load_env(session, pid)
             nodes_data = self._build_nodes_data(session, pid)
+            proj = session.get(LearningProject, pid)
+            topic = proj.topic if proj else ""
+        self._kick_project_prep(pid, topic)
         course_c = self._build_drop_choices(nodes_data)
         return (
             progress_md,
@@ -754,7 +739,8 @@ class StudyWorkbenchPage(BasePage):
                 prog = get_project_progress(s, pid)
                 progress_md = self._build_progress_md(prog)
             return (
-                f"✅ 已添加课程 [{node.code}] {node.title}。可选中它后点「🔄 重新生成本节」让 AI 生成教学内容。",
+                f"✅ 已添加课程 [{node.code}] {node.title}。选中它后，"
+                "在「阅读」页底部展开「课程内容工具」，点「重新生成本节」即可让 AI 生成教学内容。",
                 gr.update(choices=course_c, value=str(node.id)),
                 progress_md,
             )
@@ -844,8 +830,6 @@ class StudyWorkbenchPage(BasePage):
                     "*本节暂无实操课程。*",
                     "",
                     RESOURCE_EMPTY_MD,
-                    [],
-                    [],
                 )
             proj = session.get(LearningProject, node.project_id)
             header = self._build_node_header(node, proj)
@@ -870,47 +854,197 @@ class StudyWorkbenchPage(BasePage):
         guide = self._truncate_guide(guide)
         logger.info(f"[工作台] 返回内容, guide长度={len(guide)}")
 
-        return nid, header, guide, practice_md, note_content, res_md, [], []
+        return nid, header, guide, practice_md, note_content, res_md
 
     def _on_course_change(self, node_id):
         if not node_id or node_id == "__stage__":
-            return tuple(gr.update() for _ in range(8))
+            return tuple(gr.update() for _ in range(6))
         return self._on_node_select(node_id)
 
-    def _ensure_course_content(
-        self, node_id: int, topic: str, guide: str | None
-    ) -> str:
+    def _ensure_course_content(self, node_id: int, topic: str, guide: str | None) -> str:
+        """有内容就直接给；没有就排进后台备课，先显示「正在写这一节」。
+
+        以前这里是同步生成，用户点进来会卡住几十秒，失败还给一段「去点按钮」的提示；
+        现在一律不阻塞，写完由定时器自动替换。
+        """
         current = guide or ""
         if is_content_valid(current):
             return current
         try:
-            ok = generate_node_summary_to_db(node_id, topic)
-            if ok:
-                with Session(engine) as session:
-                    node = session.get(KnowledgeNode, node_id)
-                    current = node.description if node else current
-            else:
-                return self._missing_course_content(current)
-        except Exception as e:
-            return f"*生成失败: {e}*"
-        if is_content_valid(current):
-            return current
-        return self._missing_course_content(current)
+            nid = int(node_id)
+        except (TypeError, ValueError):
+            return self._writing_placeholder()
+        self._queue_single(nid)
+        return self._writing_placeholder()
+
+    def _writing_placeholder(self) -> str:
+        return (
+            "⏳ **正在写这一节…**\n\n"
+            "通常 30–60 秒。写完会自动出现在这里，你可以先去读别的章节，不用点任何按钮。\n\n"
+            "> 等不及的话，点右下角「助教」，它现在就能按这个知识点回答你。"
+        )
+
+    def _queue_single(self, node_id: int) -> None:
+        """把某一节排进后台备课，并记下它正在等。"""
+        from learning_ext.progress import prep
+
+        try:
+            nid = int(node_id)
+        except (TypeError, ValueError):
+            return
+        if nid in self._pending_nodes:
+            return
+        with Session(engine) as session:
+            node = session.get(KnowledgeNode, nid)
+            if not node:
+                return
+            proj = session.get(LearningProject, node.project_id)
+            pid = node.project_id
+            topic = proj.topic if proj else ""
+        self._pending_nodes[nid] = self._writing_placeholder()
+        self._pending_node = nid
+        prep.start(pid, [nid], topic)
+
+    def _kick_project_prep(self, pid, topic: str) -> None:
+        """打开某个项目时，把还没备课的章节全部丢后台，不用用户操心。"""
+        from learning_ext.progress import prep
+
+        try:
+            pid = int(pid)
+        except (TypeError, ValueError):
+            return
+        if pid in self._prep_kicked:
+            return
+        self._prep_kicked.add(pid)
+        try:
+            with Session(engine) as session:
+                nodes = session.exec(
+                    select(KnowledgeNode).where(KnowledgeNode.project_id == pid)
+                ).all()
+                missing = [n.id for n in nodes if not is_content_valid(n.description)]
+        except Exception:
+            logger.exception("扫描缺失教学内容失败")
+            return
+        if missing:
+            prep.start(pid, missing, topic)
+            logger.info("[工作台] 项目#%s 后台补备 %d 节", pid, len(missing))
+
+    def _poll_writing(self):
+        """定时检查：正在写的这一节写好了没，好了就替换正文。
+
+        gr.Timer 不会传输入，所以用 self._pending_node 记住当前在等哪一节；
+        替换成功后清掉，避免每 3 秒重复推同一份内容。
+        """
+        nid = self._pending_node
+        if not nid:
+            return gr.update(), gr.update()
+        try:
+            with Session(engine) as session:
+                node = session.get(KnowledgeNode, int(nid))
+                if not node or not is_content_valid(node.description):
+                    return gr.update(), gr.update()
+                practice_md = self._render_practice_md(get_practice_task(session, int(nid)))
+                body = node.description or ""
+        except Exception:
+            logger.exception("读取备课结果失败")
+            return gr.update(), gr.update()
+        self._pending_node = None
+        self._pending_nodes.pop(int(nid), None)
+        logger.info("[工作台] node#%s 备课完成，自动替换正文", nid)
+        return self._truncate_guide(body), practice_md
+
+    # ---- 选段改写 ----
+    @staticmethod
+    def _toast(message: str, ok: bool | None = None, undo: bool = False) -> str:
+        """正文下方那条小提示条（绝对定位，不占版面）。"""
+        kind = "busy" if ok is None else ("ok" if ok else "err")
+        mark = '<span class="le-toast-dot"></span>' if ok is None else ""
+        undo_btn = (
+            '<button type="button" class="le-toast-act" data-rewrite-act="undo">撤销</button>'
+            if undo
+            else ""
+        )
+        return (
+            f'<div class="le-toast le-toast-{kind}">{mark}'
+            f'<span class="le-toast-text">{html.escape(message)}</span>'
+            f'{undo_btn}'
+            '<button type="button" class="le-toast-x" aria-label="关闭">×</button></div>'
+        )
+
+    def _on_rewrite(self, node_id, payload):
+        """处理「选中一段 → 说怎么改」的请求。
+
+        只改命中的那一段，不动整节；改完留一次撤销。
+        """
+        from learning_ext.progress import rewrite as rw
+
+        try:
+            data = json.loads(payload or "{}")
+        except json.JSONDecodeError:
+            data = {}
+        action = str(data.get("action") or "rewrite")
+        snippet = str(data.get("snippet") or "")
+        instruction = str(data.get("instruction") or "")
+
+        if not node_id:
+            yield gr.update(), self._toast("先在左边选一节课程。", ok=False)
+            return
+        if action != "undo" and len(snippet.strip()) < 3:
+            yield gr.update(), self._toast("先选中要改的那句话，再点按钮。", ok=False)
+            return
+
+        yield gr.update(), self._toast(
+            "正在改这一段…通常十几秒，别关页面。" if action != "undo" else "正在撤销…"
+        )
+        try:
+            res = rw.rewrite(node_id, snippet, action, instruction)
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("改写失败 node#%s", node_id)
+            yield gr.update(), self._toast(f"改写出错：{type(exc).__name__}: {exc}", ok=False)
+            return
+
+        if not res.get("ok"):
+            yield gr.update(), self._toast(res.get("message") or "没改成。", ok=False)
+            return
+        guide = res.get("guide") or ""
+        # 撤销之后就没有「再撤销」了
+        yield (
+            self._truncate_guide(guide) if guide else gr.update(),
+            self._toast(res.get("message") or "已更新。", ok=True, undo=action != "undo"),
+        )
 
     def _missing_course_content(self, brief: str | None) -> str:
         brief = (brief or "").strip()
         lines = [
             "⚠️ **本节完整教学内容还没有生成成功。**",
             "",
-            "可以点击「🔄 重新生成本节」重新生成课程正文；右侧 AI 助教仍可基于当前知识点答疑。",
+            "可以点下方「课程内容工具」里的「重新生成本节」重新生成课程正文；"
+            "右侧 AI 助教仍可基于当前知识点答疑。",
         ]
         if brief:
             lines.extend(["", "#### 路线说明", brief])
         return "\n".join(lines)
 
+    _FENCE = re.compile(r"(```.*?```)", re.S)
+    _BLANK = re.compile(r"_{3,}")
+
+    def _normalize_blanks(self, guide: str) -> str:
+        """填空题空位写的是 ______，markdown 会把它当语法吃掉，显示成一片空白。
+        送显前换成一条可见的空位横线（代码块里不动）。"""
+
+        def fix(chunk: str) -> str:
+            return self._BLANK.sub(
+                lambda m: '<span class="le-blank" style="width:%.1fem"></span>'
+                % min(6.0, max(2.5, len(m.group()) * 0.55)),
+                chunk,
+            )
+
+        parts = self._FENCE.split(guide or "")
+        return "".join(p if p.startswith("```") else fix(p) for p in parts)
+
     def _truncate_guide(self, guide: str, max_chars: int = 15000) -> str:
         """截断超长教学内容, 在章节边界截断并提示剩余可看。"""
-        guide = clean_heading_icons(guide)
+        guide = self._normalize_blanks(clean_heading_icons(guide))
         if len(guide) <= max_chars:
             return guide
         # 在 max_chars 附近找最后一个 ## 标题边界
@@ -1037,44 +1171,6 @@ class StudyWorkbenchPage(BasePage):
             return f"### 🔍 {term}\n\n{result}"
         except Exception as e:
             return f"❌ 解释失败: {e}"
-
-    # ---- AI 对话 (generator: 先显示用户消息, 再流式回复) ----
-    def _chat_send(self, message, node_id, history):
-        if not message or not message.strip():
-            yield history, history, ""
-            return
-        user_msg = message.strip()
-        new_history = (history or []) + [{"role": "user", "content": user_msg}]
-        yield new_history, new_history, ""
-        try:
-            from learning_ext.llm import chat
-
-            with Session(engine) as s:
-                node = s.get(KnowledgeNode, int(node_id)) if node_id else None
-                proj = s.get(LearningProject, node.project_id) if node else None
-            ctx = ""
-            if node:
-                ctx = (
-                    f"【学习主题】{proj.topic if proj else ''}\n"
-                    f"【当前知识点】{node.title} ({node.code})\n"
-                    f"【教学内容摘要】\n{(node.description or '')[:2000]}\n\n"
-                )
-            recent = (history or [])[-6:]
-            ctx += "【对话历史】\n"
-            for h in recent:
-                role = "学习者" if h["role"] == "user" else "助教"
-                ctx += f"{role}: {h['content'][:300]}\n"
-            ctx += f"\n【学习者最新消息】{user_msg}\n\n请基于当前知识点教学内容回答。如教学内容有误或需补充, 明确指出。Markdown, 500字内。"
-            reply = chat(
-                ctx,
-                system="你是耐心的学习助教。基于学习者正在学习的知识点和教学内容, 解答疑问、纠正误解、补充知识。",
-                temperature=0.4,
-            )
-            final_history = new_history + [{"role": "assistant", "content": reply}]
-            yield final_history, final_history, ""
-        except Exception as e:
-            err = new_history + [{"role": "assistant", "content": f"❌ 出错了: {e}"}]
-            yield err, err, ""
 
     def _append_last_assistant_to_node(self, node_id, history):
         if not node_id:

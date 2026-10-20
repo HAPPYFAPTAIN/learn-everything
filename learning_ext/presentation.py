@@ -7,10 +7,13 @@ def presentation_css():
     css = (ASSETS / "workspace.css").read_text(encoding="utf-8")
     css += "\n" + (ASSETS / "refinements.css").read_text(encoding="utf-8")
     css += "\n" + (ASSETS / "workbench.css").read_text(encoding="utf-8")
+    css += "\n" + (ASSETS / "nav.css").read_text(encoding="utf-8")
+    css += "\n" + (ASSETS / "outline.css").read_text(encoding="utf-8")
+    css += "\n" + (ASSETS / "coach.css").read_text(encoding="utf-8")
     return css.replace("__ASSETS__", "/file=" + ASSETS.as_posix())
 
 
-BRAND = f"""<header class="le-topbar"><div class="le-brand"><img src="/file={ASSETS.as_posix()}/aethermind-logo.png" alt="以太智元 AetherMind" width="479" height="150" /></div><div class="le-app-title">Learn Everything <span>/ 学习工作台</span></div><span class="le-local">本地工作空间</span></header>"""
+BRAND = f"""<header class="le-topbar"><div class="le-brand"><img src="/file={ASSETS.as_posix()}/aethermind-logo.png" alt="以太智元 AetherMind" width="479" height="150" /></div><div class="le-app-title">Learn Everything <span>/ 学习首页</span></div><span class="le-local">本地工作空间</span></header>"""
 
 
 def welcome_html():

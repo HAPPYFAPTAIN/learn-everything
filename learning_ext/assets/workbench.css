@@ -14,14 +14,100 @@
 #le-lesson-outline button:hover,#le-lesson-outline button[aria-current=location]{color:#304f76;background:#e6edf6;border-left-color:#6385b0}#le-lesson-outline p{font-size:15px!important;color:#7b8797!important;padding:18px 12px;line-height:1.8}
 #le-center-col{grid-column:2;grid-row:2;border:1px solid #d7e0e9!important;border-radius:22px!important;box-shadow:0 8px 36px #263d5807!important;padding:36px clamp(26px,3vw,54px)!important;gap:22px!important}
 #le-center-content{padding-bottom:22px!important;border-bottom:1px solid #e1e7ee!important}#le-center-content h3{font-size:28px!important;line-height:1.5!important;letter-spacing:-.025em}#le-center-content p{margin:12px 0 0!important}#le-center-content code{padding:6px 10px!important;border-radius:8px!important;font-size:15px!important;background:#f0f4f8!important;color:#62768e!important}
-#le-content-tabs>.tab-nav{position:sticky;top:76px;z-index:8;display:flex!important;gap:4px!important;background:#f2f5f9!important;border:1px solid #e1e7ef!important;border-radius:14px!important;padding:5px!important;margin-bottom:28px!important}
+#le-content-tabs>.tab-nav{position:sticky!important;top:64px!important;z-index:12;display:flex!important;align-items:center!important;gap:4px!important;background:#f2f5f9!important;border:1px solid #e1e7ef!important;border-radius:14px!important;padding:5px!important;margin-bottom:22px!important;box-shadow:0 8px 16px -12px #263d5824!important}
 #le-content-tabs>.tab-nav button{flex:1;font-size:18px!important;padding:12px!important;border:0!important;border-radius:10px!important;color:#6c7b8e!important}
 #le-content-tabs>.tab-nav button.selected{background:#fff!important;box-shadow:0 2px 8px #253a5510!important;color:#294f7d!important}
 #le-guide-md .prose{font-size:19px!important;line-height:1.95!important;color:#3f4d5e!important}#le-guide-md h2{font-size:25px!important;margin:40px 0 18px!important;scroll-margin-top:155px}#le-guide-md h3{font-size:21px!important;margin:28px 0 14px!important}#le-guide-md h1{font-size:27px!important;line-height:1.5!important}#le-guide-md pre{border-radius:14px!important;padding:20px!important;font-size:16px!important;overflow:auto}#le-guide-md table{display:block;overflow:auto;max-width:100%}
 #le-lesson-actions{padding-top:24px!important;border-top:1px solid #dfe6ee!important;margin-top:28px!important}#le-note-zone textarea{min-height:340px!important;font-size:19px!important;line-height:1.9!important}
 #le-workbench-row.le-assistant-open #le-right-col{position:fixed!important;grid-column:auto!important;right:24px!important;top:96px!important;bottom:24px!important;width:min(420px,calc(100vw - 32px))!important;max-height:calc(100vh - 120px)!important;overflow:auto!important;z-index:50!important;border-radius:22px!important;padding:26px!important;box-shadow:0 20px 70px #1c324333!important;animation:le-surface-enter .2s ease-out}
-@media(max-width:1000px){#le-workbench-row,#le-workbench-row.le-assistant-open{grid-template-columns:minmax(0,1fr)!important;gap:18px!important}#le-lesson-outline{grid-column:1;grid-row:2;position:static;max-height:260px;background:#f6f8fb;border:1px solid #d8e1eb;border-radius:14px;padding:16px}#le-lesson-outline summary{padding-bottom:0}#le-lesson-outline[open] summary{padding-bottom:14px}#le-center-col{grid-column:1;grid-row:3;padding:26px!important}#le-content-tabs>.tab-nav{top:0}}
+@media(max-width:1000px){#le-workbench-row,#le-workbench-row.le-assistant-open{grid-template-columns:minmax(0,1fr)!important;gap:18px!important}#le-lesson-outline{grid-column:1;grid-row:2;position:static;max-height:260px;background:#f6f8fb;border:1px solid #d8e1eb;border-radius:14px;padding:16px}#le-lesson-outline summary{padding-bottom:0}#le-lesson-outline[open] summary{padding-bottom:14px}#le-center-col{grid-column:1;grid-row:3;padding:26px!important}}
 @media(max-width:650px){#le-left-col{grid-template-columns:1fr!important;padding:20px!important}#le-project-picker,#le-course-picker,#le-course-admin,#le-left-col #le-course-progress{grid-column:1!important}.le-course-strip-heading{display:block}.le-course-strip-heading span{display:block;margin-top:6px}#le-center-col{padding:22px 18px!important}#le-center-content h3{font-size:24px!important}#le-content-tabs>.tab-nav button{font-size:17px!important}#le-guide-md .prose{font-size:18px!important}}
 @media(prefers-reduced-motion:reduce){#le-workbench-row.le-assistant-open #le-right-col{animation:none!important}}
 
 #le-guide-md .prose>h1:first-child{display:none!important}
+
+/* ===== 工作台内容头：标签栏置顶并吸顶，标题紧随其后 =====
+   gr.Tabs 把「标签栏 + 全部面板」包在一个壳里，把标题放到 tabs 之后会落到
+   整个面板的下方。这里用 display:contents 拆掉这层壳，让标签栏、标题、面板
+   平级成为中间列的直接子元素（DOM 不改，只改盒子树），再用 order 排序。
+   标签栏因此仍是列里的粘性元素，可正常吸顶。 */
+#le-content-tabs{display:contents!important}
+/* 其余子元素先统一压到 3，再用更高优先级把标签栏/标题/面板提上来 */
+#le-center-col>*{order:3}
+#le-center-col>#le-content-tabs>.tab-nav{order:0;margin-bottom:0!important}
+#le-center-col>#le-center-content{order:1}
+#le-center-col>#le-content-tabs>.tabitem{order:2}
+/* 壳拆掉后宽度约束要落到具体元素上：标签栏铺满整个内容区，正文仍保持 780 可读宽度 */
+#le-center-col>#le-content-tabs>.tab-nav{max-width:none!important;width:100%!important}
+#le-center-col>#le-content-tabs>.tabitem{max-width:780px!important;width:100%!important;margin-left:auto!important;margin-right:auto!important}
+
+/* 收起 / 展开箭头（右上角，与左侧目录的角标同一套观感） */
+#le-content-tabs>.tab-nav>#le-tabs-toggle{flex:none!important;width:30px!important;height:30px!important;min-width:0!important;padding:0!important;margin-left:2px!important;border:1px solid #d8e1eb!important;border-radius:8px!important;background:#fff!important;color:#6b7c92!important;display:flex!important;align-items:center!important;justify-content:center!important;cursor:pointer;box-shadow:0 1px 4px #20324b12!important}
+#le-content-tabs>.tab-nav>#le-tabs-toggle:hover{color:#365f98!important;border-color:#bcccdd!important}
+#le-content-tabs>.tab-nav>#le-tabs-toggle svg{width:14px;height:14px;display:block;transition:transform .18s ease}
+
+/* 收起态：标签栏缩成一枚箭头，贴内容区右上角 */
+#le-center-col.le-tabs-collapsed>#le-content-tabs>.tab-nav{width:42px!important;padding:4px!important;gap:0!important;margin-left:auto!important;margin-right:0!important;box-shadow:0 2px 8px #20324b14!important}
+#le-center-col.le-tabs-collapsed>#le-content-tabs>.tab-nav>button:not(#le-tabs-toggle){display:none!important}
+#le-center-col.le-tabs-collapsed>#le-content-tabs>.tab-nav>#le-tabs-toggle{margin-left:0!important}
+#le-center-col.le-tabs-collapsed>#le-content-tabs>.tab-nav>#le-tabs-toggle svg{transform:rotate(180deg)}
+
+/* 吸顶偏移随顶栏状态走：≥801px 顶栏固定，紧贴它的下沿（不留缝）；
+   ≤800px 顶栏不再固定（会随页面滚走），直接吸到视口顶部。 */
+@media(max-width:800px){#le-content-tabs>.tab-nav{top:0!important}}
+
+/* ===== 自测练习的答案：默认折叠，点一下才展开 =====
+   新内容由提示词直接输出 <details>；老内容（> **答案：B**）由 workbench.js
+   在渲染后折成 .le-fold，两种走同一套样式。 */
+#le-guide-md details,
+#le-guide-md .le-fold{margin:10px 0 16px!important;border:1px solid #e2e9f2!important;border-left:3px solid #91acd0!important;border-radius:8px!important;background:#f2f5fa!important;overflow:hidden}
+#le-guide-md details>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;padding:10px 16px!important;font-size:16px!important;font-weight:400;color:#3f6fa8!important;user-select:none;transition:background .18s ease,color .18s ease}
+#le-guide-md details>summary::-webkit-details-marker{display:none}
+#le-guide-md details>summary::before{content:"▸";font-size:13px;color:#7c96b4;line-height:1}
+#le-guide-md details[open]>summary::before{content:"▾"}
+#le-guide-md details>summary:hover{background:#e9eff7;color:#2f5687!important}
+#le-guide-md details[open]>summary{border-bottom:1px solid #e2e9f2;background:#e9eff7}
+#le-guide-md details>:not(summary){margin-left:16px!important;margin-right:16px!important}
+#le-guide-md details>:not(summary):first-of-type{margin-top:12px!important}
+#le-guide-md details>:not(summary):last-child{margin-bottom:12px!important}
+
+/* 填空题的空位：______ 被 markdown 吃掉，服务端换成这个 span 才看得见 */
+#le-guide-md .le-blank{display:inline-block;height:.9em;border-bottom:1.5px solid #a8b9cb;margin:0 4px;vertical-align:-.08em}
+
+/* ===== 选段改写 =====
+   Gradio 4.44 没有 visible="hidden"，这一行用「移出可视区」的方式藏起来，
+   但元素仍留在 DOM 里，前端脚本才能把请求写进去再点按钮。 */
+#le-rewrite-bridge{position:fixed!important;left:-200vw!important;top:0!important;width:1px!important;height:1px!important;overflow:hidden!important;margin:0!important;padding:0!important;opacity:0!important;pointer-events:none!important;gap:0!important}
+
+/* 选中文字后浮出的操作条 */
+#le-sel-bar{position:fixed;z-index:70;display:flex;align-items:center;gap:2px;padding:4px;background:#fff;border:1px solid #d5dfeb;border-radius:12px;box-shadow:0 10px 28px #1c324329;font:400 14px var(--le-font,system-ui);animation:le-sel-in .13s ease-out}
+#le-sel-bar[hidden]{display:none!important}
+#le-sel-bar button{border:0;background:transparent;color:#4a5f7a;padding:6px 10px;border-radius:8px;font:inherit;line-height:1.2;white-space:nowrap;cursor:pointer;transition:background .15s ease,color .15s ease}
+#le-sel-bar button:hover{background:#eef3f9;color:#2b5488}
+#le-sel-bar button.le-self{color:#7b8ca1;padding:6px 8px;font-size:15px}
+#le-sel-bar input{border:1px solid #dbe3ec;border-radius:8px;padding:6px 9px;font:inherit;color:#37495f;width:190px;outline:none;background:#fafcfe}
+#le-sel-bar input:focus{border-color:#9db8d8;background:#fff}
+#le-sel-bar .le-sel-hint{font-size:13px;color:#7c8ca1;padding:0 8px;white-space:nowrap}
+@keyframes le-sel-in{from{opacity:0;transform:translateY(4px) scale(.98)}to{opacity:1;transform:none}}
+
+/* 段落右侧的改写入口：只在鼠标贴到右边缘时出现，平时不打扰 */
+#le-block-pencil{position:fixed;z-index:69;width:26px;height:26px;padding:0;border:1px solid #dbe3ec;border-radius:8px;background:#fff;color:#6f8199;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 3px 10px #1c32431f;opacity:.92;transition:color .15s ease,border-color .15s ease,opacity .15s ease}
+#le-block-pencil[hidden]{display:none!important}
+#le-block-pencil:hover{color:#2f5c94;border-color:#b9c9db;opacity:1}
+#le-block-pencil svg{width:14px;height:14px;display:block}
+
+/* 正文下方那条提示条（绝对定位，不占版面） */
+#le-rewrite-note{position:fixed!important;left:50%!important;bottom:26px!important;transform:translateX(-50%)!important;z-index:72!important;display:none;width:auto!important;max-width:min(560px,calc(100vw - 40px));background:transparent!important;border:0!important;padding:0!important;box-shadow:none!important}
+#le-rewrite-note:has(.le-toast){display:block}
+#le-rewrite-note .le-toast{display:flex;align-items:center;gap:10px;padding:10px 12px 10px 16px;border-radius:13px;background:#fff;border:1px solid #d9e2ec;box-shadow:0 14px 40px #1c32432e;font:400 15px var(--le-font,system-ui);color:#3d4f66;animation:le-sel-in .16s ease-out}
+#le-rewrite-note .le-toast-ok{border-color:#bcd8c4;background:#f7fcf9}
+#le-rewrite-note .le-toast-err{border-color:#e8c8c6;background:#fdf8f7;color:#8c4b45}
+#le-rewrite-note .le-toast-busy{border-color:#cbd9e9;background:#f7fafd;color:#4a6486}
+#le-rewrite-note .le-toast-text{flex:1;min-width:0}
+#le-rewrite-note .le-toast-dot{flex:none;width:9px;height:9px;border-radius:50%;background:#5b86bd;animation:le-toast-pulse 1s ease-in-out infinite}
+@keyframes le-toast-pulse{0%,100%{opacity:.25;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
+#le-rewrite-note .le-toast-act,#le-rewrite-note .le-toast-x{flex:none;border:0;background:#eef3f9;color:#365f98;font:inherit;font-size:14px;border-radius:8px;padding:5px 10px;cursor:pointer;transition:background .15s ease}
+#le-rewrite-note .le-toast-act:hover{background:#e2ebf6}
+#le-rewrite-note .le-toast-x{background:transparent;color:#8794a6;font-size:17px;line-height:1;padding:4px 6px}
+#le-rewrite-note .le-toast-x:hover{background:#f0f3f7;color:#55637a}
+@media(prefers-reduced-motion:reduce){#le-sel-bar,#le-rewrite-note .le-toast{animation:none}#le-rewrite-note .le-toast-dot{animation:none}}

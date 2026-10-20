@@ -46,6 +46,42 @@ sys.path.insert(0, _KOTAEMON_DIR)
 
 from theflow.settings import settings as flowsettings  # noqa: E402
 
+
+def _setup_file_logging() -> None:
+    """把 WARNING 以上（含未捕获异常）写入文件，便于事后排查。
+
+    之前 stdout 被重定向到文件时会带缓冲，Gradio 的堆栈根本落不了盘，
+    出问题只能靠复现；这里显式落一个日志文件。
+    """
+    import logging  # noqa: WPS433
+
+    app_data = getattr(flowsettings, "KH_APP_DATA_DIR", None)
+    log_dir = (
+        Path(app_data) / "logs"
+        if app_data
+        else Path(_HERE) / "kotaemon" / "ktem_app_data" / "logs"
+    )
+    try:
+        log_dir.mkdir(parents=True, exist_ok=True)
+        handler = logging.FileHandler(log_dir / "app.log", encoding="utf-8")
+        handler.setFormatter(
+            logging.Formatter("%(asctime)s %(levelname)s %(name)s | %(message)s")
+        )
+        handler.setLevel(logging.WARNING)
+        root = logging.getLogger()
+        root.setLevel(logging.INFO)
+        root.addHandler(handler)
+        # Gradio 的异常默认只 print，挂到 root 上后同样会落盘
+        logging.getLogger("gradio").addHandler(handler)
+        logging.getLogger("learning_ext").addHandler(handler)
+        # chromadb 的遥测报错是环境性噪音，屏蔽掉免得淹没真正的错误
+        logging.getLogger("chromadb.telemetry").setLevel(logging.CRITICAL)
+    except Exception as exc:  # 日志本身失败不应影响启动
+        print(f"[learning_ext] 日志初始化失败: {exc}", flush=True)
+
+
+_setup_file_logging()
+
 KH_APP_DATA_DIR = getattr(flowsettings, "KH_APP_DATA_DIR", ".")
 KH_GRADIO_SHARE = getattr(flowsettings, "KH_GRADIO_SHARE", False)
 GRADIO_TEMP_DIR = os.getenv("GRADIO_TEMP_DIR", None)
@@ -67,8 +103,16 @@ def _patch_gradio_template_for_learning_assets():
         workspace_js = Path(_HERE, "learning_ext/assets/workspace.js").read_text(encoding="utf-8")
         workspace_js += "\n" + Path(_HERE, "learning_ext/assets/coach.js").read_text(encoding="utf-8")
         workspace_js += "\n" + Path(_HERE, "learning_ext/assets/workbench.js").read_text(encoding="utf-8")
+        workspace_js += "\n" + Path(_HERE, "learning_ext/assets/outline.js").read_text(encoding="utf-8")
+        workspace_js += "\n" + Path(_HERE, "learning_ext/assets/nav.js").read_text(encoding="utf-8")
+        workspace_js += "\n" + Path(_HERE, "learning_ext/assets/assistant.js").read_text(encoding="utf-8")
         script_tag = f"<script>\n{word_lookup_js}\n</script>"
         script_tag = f"<script>\n{workspace_js}\n</script>" + script_tag
+        # 助教面板、悬浮球与外壳修正都作用于容器之外（body 级 / .gradio-container），
+        # 走 gr.Blocks(css=...) 会被 Gradio 加上 .contain 前缀而失效，故用原始 style 注入
+        raw_css = Path(_HERE, "learning_ext/assets/shell.css").read_text(encoding="utf-8")
+        raw_css += "\n" + Path(_HERE, "learning_ext/assets/assistant.css").read_text(encoding="utf-8")
+        style_tag = f"<style>\n{raw_css}\n</style>"
         template_root = Path(gradio_routes.STATIC_TEMPLATE_LIB)
         overrides = {}
         for template_name in ("frontend/index.html", "frontend/share.html"):
@@ -76,9 +120,9 @@ def _patch_gradio_template_for_learning_assets():
             if script_path not in source:
                 marker = '<script type="module" crossorigin src='
                 if marker in source:
-                    source = source.replace(marker, f"{script_tag}\n\t\t{marker}", 1)
+                    source = source.replace(marker, f"{style_tag}\n\t\t{script_tag}\n\t\t{marker}", 1)
                 else:
-                    source = source.replace("</head>", f"\t\t{script_tag}\n\t</head>", 1)
+                    source = source.replace("</head>", f"\t\t{style_tag}\n\t\t{script_tag}\n\t</head>", 1)
             overrides[template_name] = source
 
         original_loader = gradio_routes.templates.env.loader
@@ -87,7 +131,10 @@ def _patch_gradio_template_for_learning_assets():
         )
         gradio_routes.templates.env.cache.clear()
     except Exception as e:
-        print(f"[learning_ext] word lookup template patch failed: {e}")
+        import traceback  # noqa: WPS433
+
+        print(f"[learning_ext] template patch failed: {e}", flush=True)
+        traceback.print_exc()
 
 
 _patch_gradio_template_for_learning_assets()

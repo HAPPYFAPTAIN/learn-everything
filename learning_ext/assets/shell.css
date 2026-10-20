@@ -1,0 +1,12 @@
+/* 全局外壳修正：随 assistant.css 一起以原始 <style> 注入 <head>。
+   这些选择器指向 Gradio 容器本身（在 .contain 之外），
+   所以不能走 gr.Blocks(css=...)，否则会被加上 .contain 前缀而失效。 */
+
+/* Gradio 默认给 .gradio-container 加 overflow:hidden，这会让它成为容器内
+   所有 position:sticky 元素的“粘性参照物”；而它自己并不滚动，
+   于是 sticky 完全失效（工作台「本节目录」吸不住就是这个原因）。
+   overflow:clip 既能照常裁剪内容，又不会生成滚动容器，
+   sticky 因此可以正确相对视口生效。 */
+.gradio-container {
+  overflow: clip !important;
+}

@@ -152,9 +152,38 @@ def chat(
 
     if stream:
         def generate():
-            with _REQUEST_SLOT:
-                with client.chat.completions.create(stream=True, **kwargs) as response:
-                    yield from _stream_iter(response)
+            # 流式也要重试：代理/上游偶发抽风时，只要还没吐字就可以整体重来
+            attempt = 0
+            while True:
+                emitted = False
+                try:
+                    with _REQUEST_SLOT:
+                        with client.chat.completions.create(stream=True, **kwargs) as response:
+                            for piece in _stream_iter(response):
+                                emitted = True
+                                yield piece
+                    return
+                except Exception as exc:  # noqa: BLE001
+                    if emitted or attempt >= retries or not _transient(exc):
+                        log.error(
+                            "LLM 流式调用失败 | model=%s | base_url=%s | %s: %s",
+                            model,
+                            cfg.get("base_url"),
+                            type(exc).__name__,
+                            str(exc)[:500],
+                        )
+                        raise RuntimeError(friendly_error(exc)) from exc
+                    wait = 1.2 * (attempt + 1)
+                    log.warning(
+                        "LLM 流式失败(%s)，%.1fs 后重试(%d/%d)：%s",
+                        type(exc).__name__,
+                        wait,
+                        attempt + 1,
+                        retries,
+                        str(exc)[:200],
+                    )
+                    time.sleep(wait)
+                    attempt += 1
         return generate()
 
     # 非流式: 带重试
@@ -179,26 +208,24 @@ def chat(
         except Exception as e:
             last_err = e
             err_type = type(e).__name__
-            # 限流/超时/连接错误 才重试; 鉴权错误不重试
-            retryable = any(
-                kw in err_type.lower() or kw in str(e).lower()
-                for kw in (
-                    "timeout",
-                    "connection",
-                    "ratelimit",
-                    "temp",
-                    "unavailable",
-                    "overloaded",
-                )
-            )
+            # 限流/超时/连接错误/上游不可用 才重试; 鉴权错误不重试
+            retryable = _transient(e)
             if not retryable or attempt == retries:
-                raise
+                log.error(
+                    "LLM 调用失败 | model=%s | base_url=%s | prompt=%d字 | %s: %s",
+                    model,
+                    cfg.get("base_url"),
+                    len(prompt or ""),
+                    err_type,
+                    str(e)[:500],
+                )
+                raise RuntimeError(friendly_error(e)) from e
             wait = (5 if "ratelimit" in err_type.lower() else 1) * 2**attempt
             log.warning(
                 f"LLM 调用失败 ({err_type}), {wait}s 后重试 ({attempt + 1}/{retries}): {e}"
             )
             time.sleep(wait)
-    raise RuntimeError(f"LLM 调用重试 {retries} 次仍失败: {last_err}")
+    raise RuntimeError(friendly_error(last_err) if last_err else "模型调用失败")
 
 
 def _stream_iter(resp) -> Iterator[str]:
@@ -207,6 +234,57 @@ def _stream_iter(resp) -> Iterator[str]:
             raise RuntimeError("模型输出达到长度上限，请缩小问题范围后重试。")
         if chunk.choices and chunk.choices[0].delta.content:
             yield chunk.choices[0].delta.content
+
+
+# ---- 错误归类：把底层报错翻译成用户看得懂的一句话 ----
+
+_TRANSIENT_KEYWORDS = (
+    "timeout",
+    "timed out",
+    "connection",
+    "connect",
+    "ratelimit",
+    "rate limit",
+    "temp",
+    "unavailable",
+    "overloaded",
+    "router_error",
+    "upstream",
+    "502",
+    "503",
+    "504",
+    "proxy",
+    "ssl",
+    "reset by peer",
+    "econn",
+)
+
+_FRIENDLY_RULES = [
+    (r"401|invalid.*api.?key|incorrect api key|authentication",
+     "API Key 无效或已过期，请到「⚡ 模型配置」更新后重试。"),
+    (r"403", "接口拒绝访问（403），检查 Key 权限或该模型是否已开通。"),
+    (r"429|ratelimit|rate limit", "请求太频繁（被限流），等几秒再试。"),
+    (r"insufficient|balance|quota|arrears|欠费", "账户余额或额度不足，请到服务商后台充值后再试。"),
+    (r"router_error|upstream|unavailable|bad gateway|service unavailable|502|503|504",
+     "模型服务临时不可达（上游或网络波动），稍等再试；若反复出现，多半是中转代理不稳定。"),
+    (r"timeout|timed out|超时", "请求超时（网络较慢或上游拥塞），稍后重试。"),
+    (r"connection|proxy|ssl|reset by peer|econn", "连不上模型服务（网络或代理问题），检查代理是否正常。"),
+]
+
+
+def _transient(exc: Exception) -> bool:
+    """网络抖动/限流/上游不可用这类值得重试的错误。"""
+    text = f"{type(exc).__name__} {exc}".lower()
+    return any(kw in text for kw in _TRANSIENT_KEYWORDS)
+
+
+def friendly_error(exc: Exception) -> str:
+    """给界面看的错误说明，原始信息保留在括号里方便排查。"""
+    text = f"{type(exc).__name__}: {exc}".lower()
+    for pattern, message in _FRIENDLY_RULES:
+        if re.search(pattern, text):
+            return f"{message}（原始信息：{str(exc)[:160]}）"
+    return f"模型调用失败：{type(exc).__name__}: {str(exc)[:200]}"
 
 
 def chat_json(

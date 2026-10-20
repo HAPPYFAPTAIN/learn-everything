@@ -200,6 +200,13 @@
         }
 
         activeTerm = "";
+        // 选中一长段通常是想改写内容，这时候让「选段改写」的浮条独占，
+        // 两个浮窗叠在一起会挡住正文。短选（查名词）仍走原来的浮窗。
+        var rewriteBar = document.getElementById("le-sel-bar");
+        if (rewriteBar && !rewriteBar.hidden && current.text.length > 30) {
+          hidePopup();
+          return;
+        }
         var popup = renderActionPopup(current.text);
         positionPopup(popup, event.clientX, event.clientY);
         popup.style.display = "block";

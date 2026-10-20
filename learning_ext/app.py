@@ -171,11 +171,12 @@ class LearningApp(KotaemonApp):
             self.learning_dashboard_page = DashboardPage(self)
             self.learning_dashboard_page.on_building_ui()
 
-        from learning_ext.coach import coach_html
-
         with gr.Tab("动手学", elem_id="learning-coach-tab", id="learning-coach-tab", visible=visible,
                     elem_classes=["fill-main-area-height", "scrollable"]) as self._tabs["learning-coach-tab"]:
-            gr.HTML(coach_html())
+            from learning_ext.pages import CoachPage
+
+            self.coach_page = CoachPage(self)
+            self.coach_page.on_building_ui()
 
     def _build_guide_tab(self, visible: bool):
         from learning_ext.guide import GUIDE_MARKDOWN
@@ -198,6 +199,7 @@ class LearningApp(KotaemonApp):
             "learning_review_page",
             "learning_quiz_page",
             "learning_dashboard_page",
+            "coach_page",
         ):
             page = getattr(self, page_attr, None)
             if page is not None and hasattr(page, "on_register_events"):
@@ -299,6 +301,12 @@ class LearningApp(KotaemonApp):
             if KH_ENABLE_FIRST_SETUP_local:
                 with gr.Column(visible=False) as self.setup_page_wrapper:
                     self.setup_page = SetupPage(self)
+
+        # 全局 AI 助教：建在 Tabs 之外，切换标签时面板与对话都不被重载
+        from learning_ext.assistant import GlobalAssistant
+
+        self.assistant_page = GlobalAssistant(self)
+        self.assistant_page.on_building_ui()
 
     def on_subscribe_public_events(self):
         super().on_subscribe_public_events()

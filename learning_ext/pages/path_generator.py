@@ -41,6 +41,10 @@ class PathGeneratorPage(BasePage):
         super().__init__(app)
         # 当前项目 id 状态
         self.current_project_id = gr.State(None)
+        # 保存后那一段进度文案的固定部分（备课进度会追加在后面）
+        self._save_base_md = ""
+        self._last_prep_md = ""
+        self._save_pid: int | None = None
 
     def on_building_ui(self):
         gr.Markdown(
@@ -82,9 +86,11 @@ class PathGeneratorPage(BasePage):
                     "保存路线，开始学习 →", variant="primary", interactive=False
                 )
                 gr.Markdown(
-                    "保存后会准备前几节课程与环境清单，其他内容在后台逐步生成。环境操作由你确认后执行。"
+                    "保存后所有课程都会自动备课，你可以立刻去工作台读，后面的章节会自动补上。"
                 )
                 self.save_progress = gr.Markdown("")
+        # 备课进度轮询（保存后自动刷新，不用再点任何按钮）
+        self.prep_timer = gr.Timer(4.0, active=True)
 
         with gr.Accordion("调整路线与重新规划", open=False):
             self.regenerate_btn = gr.Button("重新规划", elem_id="le-route-regenerate")
@@ -206,6 +212,12 @@ class PathGeneratorPage(BasePage):
             outputs=[self.project_list],
         )
 
+        # 备课进度：每 4 秒看一眼（Timer 不传输入，用 _save_pid 记当前项目）
+        self.prep_timer.tick(
+            fn=self._poll_prep,
+            outputs=[self.save_progress],
+        )
+
         self.refresh_btn.click(fn=self._refresh_projects, outputs=[self.project_list])
 
         self.load_btn.click(
@@ -308,6 +320,22 @@ class PathGeneratorPage(BasePage):
             logger.exception("调整路线失败")
             return "", current_json, f"❌ 调整失败: {e}"
 
+    def _poll_prep(self):
+        """刷新备课进度：只在文案真的变化时才更新界面。"""
+        from learning_ext.progress import prep
+
+        pid = self._save_pid
+        if not pid or not self._save_base_md:
+            return gr.update()
+        md = prep.status_md(pid)
+        if not md:
+            return gr.update()
+        text = self._save_base_md + "\n\n" + md
+        if text == self._last_prep_md:
+            return gr.update()
+        self._last_prep_md = text
+        return gr.update(value=text)
+
     def _handle_save_with_setup(self, topic, background, goal, hours, roadmap_json):
         """保存为项目 + 自动搜集资料 + 生成环境清单 (生成器，流式输出进度)。
 
@@ -373,17 +401,7 @@ class PathGeneratorPage(BasePage):
             progress_md += f"⚠️ 环境清单生成失败（不影响学习）: {e}\n\n"
             yield pid, progress_md + "⏳ 正在搜集知识点资料...", ""
 
-        # ---- 3. 预生成前几节教学内容 (串行, 确保用户一进工作台就有内容) ----
-        # ----    剩余节点后台慢慢生成 ----
-        from learning_ext.progress.study import (
-            generate_node_summary_to_db,
-            generate_summaries_background,
-        )
-
-        nodes = roadmap.get("nodes", [])
-        total = len(nodes)
-        PRE_GEN_COUNT = min(3, total)  # 先生成前 3 节
-
+        # ---- 3. 全部交给后台备课队列，界面不再卡住 ----
         # 查出所有节点 id (按 code 排序)
         with Session(engine) as session:
             db_nodes = session.exec(
@@ -392,50 +410,27 @@ class PathGeneratorPage(BasePage):
             db_nodes = sort_nodes_by_code(list(db_nodes))
             ordered_ids = [n.id for n in db_nodes]
 
-        # 3a. 串行生成前 PRE_GEN_COUNT 节 (用户立即可见)
-        pre_done = 0
-        for i, nid in enumerate(ordered_ids[:PRE_GEN_COUNT]):
-            cur_md = (
-                progress_md
-                + f"⏳ **步骤 3/3**：正在生成前几节教学内容 ({i + 1}/{PRE_GEN_COUNT})... "
-                f"(剩余节点将在后台继续生成)\n\n"
-            )
-            yield pid, cur_md, ""
-            ok = generate_node_summary_to_db(
-                nid,
-                topic or "",
-                learning_goal=goal or "",
-                environment_context=env_md,
-            )
-            if ok:
-                pre_done += 1
+        # 3. 全部丢进后台备课队列（不再串行卡界面）
+        from learning_ext.progress import prep
 
-        # 3b. 剩余节点启动后台线程生成 (不阻塞 UI)
-        remaining_ids = ordered_ids[PRE_GEN_COUNT:]
-        if remaining_ids:
-            generate_summaries_background(
-                pid,
-                topic or "",
-                remaining_ids,
-                learning_goal=goal or "",
-                environment_context=env_md,
-            )
-            bg_note = f"，剩余 {len(remaining_ids)} 节后台生成中"
-        else:
-            bg_note = ""
-
-        # ---- 完成 ----
-        final_md = (
-            progress_md
-            + f"✅ **步骤 3/3 完成**：已生成前 {pre_done} 节教学内容{bg_note}\n\n"
-            + "> 💡 后台会继续生成后续课时内容，你学习时点开就能看到。\n\n"
-            + "---\n### 🎉 准备就绪！\n\n"
-            + f"现在请点击顶部 **「📚 学习工作台」** Tab，选择项目 #{pid}，"
-            + "按知识点顺序开始学习。系统会自动解锁前置依赖已掌握的后续知识点。\n\n"
-            + "> 💡 工作台里你可以：查看每个知识点的学习指南、标记学习状态、"
-            + "确认环境配置、做笔记。"
+        prep.start(
+            pid,
+            ordered_ids,
+            topic or "",
+            goal=goal or "",
+            env=env_md,
         )
-        yield pid, final_md, f"✅ 项目 #{pid} 已就绪，去「📚 学习工作台」开始学习吧！"
+        self._save_base_md = (
+            progress_md
+            + f"✅ **步骤 3/3 完成**：已保存 {len(ordered_ids)} 节，正在后台备课\n\n"
+            + "> 你现在就可以点顶部 **「📚 学习工作台」** 开始读，"
+            + "写好的章节会自动出现，不用等也不用点按钮。"
+        )
+        self._save_pid = pid
+        self._last_prep_md = ""
+        yield pid, self._save_base_md + "\n\n" + prep.status_md(pid), (
+            f"✅ 项目 #{pid} 已就绪，去「📚 学习工作台」开始学习吧！"
+        )
 
     def _handle_load(self, project_id):
         """加载已有项目"""
