@@ -50,6 +50,29 @@ class PathGeneratorPage(BasePage):
         gr.Markdown(
             "# 建立学习路线\n先明确目标，再预览路线。确认合适后保存，进入学习工作台。"
         )
+        # 历史路线放最上面：回来第一件事是找回上次那条，
+        # 藏在页面最底部的折叠面板里，相当于看不见。
+        with gr.Column(elem_id="le-route-history"):
+            gr.HTML(
+                '<div class="le-history-head"><div><h2>你的学习路线</h2>'
+                '<p>生成过的路线都存在本机，点一条继续学；没有合适的就在下面新建。</p></div></div>'
+            )
+            self.project_list = gr.Dataframe(
+                headers=["ID", "标题", "进度", "创建时间"],
+                datatype=["number", "str", "str", "str"],
+                interactive=False,
+                value=[],
+                row_count=(3, "dynamic"),
+                elem_id="le-route-table",
+            )
+            with gr.Row(elem_id="le-route-actions"):
+                self.refresh_btn = gr.Button("刷新列表", size="sm")
+                self.load_project_id = gr.Number(
+                    label="项目 ID", value=0, precision=0
+                )
+                self.load_btn = gr.Button(
+                    "打开这条路线", variant="primary", elem_id="le-route-load"
+                )
         with gr.Row(elem_id="le-planner"):
             with gr.Column(scale=2, min_width=300, elem_id="le-plan-input"):
                 gr.HTML('<div id="le-wizard-header"><div class="le-wizard-top"><span data-wizard-count>01 / 04</span><span>为你定制学习路线</span></div><div class="le-wizard-track"><i></i></div><h2 data-wizard-title>想学点什么？</h2><p data-wizard-hint>从一个想解决的问题开始，一句话就够。</p><div data-wizard-feedback role="status" aria-live="polite"></div></div>')
@@ -90,76 +113,53 @@ class PathGeneratorPage(BasePage):
                 )
                 self.save_progress = gr.Markdown("")
         # 备课进度轮询（保存后自动刷新，不用再点任何按钮）
-        self.prep_timer = gr.Timer(4.0, active=True)
+        self.prep_timer = gr.Timer(4.0, active=False)
 
-        with gr.Accordion("调整路线与重新规划", open=False):
-            self.regenerate_btn = gr.Button("重新规划", elem_id="le-route-regenerate")
-            self.roadmap_json = gr.Code(language="json", label="路线 JSON")
-            self.refine_input = gr.Textbox(
-                label="调整意见 (自然语言)",
-                placeholder="如：增加分布式训练的内容；删掉 RNN 部分；把难度调低",
-            )
-            self.refine_btn = gr.Button("按意见调整路线", elem_id="le-route-refine")
+        # 保存路线时要读它，界面上不露出来
+        self.roadmap_json = gr.Code(language="json", label="路线 JSON", visible=False)
 
-        with gr.Accordion("已有项目 · 查看、导入与管理", open=False):
-            self.project_list = gr.Dataframe(
-                headers=["ID", "标题", "选题", "进度", "状态", "创建时间"],
-                datatype=["number", "str", "str", "str", "str", "str"],
-                interactive=False,
-                value=[],
+        self.regenerate_btn = gr.Button(
+            "重新生成整条路线", size="sm", elem_id="le-route-regenerate"
+        )
+
+        with gr.Accordion("导入 / 导出学习路线", open=False):
+            gr.Markdown(
+                "导出会生成格式化 JSON 文件，包含项目元信息和完整路线；导入会新建一个学习项目。"
             )
             with gr.Row():
-                self.refresh_btn = gr.Button("刷新项目列表")
-                self.load_project_id = gr.Number(
-                    label="加载项目 ID", value=0, precision=0
+                self.export_project_id = gr.Number(
+                    label="导出项目 ID", value=0, precision=0
                 )
-                self.load_btn = gr.Button("加载该项目路线", elem_id="le-route-load")
-            with gr.Accordion("导入 / 导出学习路线", open=False):
-                gr.Markdown(
-                    "导出会生成格式化 JSON 文件，包含项目元信息和完整路线；导入会新建一个学习项目。"
+                self.export_roadmap_btn = gr.Button("导出学习路线")
+            self.export_roadmap_file = gr.File(
+                label="下载导出的学习路线 JSON", interactive=False
+            )
+            self.import_roadmap_file = gr.File(
+                label="导入学习路线 JSON", file_types=[".json"]
+            )
+            self.import_roadmap_btn = gr.Button("导入学习路线", variant="primary")
+        with gr.Accordion("删除项目", open=False):
+            gr.Markdown("输入项目 ID，并输入 `DELETE` 确认后删除。")
+            with gr.Row():
+                self.delete_project_id = gr.Number(
+                    label="删除项目 ID", value=0, precision=0
                 )
-                with gr.Row():
-                    self.export_project_id = gr.Number(
-                        label="导出项目 ID", value=0, precision=0
-                    )
-                    self.export_roadmap_btn = gr.Button("导出学习路线")
-                self.export_roadmap_file = gr.File(
-                    label="下载导出的学习路线 JSON", interactive=False
+                self.delete_confirm = gr.Textbox(
+                    label="确认文本", placeholder="DELETE", lines=1
                 )
-                self.import_roadmap_file = gr.File(
-                    label="导入学习路线 JSON", file_types=[".json"]
-                )
-                self.import_roadmap_btn = gr.Button("导入学习路线", variant="primary")
-            with gr.Accordion("批量审计旧路线", open=False):
-                gr.Markdown(
-                    "对已有项目执行路线完整性审计。系统会自动重写路线，并按新路线批量重新生成课程内容。"
-                    "可输入单个 ID、多个 ID（逗号/空格分隔），或留空审计全部项目。"
-                )
-                with gr.Row():
-                    self.audit_project_id = gr.Textbox(
-                        label="项目 ID（留空=全部）",
-                        placeholder="例如：3 或 3,5,8",
-                        lines=1,
-                    )
-                    self.audit_project_btn = gr.Button(
-                        "审计并重生成该项目", variant="primary"
-                    )
-                self.audit_project_output = gr.Markdown("")
-            with gr.Accordion("删除项目", open=False):
-                gr.Markdown("输入项目 ID，并输入 `DELETE` 确认后删除。")
-                with gr.Row():
-                    self.delete_project_id = gr.Number(
-                        label="删除项目 ID", value=0, precision=0
-                    )
-                    self.delete_confirm = gr.Textbox(
-                        label="确认文本", placeholder="DELETE", lines=1
-                    )
-                    self.delete_btn = gr.Button("删除项目", variant="stop")
+                self.delete_btn = gr.Button("删除项目", variant="stop")
 
         self.status = gr.Markdown("")
 
     def on_register_events(self):
         """绑定按钮事件"""
+        # 打开页面就把历史路线填进列表。以前这里只靠「刷新项目列表」按钮，
+        # 面板又是默认收起的，等于生成过的路线全看不见。
+        self._app.app.load(
+            fn=self._refresh_projects,
+            inputs=[],
+            outputs=[self.project_list],
+        )
         self.roadmap_json.change(
             fn=self._save_availability,
             inputs=[self.roadmap_json],
@@ -190,12 +190,6 @@ class PathGeneratorPage(BasePage):
             outputs=[self.roadmap_output, self.roadmap_json, self.status],
         )
 
-        self.refine_btn.click(
-            fn=self._handle_refine,
-            inputs=[self.roadmap_json, self.refine_input],
-            outputs=[self.roadmap_output, self.roadmap_json, self.status],
-        )
-
         # 保存：生成器流式输出进度 (自动搜集资料 + 生成环境清单)
         self.save_btn.click(
             fn=self._handle_save_with_setup,
@@ -210,12 +204,20 @@ class PathGeneratorPage(BasePage):
         ).then(
             fn=self._refresh_projects,
             outputs=[self.project_list],
+        ).then(
+            # 备课排队了才把定时器打开；备完由 _poll_prep 自己关掉。
+            # 常驻轮询会让每次 tick 都重绘一遍组件，界面就一直在闪。
+            fn=lambda: gr.update(active=True),
+            outputs=[self.prep_timer],
         )
 
-        # 备课进度：每 4 秒看一眼（Timer 不传输入，用 _save_pid 记当前项目）
+        # 备课进度：排队期间每 4 秒看一眼，备完自动停
+        # show_progress="hidden" 必须加：不加的话每次 tick 都会在组件上盖一层
+        # 半透明遮罩 + spinner，界面看着就是一直在闪
         self.prep_timer.tick(
             fn=self._poll_prep,
-            outputs=[self.save_progress],
+            outputs=[self.save_progress, self.prep_timer],
+            show_progress="hidden",
         )
 
         self.refresh_btn.click(fn=self._refresh_projects, outputs=[self.project_list])
@@ -223,6 +225,17 @@ class PathGeneratorPage(BasePage):
         self.load_btn.click(
             fn=self._handle_load,
             inputs=[self.load_project_id],
+            outputs=[
+                self.roadmap_output,
+                self.roadmap_json,
+                self.current_project_id,
+                self.status,
+            ],
+        )
+        # 点表格里的某一行 = 打开这条路线
+        self.project_list.select(
+            fn=self._handle_pick_row,
+            inputs=[self.project_list],
             outputs=[
                 self.roadmap_output,
                 self.roadmap_json,
@@ -250,17 +263,6 @@ class PathGeneratorPage(BasePage):
             fn=self._handle_delete_project,
             inputs=[self.delete_project_id, self.delete_confirm],
             outputs=[self.project_list, self.status],
-        )
-        self.audit_project_btn.click(
-            fn=self._handle_audit_project,
-            inputs=[self.audit_project_id],
-            outputs=[
-                self.project_list,
-                self.roadmap_output,
-                self.roadmap_json,
-                self.audit_project_output,
-                self.status,
-            ],
         )
 
     # ---- 业务处理函数 ----
@@ -321,20 +323,25 @@ class PathGeneratorPage(BasePage):
             return "", current_json, f"❌ 调整失败: {e}"
 
     def _poll_prep(self):
-        """刷新备课进度：只在文案真的变化时才更新界面。"""
+        """刷新备课进度：只在文案真的变化时才更新界面；备完顺手把定时器关掉。"""
         from learning_ext.progress import prep
 
         pid = self._save_pid
         if not pid or not self._save_base_md:
-            return gr.update()
+            return gr.update(), gr.update(active=False)
+        busy = prep.is_busy(pid)
         md = prep.status_md(pid)
-        if not md:
-            return gr.update()
-        text = self._save_base_md + "\n\n" + md
-        if text == self._last_prep_md:
-            return gr.update()
+        text = (self._save_base_md + "\n\n" + md) if md else ""
+        if not busy:
+            # 队列空了：把最后一份状态推上去，然后停止轮询
+            if text and text != self._last_prep_md:
+                self._last_prep_md = text
+                return gr.update(value=text), gr.update(active=False)
+            return gr.update(), gr.update(active=False)
+        if not md or text == self._last_prep_md:
+            return gr.update(), gr.update()
         self._last_prep_md = text
-        return gr.update(value=text)
+        return gr.update(value=text), gr.update()
 
     def _handle_save_with_setup(self, topic, background, goal, hours, roadmap_json):
         """保存为项目 + 自动搜集资料 + 生成环境清单 (生成器，流式输出进度)。
@@ -432,14 +439,55 @@ class PathGeneratorPage(BasePage):
             f"✅ 项目 #{pid} 已就绪，去「📚 学习工作台」开始学习吧！"
         )
 
+    def _handle_pick_row(self, data, evt: gr.SelectData):
+        """点表格里的一行，直接打开那条路线（不用再输 ID）。"""
+        pid = 0
+        try:
+            row = evt.index[0]
+            if hasattr(data, "iloc"):
+                pid = int(data.iloc[row, 0])
+            else:
+                pid = int(data[row][0])
+        except Exception:
+            pid = 0
+        if pid <= 0:
+            return tuple(gr.update() for _ in range(4))
+        return self._handle_load(pid)
+
+    def _project_brief_md(self, proj) -> str:
+        """把建档时填的那几项原样摆出来。
+
+        用户隔几天回来，看到一堆章节标题，会想不起当初为什么这么排。
+        """
+        if proj is None:
+            return ""
+        rows = []
+        if (proj.topic or "").strip():
+            rows.append(f"- **想学什么**：{proj.topic.strip()}")
+        if (proj.background or "").strip():
+            rows.append(f"- **已有基础**：{proj.background.strip()}")
+        if (proj.goal or "").strip():
+            rows.append(f"- **想达到**：{proj.goal.strip()}")
+        if proj.weekly_hours:
+            rows.append(f"- **每周投入**：{proj.weekly_hours:g} 小时")
+        if proj.created_at:
+            rows.append(f"- **创建时间**：{proj.created_at.strftime('%Y-%m-%d')}")
+        if not rows:
+            return ""
+        return "#### 你当初提的需求\n\n" + "\n".join(rows)
+
     def _handle_load(self, project_id):
         """加载已有项目"""
         if not project_id or int(project_id) <= 0:
             return "", "{}", None, "⚠️ 请输入有效的项目 ID"
         try:
             with Session(engine) as session:
+                proj = session.get(LearningProject, int(project_id))
+                brief = self._project_brief_md(proj)
                 roadmap = load_roadmap(session, int(project_id))
                 md = self._roadmap_to_markdown(roadmap)
+                if brief:
+                    md = f"{brief}\n\n---\n\n{md}"
                 return (
                     md,
                     json.dumps(roadmap, ensure_ascii=False, indent=2),
@@ -682,18 +730,26 @@ class PathGeneratorPage(BasePage):
                 rows = []
                 for p in projects:
                     prog = get_project_progress(session, p.id)
+                    title = p.title or "（未命名路线）"
+                    # 生成的标题经常是一整段话，不截断会把表格撑成横向滚动
+                    if len(title) > 46:
+                        title = title[:46] + "…"
                     rows.append(
                         [
                             p.id,
-                            p.title,
-                            p.topic[:40],
+                            title,
                             f"{prog['done']}/{prog['total']} ({prog['pct']}%)",
-                            p.status,
-                            p.created_at.strftime("%Y-%m-%d %H:%M"),
+                            p.created_at.strftime("%Y-%m-%d %H:%M")
+                            if p.created_at
+                            else "-",
                         ]
                     )
+                logger.info("[路径页] 读取历史路线 %d 条", len(rows))
                 return rows
         except Exception:
+            # 以前这里静默 return []，出错时界面上只是「空列表」，
+            # 看起来跟「一条都没生成过」一模一样，没法排查。
+            logger.exception("[路径页] 读取历史路线失败")
             return []
 
     @staticmethod
@@ -721,7 +777,10 @@ class PathGeneratorPage(BasePage):
         if not roadmap or "nodes" not in roadmap:
             return "*路线为空*"
 
-        lines = [f"# {roadmap.get('summary', '学习路线')}\n"]
+        summary = (roadmap.get("summary") or "学习路线").strip()
+        if len(summary) > 46:
+            summary = summary[:46].rstrip("，。、, ") + "…"
+        lines = [f"# {summary}\n"]
 
         # 按 stage 分组
         stages: dict[str, list] = {}
@@ -759,8 +818,8 @@ class PathGeneratorPage(BasePage):
                     f"`{node.get('est_hours', 2)}h` `难度{node.get('difficulty', 3)}/5`"
                     f"{prereq_str}{mastery_pct}"
                 )
-                if node.get("description"):
-                    lines.append(f"  - {node['description']}")
+                # 这里不再输出每节的 description：路线页是用来「看清结构」的，
+                # 铺开正文会变成几千字，反而看不出这条路线分几块。
             lines.append("")
 
         lines.append("---")

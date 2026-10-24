@@ -1,26 +1,58 @@
 
-#learning-workbench-tab>.le-page-heading{max-width:1320px;margin-inline:auto}
-#le-workbench-row,#le-workbench-row.le-assistant-open{grid-template-columns:220px minmax(0,1fr)!important;max-width:1320px!important;gap:28px!important;align-items:start!important}
-#le-left-col{grid-column:1/-1!important;display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr)!important;background:#fff!important;border:1px solid #d5dfe9!important;border-radius:20px!important;padding:24px 28px!important;gap:20px 28px!important}
-#le-left-col>div:first-child{grid-column:1/-1}.le-course-strip-heading{display:flex;align-items:center;gap:18px}.le-course-strip-heading strong{font-size:20px}.le-course-strip-heading span{font-size:16px;color:#738095}
-#le-project-picker{grid-column:1;order:1}#le-course-picker{grid-column:2;order:2}
-#le-left-col #le-course-progress{grid-column:1;order:3;border:0!important;margin:0!important;padding:0!important;align-self:center}#le-course-progress p{margin:0!important;font-size:16px!important}
-#le-course-hint{display:none!important}#le-course-admin{grid-column:2;order:4;align-self:start;border:0!important;background:#f7f9fc!important;padding:8px 16px!important;border-radius:12px!important}
-#le-course-admin .row{flex-direction:row!important;flex-wrap:wrap!important}#le-course-admin button{font-size:16px!important;min-height:44px!important}
-#le-lesson-outline{grid-column:1;grid-row:2;position:sticky;top:94px;padding:18px 0;color:#485d75;max-height:calc(100vh - 120px);overflow:auto;scrollbar-width:thin}
+/* 工作台不要页面级大标题（顶部导航已经高亮，课程标题才是真标题）。
+   Gradio 把 HTML 包在一个 .block 里，所以连壳一起藏。 */
+#learning-workbench-tab>div>.block:has(.le-page-heading),#learning-workbench-tab>div>div.block:has(.le-page-heading){display:none!important}
+#le-app-tabs>#learning-workbench-tab{padding-top:10px!important;padding-bottom:40px!important}
+#learning-workbench-tab>.le-page-heading h1{font-size:26px!important;margin:0 0 4px!important}
+#learning-workbench-tab>.le-page-heading p{font-size:14px!important}
+#le-workbench-row,#le-workbench-row.le-assistant-open{grid-template-columns:200px minmax(0,1fr)!important;max-width:1340px!important;gap:22px 30px!important;align-items:start!important}
+/* 顶部工具条：项目 / 课程 / 进度 / 管理 压成一行，把首屏让给正文。
+   原来是通栏大卡片（项目+课程两个下拉堆叠 + 说明 + 折叠面板），实测把正文推到 866px。 */
+#le-left-col{grid-column:1/-1!important;display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;align-items:center!important;gap:10px!important;background:#fff!important;border:1px solid #dde5ee!important;border-radius:14px!important;padding:8px 10px 8px 14px!important;min-height:56px!important;position:relative!important;z-index:26!important;box-shadow:0 8px 24px -18px #1c32434d!important}
+#le-left-col>div.block{flex:none}
+/* Gradio 把每个下拉包在 .form 里，.form 默认占满整行 → 工具条被挤成两行。
+   这里按位置定宽：第一个 form 是「项目」，第二个是「课程」占剩余宽度。 */
+#le-left-col>.form{flex:0 0 auto!important;width:auto!important;min-width:0!important;display:block!important;padding:0!important;border:0!important;background:transparent!important}
+#le-left-col>.form:first-child{width:232px!important}
+#le-left-col>.form:not(:first-child){flex:1 1 auto!important;min-width:180px!important}
+#le-left-col .form .block{width:100%!important}
+#le-left-col #le-course-admin{width:auto!important}
+#le-left-col>div.block{flex:0 0 auto}
+#le-project-picker{width:232px!important;min-width:0!important;order:1}
+#le-course-picker{flex:1 1 auto!important;min-width:0!important;order:2}
+#le-course-hint{display:none!important}
+/* 紧凑下拉：隐藏 Gradio 的 block-info 标签，改用 CSS 前缀，省一行高度 */
+#le-project-picker [data-testid="block-info"],#le-course-picker [data-testid="block-info"]{display:none!important}
+#le-project-picker .container,#le-course-picker .container{position:relative!important;padding-left:46px!important;padding-top:0!important;padding-bottom:0!important;min-height:38px!important}
+#le-project-picker .container::before,#le-course-picker .container::before{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;letter-spacing:.02em;color:#93a1b1;pointer-events:none}
+#le-project-picker .container::before{content:"项目"}
+#le-course-picker .container::before{content:"课程"}
+#le-project-picker input,#le-course-picker input{font-size:16px!important;font-weight:500;color:#2f4761!important;text-overflow:ellipsis!important}
+#le-left-col #le-course-progress{flex:none!important;order:3;min-width:104px!important;width:auto!important;margin:0!important;padding:0 6px 0 12px!important;border:0!important;background:transparent!important;box-shadow:none!important;align-self:center}
+#le-left-col #le-course-progress .prose,#le-left-col #le-course-progress p{margin:0!important;font-size:14px!important;line-height:1.35!important;color:#5d7186!important;white-space:nowrap}
+#le-left-col #le-course-progress strong{font-size:16px;color:#2f4761;font-weight:600}
+/* 管理面板收成右侧「管理」按钮，展开时浮在工具条下面，不再把正文顶下去 */
+#le-course-admin{position:relative!important;flex:none!important;order:4;margin-left:auto!important;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;align-self:center}
+#le-course-admin>button.label-wrap{width:auto!important;min-height:36px!important;padding:0 12px!important;border:1px solid #dde5ee!important;border-radius:9px!important;background:#f7f9fc!important;color:#5d7186!important;font-size:14px!important;gap:6px!important}
+#le-course-admin>button.label-wrap:hover{background:#eef3f9!important;color:#2f5c94!important}
+#le-course-admin>button.label-wrap>span:first-child{font-size:14px!important}
+#le-course-admin>div:last-child{position:absolute!important;right:0!important;top:calc(100% + 8px)!important;width:min(400px,78vw)!important;max-height:min(72vh,540px)!important;overflow:auto!important;background:#fff!important;border:1px solid #dde5ee!important;border-radius:14px!important;box-shadow:0 22px 60px #1c324333!important;padding:14px!important;z-index:44!important}
+#le-course-admin .gap{gap:10px!important}
+#le-lesson-outline{grid-column:1;grid-row:2;position:sticky;top:76px;padding:0 0 14px;color:#485d75;max-height:calc(100vh - 110px);overflow:auto;scrollbar-width:thin}
 #le-lesson-outline summary{font-size:18px;font-weight:600;cursor:pointer;padding:0 12px 16px;list-style:none}
 #le-lesson-outline summary::after{content:'⌄';float:right;color:#8492a3}
 #le-lesson-outline nav{display:flex;flex-direction:column;gap:4px}#le-lesson-outline button{font:400 16px var(--le-font);line-height:1.5;text-align:left;border:0;border-left:2px solid transparent;background:transparent;padding:11px 12px;color:#64758a;cursor:pointer;border-radius:0 9px 9px 0}
 #le-lesson-outline button:hover,#le-lesson-outline button[aria-current=location]{color:#304f76;background:#e6edf6;border-left-color:#6385b0}#le-lesson-outline p{font-size:15px!important;color:#7b8797!important;padding:18px 12px;line-height:1.8}
-#le-center-col{grid-column:2;grid-row:2;border:1px solid #d7e0e9!important;border-radius:22px!important;box-shadow:0 8px 36px #263d5807!important;padding:36px clamp(26px,3vw,54px)!important;gap:22px!important}
-#le-center-content{padding-bottom:22px!important;border-bottom:1px solid #e1e7ee!important}#le-center-content h3{font-size:28px!important;line-height:1.5!important;letter-spacing:-.025em}#le-center-content p{margin:12px 0 0!important}#le-center-content code{padding:6px 10px!important;border-radius:8px!important;font-size:15px!important;background:#f0f4f8!important;color:#62768e!important}
-#le-content-tabs>.tab-nav{position:sticky!important;top:64px!important;z-index:12;display:flex!important;align-items:center!important;gap:4px!important;background:#f2f5f9!important;border:1px solid #e1e7ef!important;border-radius:14px!important;padding:5px!important;margin-bottom:22px!important;box-shadow:0 8px 16px -12px #263d5824!important}
-#le-content-tabs>.tab-nav button{flex:1;font-size:18px!important;padding:12px!important;border:0!important;border-radius:10px!important;color:#6c7b8e!important}
+#le-center-col{grid-column:2;grid-row:2;border:1px solid #d7e0e9!important;border-radius:22px!important;box-shadow:0 8px 36px #263d5807!important;padding:24px clamp(24px,2.6vw,46px) 30px!important;gap:14px!important}
+#le-center-content{padding-bottom:16px!important;border-bottom:1px solid #e1e7ee!important}#le-center-content h3{font-size:26px!important;line-height:1.5!important;letter-spacing:-.025em}#le-center-content p{margin:12px 0 0!important}#le-center-content code{padding:6px 10px!important;border-radius:8px!important;font-size:15px!important;background:#f0f4f8!important;color:#62768e!important}
+#le-content-tabs>.tab-nav{position:sticky!important;top:64px!important;z-index:12;display:flex!important;align-items:center!important;gap:4px!important;background:#f2f5f9!important;border:1px solid #e1e7ef!important;border-radius:14px!important;padding:5px!important;margin-bottom:0!important;box-shadow:0 8px 16px -12px #263d5824!important}
+#le-content-tabs>.tab-nav button{flex:1;font-size:16px!important;padding:10px!important;border:0!important;border-radius:10px!important;color:#6c7b8e!important}
 #le-content-tabs>.tab-nav button.selected{background:#fff!important;box-shadow:0 2px 8px #253a5510!important;color:#294f7d!important}
 #le-guide-md .prose{font-size:19px!important;line-height:1.95!important;color:#3f4d5e!important}#le-guide-md h2{font-size:25px!important;margin:40px 0 18px!important;scroll-margin-top:155px}#le-guide-md h3{font-size:21px!important;margin:28px 0 14px!important}#le-guide-md h1{font-size:27px!important;line-height:1.5!important}#le-guide-md pre{border-radius:14px!important;padding:20px!important;font-size:16px!important;overflow:auto}#le-guide-md table{display:block;overflow:auto;max-width:100%}
 #le-lesson-actions{padding-top:24px!important;border-top:1px solid #dfe6ee!important;margin-top:28px!important}#le-note-zone textarea{min-height:340px!important;font-size:19px!important;line-height:1.9!important}
 #le-workbench-row.le-assistant-open #le-right-col{position:fixed!important;grid-column:auto!important;right:24px!important;top:96px!important;bottom:24px!important;width:min(420px,calc(100vw - 32px))!important;max-height:calc(100vh - 120px)!important;overflow:auto!important;z-index:50!important;border-radius:22px!important;padding:26px!important;box-shadow:0 20px 70px #1c324333!important;animation:le-surface-enter .2s ease-out}
 @media(max-width:1000px){#le-workbench-row,#le-workbench-row.le-assistant-open{grid-template-columns:minmax(0,1fr)!important;gap:18px!important}#le-lesson-outline{grid-column:1;grid-row:2;position:static;max-height:260px;background:#f6f8fb;border:1px solid #d8e1eb;border-radius:14px;padding:16px}#le-lesson-outline summary{padding-bottom:0}#le-lesson-outline[open] summary{padding-bottom:14px}#le-center-col{grid-column:1;grid-row:3;padding:26px!important}}
+@media(max-width:900px){#le-left-col{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:8px 10px!important;padding:10px!important;align-items:center!important}#le-left-col>.form{width:auto!important;min-width:0!important}#le-left-col>.form:first-child,#le-left-col>.form:not(:first-child){width:auto!important;flex:none!important}#le-left-col #le-course-progress{grid-column:1;margin:0!important;padding:0 4px!important}#le-course-admin{grid-column:2;justify-self:end!important;margin:0!important}}
 @media(max-width:650px){#le-left-col{grid-template-columns:1fr!important;padding:20px!important}#le-project-picker,#le-course-picker,#le-course-admin,#le-left-col #le-course-progress{grid-column:1!important}.le-course-strip-heading{display:block}.le-course-strip-heading span{display:block;margin-top:6px}#le-center-col{padding:22px 18px!important}#le-center-content h3{font-size:24px!important}#le-content-tabs>.tab-nav button{font-size:17px!important}#le-guide-md .prose{font-size:18px!important}}
 @media(prefers-reduced-motion:reduce){#le-workbench-row.le-assistant-open #le-right-col{animation:none!important}}
 
@@ -34,9 +66,9 @@
 #le-content-tabs{display:contents!important}
 /* 其余子元素先统一压到 3，再用更高优先级把标签栏/标题/面板提上来 */
 #le-center-col>*{order:3}
-#le-center-col>#le-content-tabs>.tab-nav{order:0;margin-bottom:0!important}
-#le-center-col>#le-center-content{order:1}
-#le-center-col>#le-content-tabs>.tabitem{order:2}
+#le-center-col>#le-center-content{order:0}
+#le-center-col>#le-content-tabs>.tab-nav{order:1;margin-bottom:0!important}
+#le-center-col>#le-content-tabs>.tabitem{order:2;padding-top:18px!important}
 /* 壳拆掉后宽度约束要落到具体元素上：标签栏铺满整个内容区，正文仍保持 780 可读宽度 */
 #le-center-col>#le-content-tabs>.tab-nav{max-width:none!important;width:100%!important}
 #le-center-col>#le-content-tabs>.tabitem{max-width:780px!important;width:100%!important;margin-left:auto!important;margin-right:auto!important}
@@ -80,13 +112,15 @@
 #le-rewrite-bridge{position:fixed!important;left:-200vw!important;top:0!important;width:1px!important;height:1px!important;overflow:hidden!important;margin:0!important;padding:0!important;opacity:0!important;pointer-events:none!important;gap:0!important}
 
 /* 选中文字后浮出的操作条 */
-#le-sel-bar{position:fixed;z-index:70;display:flex;align-items:center;gap:2px;padding:4px;background:#fff;border:1px solid #d5dfeb;border-radius:12px;box-shadow:0 10px 28px #1c324329;font:400 14px var(--le-font,system-ui);animation:le-sel-in .13s ease-out}
+#le-sel-bar{position:fixed;z-index:70;display:flex;align-items:center;gap:2px;padding:4px;background:#fff;border:1px solid #d5dfeb;border-radius:12px;box-shadow:0 10px 28px #1c324329;font:400 14px var(--le-font,system-ui);animation:le-sel-in .13s ease-out;flex-wrap:wrap;max-width:calc(100vw - 24px)}
 #le-sel-bar[hidden]{display:none!important}
 #le-sel-bar button{border:0;background:transparent;color:#4a5f7a;padding:6px 10px;border-radius:8px;font:inherit;line-height:1.2;white-space:nowrap;cursor:pointer;transition:background .15s ease,color .15s ease}
 #le-sel-bar button:hover{background:#eef3f9;color:#2b5488}
 #le-sel-bar button.le-self{color:#7b8ca1;padding:6px 8px;font-size:15px}
-#le-sel-bar input{border:1px solid #dbe3ec;border-radius:8px;padding:6px 9px;font:inherit;color:#37495f;width:190px;outline:none;background:#fafcfe}
-#le-sel-bar input:focus{border-color:#9db8d8;background:#fff}
+/* 写批注用多行输入框：单行 input 文字一长就会内部横向滚动，容易触发浮条收起 */
+#le-sel-bar .le-bar-input{border:1px solid #dbe3ec;border-radius:8px;padding:7px 9px;font:inherit;font-size:14px;line-height:1.55;color:#37495f;width:300px;max-width:100%;min-height:38px;outline:none;background:#fafcfe;resize:none;overflow-y:auto;box-sizing:border-box;flex:1 0 100%;order:10}
+#le-sel-bar .le-bar-input:focus{border-color:#9db8d8;background:#fff}
+#le-sel-bar .le-bar-input[hidden]{display:none!important}
 #le-sel-bar .le-sel-hint{font-size:13px;color:#7c8ca1;padding:0 8px;white-space:nowrap}
 @keyframes le-sel-in{from{opacity:0;transform:translateY(4px) scale(.98)}to{opacity:1;transform:none}}
 
@@ -111,3 +145,125 @@
 #le-rewrite-note .le-toast-x{background:transparent;color:#8794a6;font-size:17px;line-height:1;padding:4px 6px}
 #le-rewrite-note .le-toast-x:hover{background:#f0f3f7;color:#55637a}
 @media(prefers-reduced-motion:reduce){#le-sel-bar,#le-rewrite-note .le-toast{animation:none}#le-rewrite-note .le-toast-dot{animation:none}}
+
+/* ===== 划词批注 ===== */
+/* 批注通道也用移出可视区的办法藏起来，元素仍在 DOM 里 */
+#le-time-bridge,#le-anno-bridge,#le-snooze-bridge{position:fixed!important;left:-200vw!important;top:0!important;width:1px!important;height:1px!important;overflow:hidden!important;margin:0!important;padding:0!important;opacity:0!important;pointer-events:none!important;gap:0!important}
+
+/* 有批注的段落：左侧细色条，只作为“这段有笔记”的提示，点击不再弹窗 */
+#le-guide-md .prose > [data-anno-pin]{position:relative!important;margin-left:-10px;padding-left:10px;box-shadow:inset 3px 0 0 #e6c97a;cursor:default}
+
+/* 右侧的数字标：显示这一段有几条笔记，点它才展开。
+   单独一层浮在上面，不往正文里插节点（插节点会破坏 Gradio 的引用）。 */
+#le-anno-pins{position:fixed;left:0;top:0;width:0;height:0;z-index:68;pointer-events:none}
+#le-anno-pins .le-anno-pin{position:absolute;width:21px;height:21px;padding:0;border:1px solid #edd9a6;border-radius:50%;background:#fbf1d8;color:#8a6a1f;font:400 11px/19px var(--le-font,system-ui);text-align:center;cursor:pointer;pointer-events:auto;box-shadow:0 1px 3px #1c32431a;transition:background .12s ease,transform .12s ease,box-shadow .12s ease}
+#le-anno-pins .le-anno-pin:hover{background:#f4e0ae;transform:scale(1.1);box-shadow:0 2px 8px #1c324329}
+#le-anno-pins .le-anno-pin:active{transform:scale(.98)}
+#le-anno-pins .le-anno-pin[hidden]{display:none!important}
+
+/* 笔记页的批注列表 */
+#le-annotation-list{margin-top:26px;padding-top:20px;border-top:1px solid #dfe6ee}
+#le-annotation-list .le-anno-head{font-size:16px;color:#41556e;margin-bottom:12px;font-weight:400}
+#le-annotation-list .le-anno-head b{font-weight:500;color:#2f4a6b}
+#le-annotation-list .le-anno-item{border-left:3px solid #a9c1dc;background:#f7fafd;border-radius:0 10px 10px 0;padding:11px 14px;margin-bottom:9px}
+#le-annotation-list .le-anno-quote{font-size:14px;line-height:1.65;color:#63788f;font-style:italic;word-break:break-word}
+#le-annotation-list .le-anno-body{font-size:16px;line-height:1.75;color:#2d3d50;margin-top:7px;white-space:pre-wrap;word-break:break-word}
+#le-annotation-list .le-anno-meta{display:flex;align-items:center;justify-content:space-between;margin-top:8px;font-size:12px;color:#94a1b2}
+#le-annotation-list .le-anno-del{border:0;background:transparent;color:#a39696;font-size:12px;cursor:pointer;padding:2px 4px;border-radius:5px}
+#le-annotation-list .le-anno-del:hover{color:#b4514a;background:#f4eeee}
+#le-annotation-list .le-anno-stale{margin-left:8px;font-size:11px;color:#9a7433;background:#fbf1dc;padding:1px 6px;border-radius:6px;font-style:normal}
+#le-annotation-list .le-anno-empty{font-size:14px;line-height:1.9;color:#8b99aa;background:#f7f9fc;border:1px dashed #d3dfeb;border-radius:10px;padding:16px 18px}
+
+/* 提示条到时间就淡出（只改状态，不删节点） */
+#le-rewrite-note[data-le-hidden]{opacity:0!important;pointer-events:none!important;transition:opacity .25s ease}
+
+/* 点正文里的批注段落，弹出这条批注（可改可删） */
+#le-anno-card{position:fixed;z-index:80;max-height:min(340px,60vh);overflow:auto;background:#fff!important;opacity:1!important;border:1px solid #d9e2ec;border-radius:12px;box-shadow:0 16px 44px #1c324329;padding:13px 15px;font:400 14px var(--le-font,system-ui);color:#3d4f66;animation:le-sel-in .14s ease-out}
+#le-anno-card[hidden]{display:none!important}
+#le-anno-card .le-card-item+.le-card-item{margin-top:10px;padding-top:10px;border-top:1px solid #eef2f7}
+#le-anno-card .le-card-quote{font-size:13px;color:#7c8ea5;font-style:italic;line-height:1.6;padding-right:14px}
+#le-anno-card .le-card-body{margin-top:6px;font-size:15px;line-height:1.7;color:#2d3d50;white-space:pre-wrap;word-break:break-word}
+#le-anno-card .le-card-actions{display:flex;gap:6px;margin-top:8px;justify-content:flex-end}
+#le-anno-card .le-card-actions button{border:0;background:#eef3f9;color:#365f98;font:inherit;font-size:13px;padding:4px 11px;border-radius:7px;cursor:pointer}
+#le-anno-card .le-card-actions button:hover{background:#e2ebf6}
+#le-anno-card textarea{width:100%;box-sizing:border-box;border:1px solid #dbe3ec;border-radius:8px;padding:7px 9px;font:inherit;font-size:15px;line-height:1.6;resize:vertical;outline:none;color:#2d3d50}
+#le-anno-card textarea:focus{border-color:#9db8d8}
+#le-anno-card .le-card-x{position:absolute;right:6px;top:6px;border:0;background:transparent;color:#9aa7b6;font-size:16px;line-height:1;cursor:pointer;padding:2px 5px;border-radius:6px}
+#le-anno-card .le-card-x:hover{background:#f2f5f9;color:#5a6a80}
+
+/* ===== 课程适配度调整弹窗 ===== */
+#le-adapt-overlay{position:fixed!important;left:0!important;top:0!important;right:0!important;bottom:0!important;z-index:120!important;background:#0b1a2b73!important;backdrop-filter:blur(3px)!important;border:0!important;padding:0!important;overflow:auto!important}
+#le-adapt-center{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:center!important;width:100%!important;min-height:100%!important;padding:24px!important;gap:0!important}
+#le-adapt-modal{position:relative!important;flex:0 0 auto!important;width:min(840px,100%)!important;max-width:840px!important;max-height:88vh!important;overflow:auto!important;background:#fff!important;border:1px solid #d9e2ec!important;border-radius:18px!important;box-shadow:0 30px 90px #0b1a2b66!important;padding:22px 26px 26px!important;gap:12px!important}
+#le-adapt-head{display:block!important;position:static!important}
+#le-adapt-intro{min-width:0!important;padding-right:76px!important}
+#le-adapt-intro h3{margin:0 0 6px!important;font-size:20px!important}
+#le-adapt-intro p{margin:0!important;font-size:14px!important;line-height:1.65!important;color:#5f7288!important}
+#le-adapt-close{position:absolute!important;right:18px!important;top:16px!important;min-width:auto!important;padding:5px 12px!important;font-size:13px!important;border-radius:8px!important}
+#le-adapt-scope{align-items:end!important}
+#le-adapt-signal{background:#f7f9fc!important;border:1px solid #e3eaf3!important;border-radius:12px!important;padding:12px 14px!important}
+#le-adapt-signal p{margin:0!important;font-size:14px!important;line-height:1.75!important;color:#46586d!important}
+#le-adapt-actions{gap:10px!important}
+#le-adapt-report{max-height:46vh!important;overflow:auto!important}
+#le-adapt-report h3{font-size:16px!important;margin:14px 0 8px!important}
+#le-adapt-report p,#le-adapt-report li{font-size:14px!important;line-height:1.75!important}
+
+/* ===== 学习节奏条 ===== */
+#le-center-col>#le-rhythm-bar{order:-1!important;margin:0 0 14px!important;padding:0!important;border:0!important;background:transparent!important}
+#le-rhythm-bar .le-rhythm-inner{display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:8px!important;padding:9px 14px!important;border:1px solid #e2eaf3!important;border-radius:12px!important;background:#f8fafd!important;font:400 14px/1.5 var(--le-font,system-ui)!important;color:#5a6e85!important}
+#le-rhythm-bar .le-rhythm-item{white-space:nowrap}
+#le-rhythm-bar .le-rhythm-item.quiet{color:#7c8ca0;font-size:13px}
+#le-rhythm-bar .le-rhythm-item.info{color:#2f6da3}
+#le-rhythm-bar .le-rhythm-item.warn{color:#a35c14;background:#fdf3e4;padding:3px 9px;border-radius:8px}
+#le-rhythm-bar .le-rhythm-btn{border:1px solid #cddcec;background:#fff;color:#2b5488;padding:4px 11px;border-radius:8px;font:inherit;font-size:13px;line-height:1.4;cursor:pointer;transition:background .15s ease}
+#le-rhythm-bar .le-rhythm-btn:hover{background:#eef4fb}
+#le-rhythm-bar .le-rhythm-btn.ghost{border-color:transparent;background:transparent;color:#7b8ca1;text-decoration:underline}
+
+/* ===== 过关检查弹窗 ===== */
+#le-gate-overlay{position:fixed!important;left:0!important;top:0!important;right:0!important;bottom:0!important;z-index:118!important;background:#0b1a2b73!important;backdrop-filter:blur(3px)!important;border:0!important;padding:0!important;overflow:auto!important}
+#le-gate-center{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:center!important;width:100%!important;min-height:100%!important;padding:24px!important;gap:0!important}
+#le-gate-modal{position:relative!important;width:min(780px,100%)!important;max-width:780px!important;max-height:88vh!important;overflow:auto!important;background:#fff!important;border:1px solid #e0d8c2!important;border-radius:18px!important;box-shadow:0 30px 90px #0b1a2b66!important;padding:22px 26px 26px!important;gap:10px!important}
+#le-gate-head{display:block!important;position:static!important}
+#le-gate-title h3{margin:0 0 4px!important;font-size:20px!important;padding-right:70px!important}
+#le-gate-close{position:absolute!important;right:18px!important;top:16px!important;min-width:auto!important;padding:5px 12px!important;font-size:13px!important;border-radius:8px!important}
+#le-gate-check-md h4{font-size:16px!important;margin:0 0 6px!important;color:#7a5c14!important}
+#le-gate-check-md li{font-size:14px!important;line-height:1.9!important;color:#4c5d70!important}
+#le-gate-check-md blockquote{margin:8px 0!important;font-size:13px!important}
+#le-gate-quiz-md{font-size:14px!important;line-height:1.7!important}
+#le-gate-quiz-md p{margin:0 0 6px!important}
+#le-gate-answers{gap:10px!important}
+#le-gate-answers textarea{font-size:14px!important}
+#le-gate-modal textarea{min-height:66px!important}
+#le-gate-quiz-result p,#le-gate-recite-fb p{margin:0!important;font-size:14px!important}
+#le-gate-modal .prose p,#le-gate-modal .prose li{font-size:14px!important;line-height:1.75!important}
+#le-gate-modal .prose strong{font-weight:600!important}
+#le-gate-modal h3{font-size:15px!important;margin:14px 0 6px!important}
+#le-gate-check-md ul{list-style:none!important;padding-left:0!important;margin:6px 0 0!important}
+#le-gate-check-md li{padding-left:0!important}
+#le-gate-recite-input textarea{min-height:96px!important;font-size:14px!important}
+#le-gate-recite-input label{font-size:13px!important;color:#6b7f96!important}
+
+/* 题目区限高内部滚动，把空间让给复述区 */
+#le-gate-quiz-md{max-height:190px!important;overflow:auto!important}
+#le-gate-modal{max-height:92vh!important}
+#le-gate-skip{background:#fffdf5!important;border:1px solid #e6d9b8!important;color:#8a6a1f!important;margin-top:6px!important}
+#le-gate-skip:hover{background:#fdf6e5!important}
+
+/* 过关弹窗改成标签页：顶部一排按钮，下面两块分开 */
+#le-gate-head{display:flex!important;align-items:center!important;gap:8px!important;position:static!important}
+#le-gate-title{flex:1 1 auto!important;min-width:0!important}
+#le-gate-title h3{margin:0!important;font-size:20px!important;padding-right:0!important}
+#le-gate-close,#le-gate-skip{position:static!important;min-width:auto!important;flex:0 0 auto!important;font-size:13px!important;padding:5px 12px!important;border-radius:8px!important}
+#le-gate-tabs{margin-top:8px!important}
+#le-gate-tabs>.tab-nav{margin:0 0 12px!important;padding:4px!important;background:#f2f5f9!important;border-radius:10px!important}
+#le-gate-tabs>.tab-nav button{font-size:14px!important;padding:6px 16px!important;border-radius:8px!important}
+#le-gate-quiz-actions{gap:10px!important}
+#le-gate-quiz-actions>button{flex:0 0 auto!important;min-width:120px!important}
+
+#le-gate-head{flex-wrap:nowrap!important;overflow:visible!important}
+#le-gate-quiz-md{max-height:150px!important}
+#le-gate-modal{padding:16px 22px 20px!important}
+#le-gate-answers textarea{min-height:52px!important;height:52px!important}
+#le-gate-check-md h4{font-size:15px!important;margin:0 0 4px!important}
+#le-gate-check-md li{line-height:1.7!important;font-size:13.5px!important}
+#le-scroll-kick{display:none!important;height:0!important;margin:0!important;padding:0!important}

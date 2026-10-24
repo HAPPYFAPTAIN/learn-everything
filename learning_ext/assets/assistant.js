@@ -93,7 +93,7 @@
     fab = document.createElement('button');
     fab.id = 'le-assistant-fab';
     fab.type = 'button';
-    fab.textContent = '助教';
+    // 图标由 CSS 背景图提供（Q 版助教），这里不再放文字
     fab.title = 'AI 助教';
     fab.setAttribute('aria-label', 'AI 助教');
     fab.setAttribute('aria-controls', 'le-global-assistant');

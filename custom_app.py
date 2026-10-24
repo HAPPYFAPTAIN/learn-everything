@@ -89,6 +89,44 @@ if GRADIO_TEMP_DIR is None:
     GRADIO_TEMP_DIR = os.path.join(str(KH_APP_DATA_DIR), "gradio_tmp")
     os.environ["GRADIO_TEMP_DIR"] = GRADIO_TEMP_DIR
 
+def _make_umap_optional() -> None:
+    """umap 导入失败时放一个占位实现，避免整个应用起不来。
+
+    背景：Kotaemon 的引用可视化模块在**模块级** `import umap`，而 umap 依赖
+    numba → llvmlite。Windows 11 的「智能应用控制」(Smart App Control) 会把
+    llvmlite.dll 判定为不受信任并直接拦掉（加载报 WinError 4551），于是
+    ktem 一 import 就崩，整个 App 连启动都做不到。
+
+    引用可视化只是「知识问答」里的一个附属图表，为它牺牲整个应用不值得。
+    这里先试真 import，能用就用真的；不能用就塞一个占位模块，
+    只让那一个功能在真正调用时报错，其余功能照常。
+    """
+
+    try:
+        import umap  # noqa: F401,WPS433
+
+        return
+    except Exception as exc:  # noqa: BLE001
+        import types
+
+        print(f"[learning_ext] umap 不可用，已降级（引用可视化将不可用）：{exc}", flush=True)
+        stub = types.ModuleType("umap")
+
+        class UMAP:  # noqa: D401
+            """占位：真正的 UMAP 依赖 llvmlite，被系统策略拦住了。"""
+
+            def __init__(self, *args, **kwargs):
+                raise RuntimeError(
+                    "引用可视化需要 umap/numba，但 llvmlite 被系统策略拦截"
+                    "（Windows 智能应用控制）。此功能暂不可用，其余功能不受影响。"
+                )
+
+        stub.UMAP = UMAP
+        sys.modules["umap"] = stub
+
+
+_make_umap_optional()
+
 from learning_ext.app import LearningApp  # noqa: E402
 
 
@@ -112,6 +150,10 @@ def _patch_gradio_template_for_learning_assets():
         # 走 gr.Blocks(css=...) 会被 Gradio 加上 .contain 前缀而失效，故用原始 style 注入
         raw_css = Path(_HERE, "learning_ext/assets/shell.css").read_text(encoding="utf-8")
         raw_css += "\n" + Path(_HERE, "learning_ext/assets/assistant.css").read_text(encoding="utf-8")
+        # 与 presentation_css() 共用 __ASSETS__ 占位符：助教头像等图片走 Gradio 的 /file= 静态路径
+        raw_css = raw_css.replace(
+            "__ASSETS__", "/file=" + Path(_HERE, "learning_ext", "assets").as_posix()
+        )
         style_tag = f"<style>\n{raw_css}\n</style>"
         template_root = Path(gradio_routes.STATIC_TEMPLATE_LIB)
         overrides = {}

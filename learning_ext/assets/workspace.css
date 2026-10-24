@@ -523,3 +523,105 @@ h1::after,h2::before{display:none!important}.gradio-container p{line-height:1.85
 #le-center-col{min-width:0!important}
 }
 @media(max-width:600px){#le-left-col{grid-template-columns:minmax(0,1fr)}#le-project-picker,#le-course-picker{grid-column:1/-1}}
+
+/* ===== 学习路线页：历史路线区块 =====
+   老用户回来第一件事是找回上次的路线，所以这块从页面底部的折叠面板
+   提到标题下方，表格默认露出 5 行。 */
+#le-route-history{max-width:1300px;width:100%;margin:0 auto 4px!important;padding:20px 24px!important;gap:14px!important;background:#fff!important;border:1px solid #c8d3e0!important;border-radius:16px!important;box-shadow:0 3px 10px #263d5809!important}
+#le-route-history .le-history-head h2{margin:0 0 6px!important;font-size:19px!important;line-height:1.4;font-weight:650;color:#2b3a4d}
+#le-route-history .le-history-head p{margin:0!important;font-size:14px!important;line-height:1.7;color:#738095!important}
+#le-route-table{font-size:14px!important}
+#le-route-table button{font-size:13px!important}
+#le-route-actions{align-items:flex-end!important;gap:10px!important;margin-top:2px!important}
+#le-route-actions button{min-height:40px!important}
+#le-route-actions .block{min-width:0!important}
+@media(max-width:700px){#le-route-history{padding:16px 14px!important}#le-route-actions{flex-wrap:wrap!important}}
+/* 表格列宽固定，标题过长时换行而不是把表格撑出横向滚动 */
+#le-route-table table{table-layout:fixed!important;width:100%!important}
+#le-route-table th:nth-child(1),#le-route-table td:nth-child(1){width:58px!important}
+#le-route-table th:nth-child(3),#le-route-table td:nth-child(3){width:112px!important}
+#le-route-table th:nth-child(4),#le-route-table td:nth-child(4){width:172px!important}
+#le-route-table td:nth-child(2) .cell-wrap{white-space:normal!important;word-break:break-word;line-height:1.5}
+
+/* ===== 间隔复习：先选章节再开始 ===== */
+/* 三个控件要站在同一条底线上：章节下拉多带一行说明（info），会把自己的输入框
+   往下顶一截；所以让每个 block 的内容底部对齐，按钮再上提 10px（form 底部比
+   输入框底边多一圈内边距），三者才能严丝合缝。 */
+#le-review-scope{align-items:end!important}
+#le-review-scope>div{min-width:0!important}
+#le-review-scope>.form{align-items:flex-end!important}
+#le-review-scope .block{display:flex!important;flex-direction:column!important;justify-content:flex-end!important}
+#le-review-start{height:51px!important;min-height:51px!important;margin-bottom:10px!important;font-size:16px!important}
+/* 窄屏并排三个太挤（项目名会被压成几个字）：说明行收起来、两个下拉占满一行，
+   按钮落到第二行靠右。说明只是提示，宽屏看得见就够了。 */
+@media(max-width:1080px){
+  #le-review-scope{flex-wrap:wrap!important}
+  #le-review-scope>.form{flex:1 1 100%!important;align-items:flex-end!important}
+  #le-review-scope .block span+div:not(.wrap){display:none!important}
+  #le-review-scope .block{justify-content:flex-start!important}
+  #le-review-start{flex:0 0 auto!important;width:180px!important;margin-left:auto!important;margin-bottom:0!important}
+}
+#le-review-stats{margin:-4px 0 0!important;color:#5d7186!important}
+#le-review-stats p{margin:0!important;font-size:15px!important}
+#le-review-stats strong{color:#2f4761;font-size:17px!important}
+#le-review-actions{justify-content:flex-start!important;gap:10px!important;margin-top:4px!important}
+#le-review-actions>button{flex:0 0 auto!important;min-width:150px!important}
+#le-review-ratings button{min-height:46px!important}
+#le-review-card{min-height:150px!important;display:flex!important;align-items:center!important}
+#le-review-status p{margin:0!important;font-size:15px!important;color:#4a6486!important}
+
+/* 测验范围：四个选项排成两列，别把左栏拉太长 */
+#le-quiz-scope>div>div,#le-quiz-scope .wrap{display:grid!important;grid-template-columns:1fr 1fr!important;gap:6px 10px!important}
+#le-quiz-scope label{white-space:nowrap!important;font-size:14px!important}
+#le-quiz-scope input[type=radio]{margin-right:6px!important}
+
+/* 测验设置可收起：只留一个窄条和箭头 */
+#le-quiz-settings{position:relative!important}
+#le-quiz-toggle{
+  position:absolute!important;right:10px!important;top:10px!important;z-index:6!important;
+  width:26px!important;height:26px!important;min-width:26px!important;padding:0!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  border:1px solid #d5dfeb!important;border-radius:8px!important;background:#fff!important;
+  color:#5a6e85!important;cursor:pointer!important;transition:background .15s ease,color .15s ease
+}
+#le-quiz-toggle:hover{background:#eef4fb!important;color:#2b5488!important}
+#le-quiz-settings>#le-quiz-toggle{opacity:1!important;pointer-events:auto!important}
+
+#le-quiz-flow.le-quiz-collapsed{grid-template-columns:58px minmax(0,1fr)!important}
+#le-quiz-flow.le-quiz-collapsed #le-quiz-settings{
+  width:58px!important;min-width:58px!important;max-width:58px!important;
+  padding:10px 8px!important;overflow:hidden!important;align-items:center!important;gap:0!important
+}
+#le-quiz-flow.le-quiz-collapsed #le-quiz-settings>*{display:none!important}
+#le-quiz-flow.le-quiz-collapsed #le-quiz-settings>#le-quiz-toggle{
+  display:flex!important;position:static!important;margin:0 auto!important
+}
+#le-quiz-flow.le-quiz-collapsed #le-quiz-answer{min-width:0!important}
+#le-quiz-toggle .le-q-ico-right{display:none}
+#le-quiz-toggle.le-q-collapsed .le-q-ico-left{display:none}
+#le-quiz-toggle.le-q-collapsed .le-q-ico-right{display:block}
+
+/* 路线预览：summary 有时是一整段话，当 H1 会把版面撑成三行大字，压成小标题 */
+.le-route-result h1,
+#le-plan-preview .le-route-result h1{
+  font-size:18px!important;line-height:1.65!important;font-weight:600!important;
+  letter-spacing:0!important;margin:0 0 16px!important;color:#2a4058!important;
+  padding-bottom:12px!important;border-bottom:1px solid #e6edf5!important;
+}
+/* 「你当初提的需求」这一块单独给点底色，和下面的章节列表分开 */
+.le-route-result h4{
+  font-size:14px!important;font-weight:600!important;color:#5d7690!important;
+  margin:0 0 10px!important;padding:14px 16px 0!important;letter-spacing:.01em
+}
+.le-route-result ul{margin:0 0 4px!important}
+.le-route-result > ul:first-of-type{
+  padding:0 16px 14px!important;margin:0 0 18px!important;
+  border-bottom:1px dashed #e2eaf3!important
+}
+
+/* 没有课程时首页只留一张卡：单列、限宽，别横着拉满整屏 */
+.le-home-cards.le-home-cards-single{grid-template-columns:minmax(0,1fr);max-width:620px}
+@media(max-width:800px){.le-home-cards.le-home-cards-single{max-width:none}}
+
+/* 首页刷新桥：藏在屏幕外，只给 nav.js 点，不占版面 */
+#le-home-bridge{position:fixed!important;left:-200vw!important;top:0!important;width:1px!important;height:1px!important;overflow:hidden!important;margin:0!important;padding:0!important;opacity:0!important;pointer-events:none!important}

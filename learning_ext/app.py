@@ -188,8 +188,39 @@ class LearningApp(KotaemonApp):
             visible=visible,
             elem_classes=["fill-main-area-height", "scrollable"],
         ) as self._tabs["learning-guide-tab"]:
-            gr.HTML(welcome_html())
+            self.home_html = gr.HTML(welcome_html(self._has_any_course()))
             gr.HTML('<section class="le-start-guide"><div><h2>第一次用？跟着做就好。</h2><p>4 步认识学习流程，每次只看一步。</p></div><button data-le-tour-start>带我开始 →</button></section>')
+            # 藏在屏幕外的刷新桥：切回「学习首页」时由 nav.js 点一下，
+            # 重新判断有没有课程——没课程就不长「学习工作台」入口。
+            # 用桥而不是 Tabs 事件：Gradio 4.44 的 Tab.select / Tabs.change 前端都不派发。
+            with gr.Row(elem_id="le-home-bridge"):
+                self.home_refresh = gr.Button("刷新首页", elem_id="le-home-refresh")
+            self.home_refresh.click(
+                self._refresh_home_cards,
+                None,
+                [self.home_html],
+                show_progress="hidden",
+            )
+
+    def _has_any_course(self) -> bool:
+        """库里有没有任何课程节点。查不到时按「有」处理，宁可不藏也不误藏。"""
+        try:
+            from sqlmodel import Session, select
+
+            from ktem.db.engine import engine
+            from learning_ext.db.models import KnowledgeNode
+
+            with Session(engine) as s:
+                return s.exec(select(KnowledgeNode).limit(1)).first() is not None
+        except Exception:
+            logger.warning("判断是否已有课程失败，按有课程处理", exc_info=True)
+            return True
+
+    def _refresh_home_cards(self):
+        # 直接返回 HTML 字符串：gr.HTML 的新值就是这个字符串，
+        # 用 gr.update(value=...) 在前端不生效（实测点了没反应）。
+        has = self._has_any_course()
+        return welcome_html(has)
 
     def _register_extra_events(self):
         for page_attr in (

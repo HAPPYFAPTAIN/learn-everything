@@ -6,6 +6,9 @@
     #le-coach-composer   胶囊输入框 + 发送键（一直存在）
 
 没有内容时转写区收起，只剩居中的胶囊输入框。
+
+当前阶段：功能还在做，页面先换成「开发中」说明（见 coach_soon.py）。
+把 COMING_SOON 改成 False 就恢复原来的对话式 Agent。
 """
 
 from __future__ import annotations
@@ -20,8 +23,11 @@ from ktem.app import BasePage
 
 from learning_ext.agent import runtime
 from learning_ext.agent.tools import tool_titles
+from learning_ext.pages.coach_soon import coming_soon_html
 
 logger = logging.getLogger(__name__)
+
+COMING_SOON = True   # 开发中：只渲染说明页，原实现保留
 
 _PLACEHOLDER = "说说你卡在哪：我来接管电脑，一边做一边告诉你下一步点哪"
 
@@ -432,6 +438,11 @@ class CoachPage(BasePage):
 
     # ------------------------------------------------------------ UI
     def on_building_ui(self):
+        if COMING_SOON:
+            with gr.Column(elem_id="le-coach-soon-wrap"):
+                gr.HTML(coming_soon_html(), elem_id="le-soon")
+            self._outputs = []
+            return
         with gr.Column(elem_id="le-coach-root"):
             self.plan_html = gr.HTML("", elem_id="le-coach-plan")
             with gr.Column(elem_id="le-coach-scroll"):
@@ -466,6 +477,8 @@ class CoachPage(BasePage):
         ]
 
     def on_register_events(self):
+        if COMING_SOON:
+            return
         outputs = self._outputs
 
         self.send_btn.click(self._on_send, inputs=[self.input], outputs=outputs)

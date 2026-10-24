@@ -253,3 +253,102 @@
   }
   install();
 })();
+
+/* 测验设置面板的收起箭头：看题时收起来，让题目区变宽。
+   注意：paint 里绝不能改 innerHTML——那会触发下面这个 MutationObserver，
+   回调又调 paint，主线程直接死循环（踩过一次，整页卡死）。 */
+(function quizSettingsToggle(){
+  const KEY = 'le-quiz-settings-collapsed';
+  const ICONS =
+    '<svg class="le-q-ico-left" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>' +
+    '<svg class="le-q-ico-right" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
+
+  const collapsed = () => {
+    try { return localStorage.getItem(KEY) === '1'; } catch (e) { return false; }
+  };
+
+  function paint() {
+    const flow = document.getElementById('le-quiz-flow');
+    const btn = document.getElementById('le-quiz-toggle');
+    if (!flow || !btn) return;
+    const on = collapsed();
+    flow.classList.toggle('le-quiz-collapsed', on);
+    btn.classList.toggle('le-q-collapsed', on);
+    const label = on ? '展开测验设置' : '收起测验设置';
+    if (btn.title !== label) {
+      btn.title = label;
+      btn.setAttribute('aria-label', label);
+      btn.setAttribute('aria-expanded', String(!on));
+    }
+  }
+
+  function mount() {
+    const panel = document.getElementById('le-quiz-settings');
+    if (!panel) return false;
+    let btn = document.getElementById('le-quiz-toggle');
+    if (!btn) {
+      btn = document.createElement('button');
+      btn.id = 'le-quiz-toggle';
+      btn.type = 'button';
+      btn.innerHTML = ICONS;   // 只在这里写一次，paint 不碰
+      btn.addEventListener('click', () => {
+        try { localStorage.setItem(KEY, collapsed() ? '0' : '1'); } catch (e) {}
+        paint();
+      });
+      panel.appendChild(btn);
+    }
+    paint();
+    return true;
+  }
+
+  mount();
+  if (!document.getElementById('le-quiz-toggle')) {
+    let n = 0;
+    const timer = setInterval(() => { if (mount() || ++n > 60) clearInterval(timer); }, 300);
+  }
+  // 组件被 Gradio 重渲染后按钮会丢，补回去（只补不重画，避免自触发）
+  new MutationObserver(() => {
+    if (!document.getElementById('le-quiz-settings')) return;
+    if (document.getElementById('le-quiz-toggle')) paint(); else mount();
+  }).observe(document.documentElement, { childList: true, subtree: true });
+})();
+
+/* 开发中页面：一键复制反馈模板，用户粘给客服就行 */
+(function soonFeedback(){
+  const TEMPLATE = [
+    '【动手学 · 功能建议】',
+    '我最想用它练的场景：',
+    '（例如：用 Excel 做月度报表，每次都卡在数据透视表）',
+    '',
+    '最希望它做到：',
+    '（例如：我在第 3 步走错时当场提醒，而不是做完才说）',
+  ].join('\n');
+
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest && e.target.closest('[data-soon-copy]');
+    if (!btn) return;
+    const done = () => {
+      btn.textContent = '已复制，去粘给客服';
+      btn.classList.add('is-done');
+      setTimeout(() => {
+        btn.textContent = '复制反馈模板';
+        btn.classList.remove('is-done');
+      }, 2400);
+    };
+    const fallback = () => {
+      const ta = document.createElement('textarea');
+      ta.value = TEMPLATE;
+      ta.style.position = 'fixed';
+      ta.style.top = '-999px';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); done(); } catch (err) { btn.textContent = '请手动联系客服'; }
+      document.body.removeChild(ta);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(TEMPLATE).then(done).catch(fallback);
+    } else {
+      fallback();
+    }
+  });
+})();

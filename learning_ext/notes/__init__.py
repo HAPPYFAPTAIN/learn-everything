@@ -1,5 +1,6 @@
 """学习笔记与参考资料模块。"""
 
+from . import annotations
 from learning_ext.notes.service import (
     explain_term,
     fetch_preview,
@@ -18,4 +19,5 @@ __all__ = [
     "save_resources_to_db",
     "fetch_preview",
     "explain_term",
+    "annotations",
 ]

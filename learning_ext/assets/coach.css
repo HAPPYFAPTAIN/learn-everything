@@ -187,15 +187,16 @@
   margin: 0;
 }
 
+/* 对话头像只有 28px，用「脸部特写」版本才看得清表情（整身图在这个尺寸会糊） */
 .le-ai .le-avatar {
   flex: none;
   width: 28px;
   height: 28px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #3b669c, #5d88bf);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 600;
+  border-radius: 50%;
+  background: #f7fbfe url("__ASSETS__/coach-mascot-face.png") center / 96% no-repeat;
+  border: 1px solid #e3edf6;
+  color: transparent;
+  font-size: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -738,3 +739,149 @@
     max-height: 24vh;
   }
 }
+
+/* ================= 动手学 · 开发中说明页 ================= */
+#le-coach-soon-wrap{padding:0!important;background:transparent!important;border:0!important}
+
+#le-soon{
+  max-width:1000px!important;margin:0 auto!important;padding:36px 24px 56px!important;
+  font-family:var(--le-font,system-ui,sans-serif);color:#1f3348;
+  background:
+    radial-gradient(900px 320px at 50% -10%, #eef5fd 0%, transparent 70%);
+}
+
+/* ---- 头部 ---- */
+#le-soon .soon-head{text-align:center;margin:0 0 40px}
+#le-soon .soon-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:6px 14px;border-radius:999px;
+  background:#fdf5e8;border:1px solid #f0dfc2;color:#8a5f18;
+  font-size:13px;letter-spacing:.02em;
+}
+#le-soon .soon-badge i{
+  width:7px;height:7px;border-radius:50%;background:#e0a13c;
+  box-shadow:0 0 0 4px #f6e6c7;animation:soon-pulse 2.4s ease-in-out infinite;
+}
+@keyframes soon-pulse{0%,100%{opacity:1}50%{opacity:.35}}
+#le-soon .soon-head h1{
+  margin:18px 0 12px;font-size:42px;line-height:1.15;letter-spacing:-.02em;
+  font-weight:650;color:#16293c;
+}
+#le-soon .soon-lead{
+  margin:0 auto;max-width:560px;font-size:16.5px;line-height:1.85;color:#5c7086;
+}
+
+/* ---- 能力卡片 ---- */
+#le-soon .soon-grid{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:0 0 44px;
+}
+#le-soon .soon-card{
+  padding:22px 22px 20px;border:1px solid #e3ebf4;border-radius:16px;background:#fff;
+  box-shadow:0 1px 2px #24384f08,0 10px 26px -22px #24384f33;
+  transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+#le-soon .soon-card:hover{
+  transform:translateY(-2px);border-color:#cfdcec;
+  box-shadow:0 2px 4px #24384f0a,0 18px 34px -24px #24384f4d;
+}
+#le-soon .soon-ico{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:42px;height:42px;border-radius:12px;margin-bottom:14px;
+  background:#eef4fb;color:#2b5488;
+}
+#le-soon .soon-ico svg{width:21px;height:21px}
+#le-soon .soon-card h3{margin:0 0 8px;font-size:16.5px;font-weight:600;color:#1b2f43}
+#le-soon .soon-card p{margin:0;font-size:14px;line-height:1.85;color:#607387}
+
+/* ---- 区块标题 ---- */
+#le-soon .soon-sec-head{
+  display:flex;align-items:baseline;gap:14px;margin:0 0 20px;flex-wrap:wrap;
+}
+#le-soon .soon-sec-head h2{margin:0;font-size:20px;font-weight:600;color:#18293b;letter-spacing:-.01em}
+#le-soon .soon-sec-head span{font-size:13.5px;color:#8496a8}
+
+/* ---- 流程 ---- */
+#le-soon .soon-flow{margin:0 0 44px}
+#le-soon .soon-steps{
+  list-style:none;margin:0;padding:0;display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;
+}
+#le-soon .soon-steps li{
+  position:relative;padding:16px 14px 14px;border:1px solid #e3ebf4;border-radius:14px;
+  background:linear-gradient(180deg,#fbfdff,#f7fafd);
+}
+#le-soon .soon-steps li::after{
+  content:"";position:absolute;right:-7px;top:50%;width:6px;height:1px;background:#d7e2ee;
+}
+#le-soon .soon-steps li:last-child::after{display:none}
+#le-soon .soon-steps b{
+  display:inline-block;font-size:11.5px;font-weight:600;letter-spacing:.06em;
+  color:#8fa4b8;margin-bottom:8px;
+}
+#le-soon .soon-steps span{display:block}
+#le-soon .soon-steps strong{display:block;font-size:14.5px;font-weight:600;color:#1e3247;margin-bottom:5px}
+#le-soon .soon-steps em{display:block;font-style:normal;font-size:12.5px;line-height:1.7;color:#7c8fa3}
+
+/* ---- 在琢磨的想法 ---- */
+#le-soon .soon-ideas{margin:0 0 44px}
+#le-soon .soon-idea-list{
+  list-style:none;margin:0;padding:0;
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 28px;
+}
+#le-soon .soon-idea-list li{
+  position:relative;padding-left:20px;font-size:14px;line-height:1.8;color:#57697d;
+}
+#le-soon .soon-idea-list li::before{
+  content:"";position:absolute;left:5px;top:.72em;width:5px;height:5px;border-radius:50%;
+  background:#a9c0d6;
+}
+
+/* ---- 反馈 ---- */
+#le-soon .soon-cta{
+  display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;
+  padding:26px 28px;border-radius:18px;border:1px solid #d8e5f3;
+  background:linear-gradient(135deg,#f2f8ff 0%,#eef5fd 55%,#f7fbff 100%);
+}
+#le-soon .soon-cta-text{flex:1 1 420px;min-width:0}
+#le-soon .soon-cta h3{margin:0 0 8px;font-size:18px;font-weight:600;color:#16293c}
+#le-soon .soon-cta p{margin:0;font-size:14px;line-height:1.8;color:#5b7189}
+#le-soon .soon-cta-action{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+#le-soon .soon-btn{
+  padding:11px 20px;border-radius:10px;border:1px solid #2b5488;background:#2b5488;
+  color:#fff;font:inherit;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap;
+  transition:background .16s ease,transform .16s ease;
+}
+#le-soon .soon-btn:hover{background:#1f4370;transform:translateY(-1px)}
+#le-soon .soon-btn:active{transform:translateY(0)}
+#le-soon .soon-btn.is-done{background:#2f7a52;border-color:#2f7a52}
+#le-soon .soon-tip{font-size:12.5px;color:#7f93a8}
+
+/* ---- 底部 ---- */
+#le-soon .soon-foot{
+  display:flex;align-items:flex-start;gap:10px;margin:32px auto 0;max-width:760px;
+  font-size:12.5px;line-height:1.9;color:#93a4b6;
+}
+#le-soon .soon-foot span{flex:0 0 auto;color:#b7c6d4;margin-top:2px}
+#le-soon .soon-foot svg{width:14px;height:14px}
+
+/* ---- 窄屏 ---- */
+@media(max-width:860px){
+  #le-soon{padding:26px 16px 44px!important}
+  #le-soon .soon-head h1{font-size:32px}
+  #le-soon .soon-grid{grid-template-columns:1fr}
+  #le-soon .soon-steps{grid-template-columns:1fr 1fr}
+  #le-soon .soon-steps li::after{display:none}
+  #le-soon .soon-idea-list{grid-template-columns:1fr}
+  #le-soon .soon-cta{padding:20px}
+}
+
+/* 流程编号做成小方块徽章，比裸数字清楚 */
+#le-soon .soon-steps b{
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  width:26px!important;height:26px!important;border-radius:8px!important;
+  background:#eaf1f9!important;color:#5b7fa6!important;
+  font-size:11px!important;font-weight:600!important;letter-spacing:0!important;margin-bottom:10px!important;
+}
+#le-soon .soon-idea-list{align-items:start!important}
+#le-soon .soon-steps li{padding:15px 14px 15px!important}
+#le-soon .soon-tip{font-size:13px!important;color:#6d8298!important}

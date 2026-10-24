@@ -232,6 +232,24 @@ class NodeNote(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 
+class NodeAnnotation(SQLModel, table=True):
+    """正文里某句话的批注：原文快照 + 一句话笔记。
+
+    和 NodeNote 的区别：NodeNote 是整节一段总结，这里是一句一条，
+    带着原文，复习时能对回正文（正文被改写后靠 quote 匹配，匹配不上也不会丢）。
+    """
+
+    __tablename__ = "le_annotation"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: str = Field(default="default", index=True)
+    node_id: int = Field(foreign_key="le_knode.id", index=True)
+    project_id: int = Field(default=0, index=True)
+    quote: str = Field(default="", description="被批注的原文片段")
+    body: str = Field(default="", description="用户写的一句话批注")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
 class NodeResource(SQLModel, table=True):
     """知识点的参考资料 (AI 推荐 + 用户补充)"""
 
@@ -247,3 +265,32 @@ class NodeResource(SQLModel, table=True):
     preview: str = Field(default="", description="预览内容 (抓取的正文或摘要)")
     source: str = Field(default="ai", description="ai|user")
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class LessonGate(SQLModel, table=True):
+    """一节课的过关记录（学完 ≠ 学会）。
+
+    费曼学习法的门槛：讲不出来就不算学会。所以「已掌握」要先过两关：
+    速测答对、用自己的话讲一遍。这里存这两项的真实数据，不是标记位——
+    速测存最好成绩，复述存最后一段。阅读时长照旧累计，只做参考，不参与判定。
+    """
+
+    __tablename__ = "le_gate"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: str = Field(default="default", index=True)
+    node_id: int = Field(foreign_key="le_knode.id", index=True)
+    project_id: int = Field(default=0, index=True)
+
+    dwell_seconds: float = Field(default=0.0, description="本节累计阅读秒数")
+    quiz_correct: int = Field(default=-1, description="速测最好成绩，-1 表示没测过")
+    quiz_total: int = Field(default=3, description="速测题数")
+    quiz_at: Optional[datetime] = Field(default=None, description="速测时间")
+
+    recite_text: str = Field(default="", description="用户用自己的话复述的内容")
+    recite_passed: bool = Field(default=False, description="AI 是否认可讲清了")
+    recite_feedback: str = Field(default="", description="助教对复述的点评")
+
+    passed_at: Optional[datetime] = Field(default=None, description="过两关的时间")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)

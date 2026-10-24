@@ -4,6 +4,7 @@
    避免与其它固定定位规则硬碰。 */
 
 /* ---------- 悬浮球 ---------- */
+/* 图标是抠好的 Q 版人像（透明 PNG），圆形白底托住，避免深蓝底把水彩吃掉 */
 #le-assistant-fab {
   position: fixed;
   right: 28px;
@@ -11,29 +12,30 @@
   width: 58px;
   height: 58px;
   padding: 0;
-  border: 0;
+  border: 1px solid #dbe7f3;
   border-radius: 50%;
-  background: #365f98;
-  color: #fff;
-  font: 500 16px/1 var(--le-font);
-  letter-spacing: .06em;
+  background: #f7fbfe url("__ASSETS__/coach-mascot.png") center / 82% no-repeat;
+  color: transparent;
+  font-size: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: grab;
   z-index: 70;
-  box-shadow: 0 10px 26px #1d355829;
+  box-shadow: 0 8px 22px #1d355826, inset 0 0 0 2px #fff;
   touch-action: none;
-  transition: background .16s ease, transform .2s ease, box-shadow .16s ease, opacity .2s ease;
+  transition: background-color .16s ease, border-color .16s ease,
+    transform .2s ease, box-shadow .16s ease, opacity .2s ease;
 }
 #le-assistant-fab:hover {
-  background: #2f5588;
-  transform: translateY(-1px);
-  box-shadow: 0 12px 30px #1d355833;
+  background-color: #fff;
+  border-color: #c6dbee;
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 14px 30px #1d355833, inset 0 0 0 2px #fff;
 }
 #le-assistant-fab:focus-visible {
   outline: 2px solid #7e9fc9;
-  outline-offset: 2px;
+  outline-offset: 3px;
 }
 #le-assistant-fab.le-dragging {
   cursor: grabbing;
@@ -41,7 +43,8 @@
   transition: none;
 }
 #le-assistant-fab[aria-expanded="true"] {
-  background: #2b4f80;
+  background-color: #fff;
+  border-color: #b9d2e9;
 }
 
 /* 对话框打开时淡出并不可点（对话内容不受影响） */
@@ -50,7 +53,7 @@
   transform: scale(.72);
   pointer-events: none;
   visibility: hidden;
-  transition: background .16s ease, transform .2s ease, box-shadow .16s ease,
+  transition: background-color .16s ease, transform .2s ease, box-shadow .16s ease,
     opacity .2s ease, visibility 0s linear .2s;
 }
 /* 不在允许出现助教的页面时彻底收起 */

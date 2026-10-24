@@ -4,9 +4,15 @@ from __future__ import annotations
 
 import html
 import json
+from datetime import datetime
 import logging
 import re
-from learning_ext.presentation import project_display_name, project_choices, clean_heading_icons
+from learning_ext.presentation import (
+    project_display_name,
+    project_choices,
+    clean_heading_icons,
+    md_safe,
+)
 
 import gradio as gr
 from ktem.app import BasePage
@@ -18,9 +24,11 @@ from learning_ext.db.models import (
     KnowledgeNode,
     LearningProject,
     NodeResource,
+    QuizQuestion,
     Task,
 )
 from learning_ext.notes import (
+    annotations,
     explain_term,
     fetch_preview,
     generate_resources,
@@ -46,7 +54,10 @@ from learning_ext.progress.study import (
     regenerate_all_content,
     set_node_status,
 )
+from learning_ext.progress import gate
 from learning_ext.progress.audit import audit_node_content
+from learning_ext.llm.client import friendly_error
+from learning_ext.pages.adapt_panel import AdaptPanel
 
 logger = logging.getLogger(__name__)
 
@@ -115,7 +126,6 @@ class StudyWorkbenchPage(BasePage):
         )
         with gr.Row(elem_id="le-workbench-row"):
             with gr.Column(scale=1, min_width=200, elem_id="le-left-col"):
-                gr.HTML('<div class="le-course-strip-heading"><strong>当前学习</strong><span>选择项目和课程，继续你的进度</span></div>')
                 self.project_id = gr.Dropdown(
                     label="学习项目", choices=[], value=None, interactive=True, elem_id="le-project-picker"
                 )
@@ -127,10 +137,13 @@ class StudyWorkbenchPage(BasePage):
                     "选择课程后自动打开。完成阅读后，可在正文下方标记掌握情况。",
                     elem_classes=["le-caption"], elem_id="le-course-hint",
                 )
-                with gr.Accordion("项目与课程管理", open=False, elem_id="le-course-admin"):
+                with gr.Accordion("管理", open=False, elem_id="le-course-admin"):
                     with gr.Row():
                         self.refresh_btn = gr.Button("刷新项目", size="sm")
                         self.load_list_btn = gr.Button("刷新课程", size="sm")
+                    self.adapt_open_btn = gr.Button(
+                        "课程适配度调整", size="sm", elem_id="le-adapt-open"
+                    )
                     self.view_btn = gr.Button("重新载入当前课程", size="sm")
                     with gr.Accordion("环境配置", open=False, elem_id="le-env-setup"):
                         self.env_status = gr.Markdown("")
@@ -183,6 +196,8 @@ class StudyWorkbenchPage(BasePage):
                     interactive=True,
                     show_label=False,
                 )
+                # 学习节奏条：到期复习 / 今天学了多久 / 该做查漏了
+                self.rhythm_bar = gr.HTML("", elem_id="le-rhythm-bar")
                 with gr.Tabs(elem_id="le-content-tabs"):
                     with gr.TabItem("阅读", elem_id="le-lookup-zone"):
                         self.node_guide = gr.Markdown(
@@ -207,15 +222,21 @@ class StudyWorkbenchPage(BasePage):
                         self.gen_practice_btn = gr.Button("准备实践内容", size="sm")
                         self.gen_practice_status = gr.Markdown("")
                     with gr.TabItem("笔记", elem_id="le-note-zone"):
+                        gr.Markdown("### 我的总结")
                         self.note_input = gr.Textbox(
-                            label="我的理解",
-                            placeholder="用自己的话，记下这一节最重要的内容…",
-                            lines=12,
+                            label="用自己的话，记下这一节最重要的内容",
+                            show_label=False,
+                            placeholder="读完这一节，用两三句话说说你的理解…",
+                            lines=8,
                         )
                         self.save_note_btn = gr.Button(
-                            "保存笔记", variant="primary", size="sm"
+                            "保存总结", variant="primary", size="sm"
                         )
                         self.note_status = gr.Markdown("")
+                        # 正文里划词记下的批注，一条条列在这里
+                        self.annotation_md = gr.HTML(
+                            "", elem_id="le-annotation-list"
+                        )
                     with gr.TabItem("参考", elem_id="le-resource-zone"):
                         self.resources_md = gr.Markdown(RESOURCE_EMPTY_MD)
                         self.gen_resources_btn = gr.Button(
@@ -243,6 +264,65 @@ class StudyWorkbenchPage(BasePage):
                         "已掌握本节 ✓", variant="primary", size="sm"
                     )
                 self.action_status = gr.Markdown("")
+        # 过关检查弹窗：点「已掌握」没过时弹出。两关缺一条就不让标已掌握，
+        # 因为「看完了」和「学会了」是两件事。
+        # 放页面级而不是正文里：正文的有效区在最底下，放在那儿用户点了按钮
+        # 其实什么也看不见，还得自己往下翻。
+        with gr.Column(elem_id="le-gate-overlay", visible=False) as self.gate_panel:
+            with gr.Column(elem_id="le-gate-center"):
+                with gr.Column(elem_id="le-gate-modal"):
+                    with gr.Row(elem_id="le-gate-head"):
+                        gr.Markdown("### 过关检查", elem_id="le-gate-title")
+                        self.gate_skip_btn = gr.Button(
+                            "跳过本节", size="sm", elem_id="le-gate-skip"
+                        )
+                        self.gate_close_btn = gr.Button(
+                            "关闭", size="sm", elem_id="le-gate-close"
+                        )
+                    self.gate_check_md = gr.Markdown("", elem_id="le-gate-check-md")
+                    # 两块分标签页，而不是上下堆。堆在一起时「讲一遍」和「跳过」
+                    # 会被挤到弹窗滚动区外，用户根本不知道还有这两步。
+                    with gr.Tabs(elem_id="le-gate-tabs") as self.gate_tabs:
+                        with gr.Tab("① 速测", id="le-gate-tab-quiz"):
+                            self.gate_quiz_md = gr.Markdown(
+                                "", elem_id="le-gate-quiz-md"
+                            )
+                            with gr.Row(elem_id="le-gate-answers"):
+                                self.gate_ans1 = gr.Textbox(label="第 1 题", lines=1)
+                                self.gate_ans2 = gr.Textbox(label="第 2 题", lines=1)
+                                self.gate_ans3 = gr.Textbox(label="第 3 题", lines=1)
+                            with gr.Row(elem_id="le-gate-quiz-actions"):
+                                self.gate_submit = gr.Button(
+                                    "提交速测", size="sm", variant="primary"
+                                )
+                                self.gate_quiz_btn = gr.Button("换一组题", size="sm")
+                            self.gate_quiz_result = gr.Markdown(
+                                "", elem_id="le-gate-quiz-result"
+                            )
+                        with gr.Tab("② 讲一遍", id="le-gate-tab-recite"):
+                            gr.Markdown(
+                                "不看原文，用自己的话说清这一节在讲什么、为什么是这样。"
+                                "讲不出来，说明还没真懂。"
+                            )
+                            self.recite_input = gr.Textbox(
+                                label="你的复述",
+                                lines=4,
+                                placeholder="比如：这一节主要在说……，因为……，所以……",
+                                elem_id="le-gate-recite-input",
+                            )
+                            self.recite_btn = gr.Button(
+                                "让助教看看讲清楚没有", size="sm", variant="primary"
+                            )
+                            self.recite_feedback = gr.Markdown(
+                                "", elem_id="le-gate-recite-fb"
+                            )
+                    self.gate_quiz_state = gr.State([])
+                # 「跳过 / 已掌握」之后要自动进入的下一节
+                self.gate_next_id = gr.State(None)
+
+        # 课程适配度调整：点按钮弹出中号窗口
+        self.adapt_panel = AdaptPanel(self._app, self).build()
+
         # 选段改写的桥：前端把「选中了哪句话、要怎么改」写进这个隐藏输入框，
         # 再点一下隐藏按钮触发事件。Gradio 4.44 没有 visible="hidden"，
         # 所以用 CSS 把这一行挪出可视区（元素仍在 DOM 里，脚本才够得着）。
@@ -253,8 +333,30 @@ class StudyWorkbenchPage(BasePage):
             self.rewrite_trigger = gr.Button("改写", elem_id="le-rewrite-trigger")
         # 提示条必须放在隐藏行外面：那行是 opacity:0，放里面会跟着一起透明
         self.rewrite_note = gr.HTML("", elem_id="le-rewrite-note")
+        # 批注的桥：同一套做法（写值 → 点隐藏按钮）
+        with gr.Row(elem_id="le-anno-bridge"):
+            self.anno_payload = gr.Textbox(
+                value="", show_label=False, container=False, elem_id="le-anno-payload"
+            )
+            self.anno_trigger = gr.Button("批注", elem_id="le-anno-trigger")
+        # 学习时长：前端每 30 秒把「刚才停留的秒数」写进这个隐藏框再点隐藏按钮，
+        # 后端累加成 study_minutes。看板的「近 7 天学习」终于有真实数据了。
+        with gr.Row(elem_id="le-time-bridge"):
+            self.time_payload = gr.Textbox(
+                value="", show_label=False, container=False, elem_id="le-time-payload"
+            )
+            self.time_trigger = gr.Button("计时", elem_id="le-time-trigger")
+        # 节奏条上的「我先学，回头补」：同一套隐藏桥，记录今天已确认过
+        # 跳转后把页面拉回顶部：Gradio 事件的 js 在请求前跑，滚了也会被新内容顶回去，
+        # 所以用一个隐藏元素做信号，内容一变前端就去滚。
+        self.scroll_kick = gr.HTML("", elem_id="le-scroll-kick")
+        with gr.Row(elem_id="le-snooze-bridge"):
+            self.snooze_payload = gr.Textbox(
+                value="", show_label=False, container=False, elem_id="le-snooze-payload"
+            )
+            self.snooze_trigger = gr.Button("补", elem_id="le-snooze-trigger")
         # 备课轮询：正文还在写时，写好了自动替换，用户不用点任何按钮
-        self.prep_timer = gr.Timer(3.0, active=True)
+        self.prep_timer = gr.Timer(3.0, active=False)
 
     # ==================== 事件绑定 ====================
 
@@ -293,24 +395,54 @@ class StudyWorkbenchPage(BasePage):
             self.practice_md,
             self.note_input,
             self.resources_md,
+            self.annotation_md,
+            self.prep_timer,  # 只有真的在等备课才把轮询打开
         ]
         self.view_btn.click(
             fn=self._on_node_select,
             inputs=[self.course_drop],
             outputs=view_outputs,
+        ).then(
+            fn=self._refresh_rhythm,
+            inputs=[self.current_project_id],
+            outputs=[self.rhythm_bar],
         )
         self.course_drop.change(
             fn=self._on_course_change,
             inputs=[self.course_drop],
             outputs=view_outputs,
+        ).then(
+            fn=self._refresh_rhythm,
+            inputs=[self.current_project_id],
+            outputs=[self.rhythm_bar],
         )
 
         # 备课轮询：正文还在写 → 写好了自动替换（无需用户点按钮）
         # 注意：gr.Timer 的 tick 不会给事件传输入，所以这里不留 inputs，
         # 由页面自己记住「当前在等哪一节」。
+        # show_progress="hidden" 必须加：不加的话每 3 秒都会在正文组件上盖一层
+        # 半透明遮罩 + spinner，读文章时看着就是不停地闪。
         self.prep_timer.tick(
             fn=self._poll_writing,
-            outputs=[self.node_guide, self.practice_md],
+            outputs=[self.node_guide, self.practice_md, self.prep_timer],
+            show_progress="hidden",
+        )
+
+        # 课程适配度调整弹窗
+        self.adapt_panel.register(self.adapt_open_btn)
+
+        # 学习时长心跳
+        self.time_trigger.click(
+            fn=self._on_study_tick,
+            inputs=[self.current_node_id, self.current_project_id, self.time_payload],
+            outputs=None,
+            show_progress="hidden",
+        )
+        self.snooze_trigger.click(
+            fn=self._on_snooze,
+            inputs=[self.snooze_payload],
+            outputs=[self.rhythm_bar],
+            show_progress="hidden",
         )
 
         # 选段改写：前端把请求写进隐藏输入框后点这个按钮
@@ -318,6 +450,12 @@ class StudyWorkbenchPage(BasePage):
             fn=self._on_rewrite,
             inputs=[self.current_node_id, self.rewrite_payload],
             outputs=[self.node_guide, self.rewrite_note],
+        )
+        # 划词批注：新增 / 删除
+        self.anno_trigger.click(
+            fn=self._on_annotate,
+            inputs=[self.current_node_id, self.current_project_id, self.anno_payload],
+            outputs=[self.annotation_md, self.rewrite_note],
         )
 
         # 环境配置
@@ -438,16 +576,95 @@ class StudyWorkbenchPage(BasePage):
             inputs=[self.current_node_id],
             outputs=status_outputs,
         ).then(self._refresh_node_header, inputs=[self.current_node_id], outputs=[self.node_header])
+        # 「已掌握」不再是点一下就成：先过两关（测对、讲清）
         self.master_btn.click(
-            fn=lambda nid: self._set_status(nid, STATUS_MASTERED),
+            fn=self._try_master,
             inputs=[self.current_node_id],
-            outputs=status_outputs,
-        ).then(self._refresh_node_header, inputs=[self.current_node_id], outputs=[self.node_header])
+            outputs=[
+                self.node_header,
+                self.action_status,
+                self.progress_display,
+                self.course_drop,
+                self.gate_panel,
+                self.gate_check_md,
+                self.rhythm_bar,
+                self.gate_tabs,
+                self.gate_next_id,
+            ],
+        ).then(
+            fn=self._gate_auto_quiz,
+            inputs=[self.current_node_id, self.gate_quiz_state],
+            outputs=[self.gate_quiz_md, self.gate_quiz_state, self.gate_quiz_result],
+        ).then(
+            # 跳过 / 已掌握之后自动进下一节，不用再回上面点下拉
+            fn=self._goto_next_after_gate,
+            inputs=[self.gate_next_id],
+            outputs=[*view_outputs, self.course_drop, self.scroll_kick],
+        )
+        self.gate_quiz_btn.click(
+            fn=self._gate_make_quiz,
+            inputs=[self.current_node_id],
+            outputs=[self.gate_quiz_md, self.gate_quiz_state, self.gate_quiz_result],
+        )
+        self.gate_submit.click(
+            fn=self._gate_submit,
+            inputs=[
+                self.current_node_id,
+                self.gate_ans1,
+                self.gate_ans2,
+                self.gate_ans3,
+                self.gate_quiz_state,
+            ],
+            outputs=[
+                self.gate_quiz_result,
+                self.gate_check_md,
+                self.gate_tabs,
+            ],
+        )
+        self.recite_btn.click(
+            fn=self._gate_recite,
+            inputs=[self.current_node_id, self.recite_input],
+            outputs=[self.recite_feedback, self.gate_check_md],
+        )
+        self.gate_skip_btn.click(
+            fn=self._gate_skip,
+            inputs=[self.current_node_id],
+            outputs=[
+                self.node_header,
+                self.action_status,
+                self.progress_display,
+                self.course_drop,
+                self.gate_panel,
+                self.rhythm_bar,
+                self.gate_next_id,
+            ],
+        ).then(
+            fn=self._goto_next_after_gate,
+            inputs=[self.gate_next_id],
+            outputs=[*view_outputs, self.course_drop, self.scroll_kick],
+        )
+        self.gate_close_btn.click(
+            fn=lambda: gr.update(visible=False),
+            outputs=[self.gate_panel],
+        )
+        # 主页面这个「跳过本节」跟弹窗里的是同一个动作，也应该自动进下一节
         self.skip_btn.click(
-            fn=lambda nid: self._set_status(nid, STATUS_SKIPPED),
+            fn=self._gate_skip,
             inputs=[self.current_node_id],
-            outputs=status_outputs,
-        ).then(self._refresh_node_header, inputs=[self.current_node_id], outputs=[self.node_header])
+            outputs=[
+                self.node_header,
+                self.action_status,
+                self.progress_display,
+                self.course_drop,
+                self.gate_panel,
+                self.rhythm_bar,
+                self.gate_next_id,
+            ],
+        ).then(
+            fn=self._goto_next_after_gate,
+            inputs=[self.gate_next_id],
+            outputs=[*view_outputs, self.course_drop, self.scroll_kick],
+        )
 
         # 页面加载后自动初始化: 填充项目+课程+预加载第一节内容
         load_outputs = [
@@ -462,12 +679,18 @@ class StudyWorkbenchPage(BasePage):
             self.practice_md,  # 8: 实操课程
             self.note_input,  # 9: 笔记
             self.resources_md,  # 10: 参考资料
+            self.annotation_md,  # 11: 正文批注（刷新页面后不该消失）
+            self.prep_timer,  # 12: 备课轮询开关
         ]
         try:
             self._app.app.load(
                 fn=self._auto_init,
                 outputs=load_outputs,
                 js=WORD_LOOKUP_JS,
+            ).then(
+                fn=self._refresh_rhythm,
+                inputs=[self.current_project_id],
+                outputs=[self.rhythm_bar],
             )
         except Exception as e:
             logger.warning(f"demo.load 注册失败: {e}")
@@ -482,10 +705,8 @@ class StudyWorkbenchPage(BasePage):
         )
 
     def _build_progress_md(self, prog):
-        return (
-            f"**进度**: {prog['done']}/{prog['total']} ({prog['pct']}%)\n\n"
-            f"已掌握 {prog['done']} · 学习中 {prog['learning']} · 待学 {prog['pending']}"
-        )
+        # 工具条里只有一行，详细拆分留给看板
+        return f"**{prog['done']} / {prog['total']}** · 已掌握 {prog['done']}"
 
     def _build_nodes_data(self, session, pid):
         nodes = session.exec(
@@ -591,6 +812,8 @@ class StudyWorkbenchPage(BasePage):
                         "*本节暂无实操课程。*",
                         "",
                         RESOURCE_EMPTY_MD,
+                        self._annotation_empty(),
+                        self._timer_update(),
                     ]
                 pid = projs[0].id
                 dd_update = gr.update(
@@ -612,6 +835,7 @@ class StudyWorkbenchPage(BasePage):
                 practice_md = "*本节暂无实操课程。*"
                 note_content = ""
                 res_md = RESOURCE_EMPTY_MD
+                anno_html = self._annotation_empty()
                 if nodes_data:
                     first = nodes_data[0]
                     first_node_id = first["id"]
@@ -635,6 +859,11 @@ class StudyWorkbenchPage(BasePage):
                             res_md = self._ensure_resources_background(
                                 first_node_id, pid
                             )
+                        # 批注也要跟着预加载，否则刷新页面正文里的数字标会不见
+                        anno_html = annotations.render_html(
+                            annotations.list_for_node(s, first_node_id),
+                            node.description or "",
+                        )
                 # 选中第一个节点
                 course_update = gr.update(
                     choices=course_c,
@@ -657,6 +886,8 @@ class StudyWorkbenchPage(BasePage):
                     practice_md,  # 8: 实操课程
                     note_content,  # 9: 笔记
                     res_md,  # 10: 参考资料
+                    anno_html,  # 11: 正文批注
+                    self._timer_update(),  # 12: 备课轮询开关
                 ]
         except Exception as e:
             logger.exception("_auto_init 失败")
@@ -672,6 +903,8 @@ class StudyWorkbenchPage(BasePage):
                 "*本节暂无实操课程。*",
                 "",
                 RESOURCE_EMPTY_MD,
+                self._annotation_empty(),
+                self._timer_update(),
             ]
 
     # ---- 项目相关 ----
@@ -803,8 +1036,8 @@ class StudyWorkbenchPage(BasePage):
                 "*本节暂无实操课程。*",
                 "",
                 RESOURCE_EMPTY_MD,
-                [],
-                [],
+                self._annotation_empty(),
+                self._timer_update(),
             )
         try:
             nid = int(node_id)
@@ -816,8 +1049,8 @@ class StudyWorkbenchPage(BasePage):
                 "*本节暂无实操课程。*",
                 "",
                 RESOURCE_EMPTY_MD,
-                [],
-                [],
+                self._annotation_empty(),
+                self._timer_update(),
             )
 
         with Session(engine) as session:
@@ -830,6 +1063,8 @@ class StudyWorkbenchPage(BasePage):
                     "*本节暂无实操课程。*",
                     "",
                     RESOURCE_EMPTY_MD,
+                    self._annotation_empty(),
+                    self._timer_update(),
                 )
             proj = session.get(LearningProject, node.project_id)
             header = self._build_node_header(node, proj)
@@ -845,6 +1080,10 @@ class StudyWorkbenchPage(BasePage):
                 else self._ensure_resources_background(nid, node.project_id)
             )
             topic = proj.topic if proj else ""
+            # 批注列表：一句一条，guide 传原始正文用于判断「原文是否已被改动」
+            anno_html = annotations.render_html(
+                annotations.list_for_node(session, nid), guide
+            )
 
         logger.info(
             f"[工作台] 加载节点 [{node.code}] {node.title}, guide长度={len(guide)}"
@@ -854,11 +1093,32 @@ class StudyWorkbenchPage(BasePage):
         guide = self._truncate_guide(guide)
         logger.info(f"[工作台] 返回内容, guide长度={len(guide)}")
 
-        return nid, header, guide, practice_md, note_content, res_md
+        return (
+            nid,
+            header,
+            guide,
+            practice_md,
+            note_content,
+            res_md,
+            anno_html,
+            self._timer_update(),
+        )
+
+    def _timer_update(self):
+        """有章节正在后台备课才开轮询，否则关掉。
+
+        常驻轮询（active=True）会让 Gradio 每 3 秒跑一次事件、并在组件上
+        重绘一遍加载态，读文章时界面就一直闪。改成按需开关后，安静时零刷新。
+        """
+        return gr.update(active=self._pending_node is not None)
+
+    @staticmethod
+    def _annotation_empty() -> str:
+        return annotations.render_html([], "")
 
     def _on_course_change(self, node_id):
         if not node_id or node_id == "__stage__":
-            return tuple(gr.update() for _ in range(6))
+            return tuple(gr.update() for _ in range(8))
         return self._on_node_select(node_id)
 
     def _ensure_course_content(self, node_id: int, topic: str, guide: str | None) -> str:
@@ -937,21 +1197,23 @@ class StudyWorkbenchPage(BasePage):
         """
         nid = self._pending_node
         if not nid:
-            return gr.update(), gr.update()
+            # 没在等任何一节：顺手把轮询关掉，别让它在后台空转
+            return gr.update(), gr.update(), gr.update(active=False)
         try:
             with Session(engine) as session:
                 node = session.get(KnowledgeNode, int(nid))
                 if not node or not is_content_valid(node.description):
-                    return gr.update(), gr.update()
+                    return gr.update(), gr.update(), gr.update()
                 practice_md = self._render_practice_md(get_practice_task(session, int(nid)))
                 body = node.description or ""
         except Exception:
             logger.exception("读取备课结果失败")
-            return gr.update(), gr.update()
+            return gr.update(), gr.update(), gr.update()
         self._pending_node = None
         self._pending_nodes.pop(int(nid), None)
         logger.info("[工作台] node#%s 备课完成，自动替换正文", nid)
-        return self._truncate_guide(body), practice_md
+        # 写完了就把轮询关掉：留着它每 3 秒重绘一次正文，界面会闪
+        return self._truncate_guide(body), practice_md, gr.update(active=False)
 
     # ---- 选段改写 ----
     @staticmethod
@@ -1012,6 +1274,57 @@ class StudyWorkbenchPage(BasePage):
             self._truncate_guide(guide) if guide else gr.update(),
             self._toast(res.get("message") or "已更新。", ok=True, undo=action != "undo"),
         )
+
+    def _on_annotate(self, node_id, project_id, payload):
+        """阅读页划词记的一条批注：新增或删除。"""
+        try:
+            data = json.loads(payload or "{}")
+        except json.JSONDecodeError:
+            data = {}
+        action = str(data.get("action") or "add")
+
+        if not node_id:
+            return gr.update(), self._toast("先在左边选一节课程。", ok=False)
+        try:
+            nid = int(node_id)
+        except (TypeError, ValueError):
+            return gr.update(), self._toast("课程还没准备好，稍等再试。", ok=False)
+
+        try:
+            with Session(engine) as session:
+                if action == "del":
+                    ok = annotations.remove(session, int(data.get("id") or 0))
+                    msg = "已删除这条批注" if ok else "这条批注已经不在了"
+                elif action == "update":
+                    body = str(data.get("body") or "").strip()
+                    if not body:
+                        return gr.update(), self._toast("批注不能是空的。", ok=False)
+                    ok = annotations.update(
+                        session, int(data.get("id") or 0), body
+                    )
+                    msg = "已更新这条批注" if ok else "这条批注已经不在了"
+                else:
+                    quote = str(data.get("quote") or "").strip()
+                    body = str(data.get("body") or "").strip()
+                    if len(quote) < 2:
+                        return gr.update(), self._toast(
+                            "没拿到选中的文字，刷新页面再试一次。", ok=False
+                        )
+                    if not body:
+                        return gr.update(), self._toast("批注是空的，没保存。", ok=False)
+                    annotations.add(session, nid, project_id, quote, body)
+                    msg = "已记下这一条"
+
+                node = session.get(KnowledgeNode, nid)
+                html = annotations.render_html(
+                    annotations.list_for_node(session, nid),
+                    node.description if node else "",
+                )
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("批注操作失败 node#%s", node_id)
+            return gr.update(), self._toast(f"出错了：{type(exc).__name__}: {exc}", ok=False)
+
+        return html, self._toast(f"{msg} · 可在「笔记」里查看", ok=True)
 
     def _missing_course_content(self, brief: str | None) -> str:
         brief = (brief or "").strip()
@@ -1348,6 +1661,434 @@ class StudyWorkbenchPage(BasePage):
             project = session.get(LearningProject, node.project_id)
             return self._build_node_header(node, project)
 
+    def _on_snooze(self, payload):
+        """用户说「我先学，回头补」：今天不再拿欠复习提醒他。"""
+        try:
+            pid = int(str(payload or "").strip())
+        except (TypeError, ValueError):
+            return gr.update()
+        try:
+            with Session(engine) as s:
+                gate.snooze_today(s, pid)
+                return self._rhythm_html(s, pid)
+        except Exception:
+            logger.exception("记录「回头补」失败")
+            return gr.update()
+
+    def _on_study_tick(self, node_id, project_id, payload):
+        """前端心跳：把刚才的停留秒数记成学习时长。"""
+        try:
+            seconds = float(str(payload or "0").strip() or 0)
+        except (TypeError, ValueError):
+            return
+        if not node_id or not project_id or seconds <= 0:
+            return
+        minutes = round(min(seconds, 600) / 60.0, 2)
+        if minutes <= 0:
+            return
+        try:
+            from learning_ext.progress import record_study_time
+
+            with Session(engine) as s:
+                record_study_time(s, "default", int(project_id), int(node_id), minutes)
+                # 同一份心跳也累计到本节过关时长上，省一次前端请求。
+                # 上限和上面一致，防止切回标签页时一次性冲进一大段。
+                gate.add_dwell(s, int(node_id), min(seconds, 600))
+        except Exception:
+            logger.exception("记录学习时长失败")
+
+    def _make_cards_in_background(self, node_id: int, content: str) -> None:
+        """把刚学完的这一节提炼成复习卡（已有卡就跳过），后台跑。"""
+        import threading
+
+        def worker():
+            from learning_ext.db.models import Card
+            from learning_ext.fsrs_review.service import generate_cards_from_node
+
+            try:
+                with Session(engine) as s:
+                    has = s.exec(select(Card).where(Card.node_id == int(node_id))).first()
+                    if has:
+                        return
+                    node = s.get(KnowledgeNode, int(node_id))
+                    text = content or (node.description if node else "")
+                    cards = generate_cards_from_node(
+                        s, int(node_id), "default", text, count=5
+                    )
+                    logger.info("[工作台] node#%s 生成复习卡 %d 张", node_id, len(cards))
+            except Exception:
+                logger.exception("后台生成复习卡失败 node#%s", node_id)
+
+        threading.Thread(target=worker, name=f"le-cards-{node_id}", daemon=True).start()
+
+    # ---- 学习闭环门控：两关不过不给标已掌握 ----
+
+    def _gate_check_md(self, chk: dict) -> str:
+        """把两关状态写成人话，缺什么说清楚。"""
+
+        def mk(ok):
+            return "✓" if ok else "○"
+
+        quiz_txt = (
+            "还没测"
+            if chk["quiz_correct"] < 0
+            else f"{chk['quiz_correct']}/{chk['quiz_total']}"
+        )
+        lines = [
+            "#### 还差一点，先把这两关过了",
+            f"- {mk(chk['quiz_ok'])} **本节速测**：{quiz_txt}（至少答对 2 题）",
+            f"- {mk(chk['recite_ok'])} **复述**："
+            + ("助教认可讲清了" if chk["recite_ok"] else "还没通过"),
+        ]
+        if chk["recite_feedback"] and not chk["recite_ok"]:
+            lines.append(f"\n> 助教上次的点评：{chk['recite_feedback']}")
+        if not chk["passed"]:
+            lines.append("\n这两关都过了，再点一次「已掌握本节 ✓」。")
+        return "\n".join(lines)
+
+    def _rhythm_html(self, session, pid) -> str:
+        """顶部节奏条：到期多少、欠多久、今天学了多久、该不该查漏。"""
+        try:
+            r = gate.gate_rhythm(session, int(pid))
+            snoozed = gate.is_snoozed_today(session, int(pid))
+        except Exception:
+            logger.exception("读取学习节奏失败")
+            return ""
+        parts = []
+        if r["due_count"]:
+            overdue_days = int(r["overdue_hours"] // 24)
+            cls = "warn" if r["overdue_hours"] > 24 else "info"
+            txt = f"<b>{r['due_count']} 张卡到期</b>"
+            if overdue_days >= 1:
+                txt += f"，已经欠了 {overdue_days} 天"
+            parts.append(f'<span class="le-rhythm-item {cls}">{txt}</span>')
+            parts.append(
+                '<button type="button" class="le-rhythm-btn" '
+                'data-goto="learning-review-tab">去复习</button>'
+            )
+            if overdue_days >= 1 and not snoozed:
+                parts.append(
+                    f'<button type="button" class="le-rhythm-btn ghost" '
+                    f'data-snooze="{int(pid)}">我先学，回头补</button>'
+                )
+        else:
+            parts.append('<span class="le-rhythm-item quiet">暂无到期卡片，专心学</span>')
+        parts.append(
+            f'<span class="le-rhythm-item quiet">今天已学 {r["today_minutes"]} 分钟</span>'
+        )
+        try:
+            stage = gate.stage_due(session, int(pid))
+        except Exception:
+            stage = False
+        if stage:
+            parts.append(
+                '<span class="le-rhythm-item info">学到整数节，做一次查漏更稳</span>'
+                '<button type="button" class="le-rhythm-btn" '
+                'data-goto="learning-quiz-tab">去查漏</button>'
+            )
+        return '<div class="le-rhythm-inner">' + "".join(parts) + "</div>"
+
+    def _refresh_rhythm(self, pid):
+        """只刷新顶部节奏条。挂在切换课程之后，不动正文。"""
+        if not pid:
+            return ""
+        try:
+            with Session(engine) as s:
+                return self._rhythm_html(s, int(pid))
+        except Exception:
+            logger.exception("刷新节奏条失败")
+            return ""
+
+    def _try_master(self, node_id):
+        """点「已掌握」：先过两关。没过就展开检查面板，过了才真落状态。"""
+        if not node_id:
+            return (
+                gr.update(),
+                "⚠️ 请先选择课程",
+                gr.update(),
+                gr.update(),
+                gr.update(),
+                gr.update(),
+                gr.update(),
+                gr.update(),
+                gr.update(),
+            )
+        nid = int(node_id)
+        try:
+            with Session(engine) as s:
+                node = s.get(KnowledgeNode, nid)
+                if not node:
+                    raise ValueError("这一节不存在")
+                pid = node.project_id
+                chk = gate.check_gate(s, node)
+                if not chk["passed"]:
+                    return (
+                        gr.update(),
+                        "先把这两关过了，再标已掌握。",
+                        gr.update(),
+                        gr.update(),
+                        gr.update(visible=True),
+                        self._gate_check_md(chk),
+                        self._rhythm_html(s, pid),
+                        gr.update(
+                            selected=(
+                                "le-gate-tab-recite"
+                                if chk["quiz_ok"]
+                                else "le-gate-tab-quiz"
+                            )
+                        ),
+                        gr.update(),
+                    )
+            msg, prog, course = self._set_status(nid, STATUS_MASTERED)
+            with Session(engine) as s:
+                node = s.get(KnowledgeNode, nid)
+                gate.mark_passed(s, node)
+                proj = s.get(LearningProject, pid)
+                header = self._build_node_header(node, proj)
+                rhythm = self._rhythm_html(s, pid)
+                next_id = self._next_node_id(s, node)
+            tail = " 已跳到下一节。" if next_id else " 这一节是最后一节。"
+            return (
+                header,
+                msg + tail + " 速测和复述都过了，这一节才算真的学会。",
+                prog,
+                course,
+                gr.update(visible=False),
+                "",
+                rhythm,
+                gr.update(),
+                next_id,
+            )
+        except Exception as e:
+            logger.exception("过关检查失败")
+            return (
+                gr.update(),
+                f"❌ {e}",
+                gr.update(),
+                gr.update(),
+                gr.update(),
+                gr.update(),
+                gr.update(),
+                gr.update(),
+                gr.update(),
+            )
+
+    def _next_node_id(self, session, node):
+        """按编号顺序找下一节。已经是最后一节返回 None。"""
+        try:
+            rows = session.exec(
+                select(KnowledgeNode).where(
+                    KnowledgeNode.project_id == node.project_id
+                )
+            ).all()
+            ordered = sort_nodes_by_code(list(rows))
+            for i, n in enumerate(ordered):
+                if n.id == node.id:
+                    return ordered[i + 1].id if i + 1 < len(ordered) else None
+        except Exception:
+            logger.exception("查找下一节失败")
+        return None
+
+    def _goto_next_after_gate(self, next_id):
+        """跳过 / 已掌握之后直接翻到下一节，省得用户再回顶部点下拉。"""
+        n = 9  # view_outputs 8 项 + 课程下拉
+        if not next_id:
+            return tuple(gr.update() for _ in range(n)) + ("",)
+        try:
+            res = self._on_node_select(str(next_id))
+            if not isinstance(res, tuple):
+                res = tuple(res)
+            # 最后一项是滚动信号：内容变了前端才知道该滚回顶部
+            kick = f'<i data-kick="{int(datetime.now().timestamp() * 1000)}"></i>'
+            return res + (gr.update(value=str(next_id)), kick)
+        except Exception:
+            logger.exception("自动跳到下一节失败")
+            return tuple(gr.update() for _ in range(n)) + ("",)
+
+    def _gate_auto_quiz(self, node_id, items):
+        """弹窗一打开就把题出好——不该让用户先点一下才知道要考什么。
+
+        已经刷过题（items 非空）或这一节的速测已经过了，就不再花钱调模型。
+        """
+        if not node_id:
+            return gr.update(), items, gr.update()
+        try:
+            if items:
+                return gr.update(), items, gr.update()
+            with Session(engine) as s:
+                node = s.get(KnowledgeNode, int(node_id))
+                if not node:
+                    return gr.update(), items, gr.update()
+                chk = gate.check_gate(s, node)
+            if chk["quiz_ok"]:
+                return gr.update(), items, gr.update()
+        except Exception:
+            logger.exception("进入过关检查时读取状态失败")
+
+        return self._gate_make_quiz(node_id)
+
+    def _gate_skip(self, node_id):
+        """弹窗里也能直接跳过，不用先关窗再去找按钮。"""
+        if not node_id:
+            return (
+                gr.update(),
+                "⚠️ 请先选择课程",
+                gr.update(),
+                gr.update(),
+                gr.update(),
+                gr.update(),
+                gr.update(),
+            )
+        try:
+            nid = int(node_id)
+            msg, prog, course = self._set_status(nid, STATUS_SKIPPED)
+            with Session(engine) as s:
+                node = s.get(KnowledgeNode, nid)
+                proj = s.get(LearningProject, node.project_id) if node else None
+                header = self._build_node_header(node, proj) if node else gr.update()
+                rhythm = self._rhythm_html(s, node.project_id) if node else gr.update()
+                next_id = self._next_node_id(s, node) if node else None
+            return (
+                header,
+                msg + (" 已跳到下一节。" if next_id else " 这一节是最后一节。")
+                + " 跳过不计入进度，也不生成复习卡。",
+                prog,
+                course,
+                gr.update(visible=False),
+                rhythm,
+                next_id,
+            )
+        except Exception as e:
+            logger.exception("跳过本节失败")
+            return (
+                gr.update(),
+                f"❌ {e}",
+                gr.update(),
+                gr.update(),
+                gr.update(),
+                gr.update(),
+                gr.update(),
+            )
+
+    def _gate_make_quiz(self, node_id):
+        """给这一节出 3 道速测。"""
+        if not node_id:
+            return "先选一节课程。", [], ""
+        try:
+            from learning_ext.quiz.service import generate_quiz
+
+            with Session(engine) as s:
+                node = s.get(KnowledgeNode, int(node_id))
+                if not node:
+                    raise ValueError("这一节不存在")
+                quiz = generate_quiz(
+                    s,
+                    "default",
+                    [node.id],
+                    project_id=node.project_id,
+                    count=3,
+                    qtype="mixed",
+                )
+                rows = s.exec(
+                    select(QuizQuestion)
+                    .where(QuizQuestion.quiz_id == quiz.id)
+                    .order_by(QuizQuestion.id)
+                ).all()
+                items = [
+                    {
+                        "qtype": q.qtype,
+                        "stem": q.stem,
+                        "options": q.options or "",
+                        "answer": q.answer,
+                    }
+                    for q in rows
+                ]
+                title = node.title
+        except Exception as e:
+            logger.exception("出速测题失败")
+            return f"❌ 出题失败：{friendly_error(e)}", [], ""
+
+        if not items:
+            return "❌ 这次没出出题来，再试一次。", [], ""
+
+        blocks = [f"围绕「{title}」的 {len(items)} 道速测："]
+        for i, it in enumerate(items, 1):
+            blocks.append(f"**{i}. {md_safe(it['stem'])}**")
+            opts = []
+            try:
+                raw = json.loads(it["options"]) if it["options"] else []
+                opts = raw if isinstance(raw, list) else []
+            except Exception:
+                opts = []
+            if opts:
+                blocks.extend(f"　　{x}" for x in opts)
+        blocks.append("> 选择题填字母（如 B），填空和简答直接写关键词。")
+        return "\n\n".join(blocks), items, ""
+
+    def _gate_submit(self, node_id, a1, a2, a3, items):
+        """判速测，记最好成绩。"""
+        if not node_id or not items:
+            return "还没出题，稍等一下。", gr.update(), gr.update()
+        try:
+            result = gate.grade_quick(list(items), [a1, a2, a3])
+            with Session(engine) as s:
+                node = s.get(KnowledgeNode, int(node_id))
+                gate.mark_quiz(s, node.id, result["correct"], result["total"])
+                chk = gate.check_gate(s, node)
+            lines = [f"**速测 {result['correct']}/{result['total']}**"]
+            for i, d in enumerate(result["details"], 1):
+                lines.append(
+                    f"- 第 {i} 题 {'✅' if d['ok'] else '❌'}"
+                    + (f"　{d['note']}" if d["note"] else "")
+                )
+            passed = result["correct"] >= gate.RECITE_PASS_BRIEF
+            if passed:
+                lines.append("\n速测过了。接着把这一节用自己的话讲一遍。")
+            else:
+                lines.append(
+                    f"\n至少要对 {gate.RECITE_PASS_BRIEF} 题。回头翻一下正文，再测一次。"
+                )
+            return (
+                "\n".join(lines),
+                self._gate_check_md(chk),
+                gr.update(
+                    selected=(
+                        "le-gate-tab-recite" if passed else "le-gate-tab-quiz"
+                    )
+                ),
+            )
+        except Exception as e:
+            logger.exception("提交速测失败")
+            return (
+                f"❌ 判分失败：{friendly_error(e)}",
+                gr.update(),
+                gr.update(),
+            )
+
+    def _gate_recite(self, node_id, text):
+        """让助教判断复述是否讲清。"""
+        if not node_id:
+            return "先选一节课程。", gr.update()
+        if not (text or "").strip():
+            return "还没写呢。不看原文，用自己的话说两句。", gr.update()
+        try:
+            with Session(engine) as s:
+                node = s.get(KnowledgeNode, int(node_id))
+                if not node:
+                    raise ValueError("这一节不存在")
+                verdict = gate.judge_recite(node, text)
+                gate.save_recite(s, node, text, verdict)
+                chk = gate.check_gate(s, node)
+            head = "✅ 助教认为你讲清了。" if verdict["passed"] else "⬜ 还差点意思。"
+            fb = verdict.get("feedback") or ""
+            return (
+                f"{head}{fb}",
+                "" if chk["passed"] else self._gate_check_md(chk),
+            )
+        except Exception as e:
+            logger.exception("复述判定失败")
+            return f"❌ 判定失败：{friendly_error(e)}", gr.update()
+
     def _set_status(self, node_id, status):
         if not node_id:
             return (
@@ -1367,12 +2108,17 @@ class StudyWorkbenchPage(BasePage):
                     pids = [n.id for n in pending if n.id != nid]
                     if pids:
                         generate_summaries_background(pid, topic, pids)
+                body_for_cards = node.description or ""
+                if status == STATUS_MASTERED:
+                    # 学完就把它变成复习卡，否则「间隔复习」永远是空的，
+                    # 「学习 → 记住」这条路是断的。放到后台线程，别卡界面。
+                    self._make_cards_in_background(nid, body_for_cards)
                 prog = get_project_progress(s, pid)
                 progress_md = self._build_progress_md(prog)
                 nodes_data = self._build_nodes_data(s, pid)
             course_c = self._build_drop_choices(nodes_data)
             if status == STATUS_MASTERED:
-                msg = "🎉 已掌握！下一节内容正在后台生成。"
+                msg = "🎉 已掌握！复习卡正在后台生成，下一节也在准备中。"
             elif status == STATUS_LEARNING:
                 msg = "📖 已标记学习中。"
             else:

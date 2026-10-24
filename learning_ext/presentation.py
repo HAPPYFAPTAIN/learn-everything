@@ -16,14 +16,61 @@ def presentation_css():
 BRAND = f"""<header class="le-topbar"><div class="le-brand"><img src="/file={ASSETS.as_posix()}/aethermind-logo.png" alt="以太智元 AetherMind" width="479" height="150" /></div><div class="le-app-title">Learn Everything <span>/ 学习首页</span></div><span class="le-local">本地工作空间</span></header>"""
 
 
-def welcome_html():
-    return """<div class="le-home">
- <section class="le-home-intro"><span class="le-home-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6c-3-2-6-2-10-1v15c4-1 7-1 10 1 3-2 6-2 10-1V5c-4-1-7-1-10 1v15"/></svg> 专注于理解与掌握</span><h1>让每一次学习，都有方向。</h1><p>从一个好奇的问题开始，把知识变成自己的能力。</p></section>
- <div class="le-home-label"><h2>你的学习空间</h2><span>选好下一步，专注当下</span></div>
- <section class="le-home-cards" aria-label="开始学习">
-  <article class="le-home-card"><span class="le-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6c-3-2-6-2-10-1v15c4-1 7-1 10 1 3-2 6-2 10-1V5c-4-1-7-1-10 1v15"/></svg></span><span class="le-card-tag">学习工作台</span><h3>回到你的课程</h3><p>打开已有项目，继续阅读、实践和记录。遇到疑问时，随时向助教提问。</p><button data-le-nav="learning-workbench-tab">进入学习工作台 <span>→</span></button></article>
-  <article class="le-home-card secondary"><span class="le-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><span class="le-card-tag">新的开始</span><h3>探索一个新方向</h3><p>告诉 AI 你想学什么、已有的基础与目标，建立一条循序渐进的学习路线。</p><button data-le-nav="learning-path-tab">创建学习路线 <span>→</span></button></article>
- </section>
+_BOOK_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6c-3-2-6-2-10-1v15c4-1 7-1 10 1 3-2 6-2 10-1V5c-4-1-7-1-10 1v15"/></svg>'
+_PLUS_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>'
+
+
+def _workbench_card() -> str:
+    """有课程时才出现的入口：回到已有课程。"""
+    return (
+        f'<article class="le-home-card"><span class="le-card-icon">{_BOOK_ICON}</span>'
+        '<span class="le-card-tag">学习工作台</span><h3>回到你的课程</h3>'
+        "<p>打开已有项目，继续阅读、实践和记录。遇到疑问时，随时向助教提问。</p>"
+        '<button data-le-nav="learning-workbench-tab">进入学习工作台 <span>→</span></button></article>'
+    )
+
+
+def _path_card(primary: bool = False) -> str:
+    """建新路线。没有课程时它是唯一的卡，所以用主样式、文案也更直接。"""
+    if primary:
+        cls, tag = "le-home-card", "从零开始"
+        title = "先给自己建一条学习路线"
+        desc = "告诉 AI 你想学什么、已有的基础与目标。路线建好，学习工作台就会出现在这一页。"
+    else:
+        cls, tag = "le-home-card secondary", "新的开始"
+        title = "探索一个新方向"
+        desc = "告诉 AI 你想学什么、已有的基础与目标，建立一条循序渐进的学习路线。"
+    return (
+        f'<article class="{cls}"><span class="le-card-icon">{_PLUS_ICON}</span>'
+        f'<span class="le-card-tag">{tag}</span><h3>{title}</h3><p>{desc}</p>'
+        '<button data-le-nav="learning-path-tab">创建学习路线 <span>→</span></button></article>'
+    )
+
+
+def welcome_html(has_course: bool = True) -> str:
+    """学习首页。没有任何课程时只给「建路线」，课程出现后才长出工作台入口。"""
+    if has_course:
+        label = (
+            '<div class="le-home-label"><h2>你的学习空间</h2>'
+            "<span>选好下一步，专注当下</span></div>"
+        )
+        cards = (
+            f'<section class="le-home-cards" aria-label="开始学习">'
+            f"{_workbench_card()}{_path_card()}</section>"
+        )
+    else:
+        label = (
+            '<div class="le-home-label"><h2>还没有课程</h2>'
+            "<span>先建一条学习路线，工作台才会打开</span></div>"
+        )
+        cards = (
+            '<section class="le-home-cards le-home-cards-single" aria-label="开始学习">'
+            f"{_path_card(primary=True)}</section>"
+        )
+    return f"""<div class="le-home">
+ <section class="le-home-intro"><span class="le-home-badge">{_BOOK_ICON} 专注于理解与掌握</span><h1>让每一次学习，都有方向。</h1><p>从一个好奇的问题开始，把知识变成自己的能力。</p></section>
+ {label}
+ {cards}
  <section class="le-home-path" aria-label="学习流程"><div class="le-home-path-title"><h2>从理解，到真正掌握</h2><span>每一步，都知道接下来做什么</span></div><div class="le-home-steps">
   <div class="le-home-step"><span>01</span><div><h3>建立路线</h3><p>明确目标，拆解知识</p></div></div>
   <div class="le-home-step"><span>02</span><div><h3>深入学习</h3><p>阅读、实践与笔记</p></div></div>
@@ -157,3 +204,14 @@ def clean_heading_icons(markdown):
             line = re.sub(r"^(#{1,6}) +", r"\1 ", line)
         lines.append(line)
     return "\n".join(lines)
+
+
+def md_safe(text: str) -> str:
+    """展示用：把连续下划线转义掉。
+
+    Markdown 会把 `______` 当成强调/粗体语法吃掉，填空题的挖空就消失了
+    （四个环节依次是 、、、。 这种）。只改展示，不动存储。
+    """
+    import re as _re
+
+    return _re.sub(r"_{2,}", lambda m: "\\_" * min(len(m.group()), 12), text or "")

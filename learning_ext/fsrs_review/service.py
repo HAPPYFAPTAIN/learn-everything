@@ -23,7 +23,7 @@ from datetime import datetime, timezone
 from typing import List, Optional
 
 from sqlalchemy.orm import Session
-from sqlmodel import select
+from sqlmodel import func, select
 
 from learning_ext.db.models import Card, ReviewLog
 
@@ -166,10 +166,11 @@ def get_due_cards(
     user_id: str = "default",
     *,
     project_id: Optional[int] = None,
+    node_id: Optional[int] = None,
     now: Optional[datetime] = None,
     limit: int = 100,
 ) -> List[Card]:
-    """获取到期需要复习的卡片。"""
+    """获取到期需要复习的卡片。传 node_id 就只取这一节的。"""
     now = now or datetime.utcnow()  # naive UTC, 与 DB 存储一致
     stmt = (
         select(Card)
@@ -179,6 +180,8 @@ def get_due_cards(
     )
     if project_id is not None:
         stmt = stmt.where(Card.project_id == project_id)
+    if node_id is not None:
+        stmt = stmt.where(Card.node_id == node_id)
     stmt = stmt.order_by(Card.next_review.asc()).limit(limit)
     return list(session.exec(stmt).all())
 
@@ -187,21 +190,37 @@ def get_review_stats(
     session: Session,
     user_id: str = "default",
     project_id: Optional[int] = None,
+    node_id: Optional[int] = None,
 ) -> dict:
     """复习统计 (用于看板)。单次查询 + Python 聚合, 避免多次扫表。"""
     now = datetime.utcnow()  # naive UTC, 与 DB 存储一致
     stmt = select(Card).where(Card.user_id == user_id).where(Card.suspended == False)  # noqa: E712
     if project_id is not None:
         stmt = stmt.where(Card.project_id == project_id)
+    if node_id is not None:
+        stmt = stmt.where(Card.node_id == node_id)
     all_cards = list(session.exec(stmt).all())
     due = [c for c in all_cards if c.next_review <= now]
+    next_due = min((c.next_review for c in all_cards), default=None)
     return {
         "due_count": len(due),
         "total_cards": len(all_cards),
         "new_cards": sum(1 for c in due if c.state == _OUR_NEW),
         "learning_cards": sum(1 for c in due if c.state == 1),
         "review_cards": sum(1 for c in due if c.state in (2, 3)),
+        "next_due": next_due,
     }
+
+
+def cards_per_node(session: Session, project_id: int, user_id: str = "default") -> dict:
+    """每个知识点有几张卡：给「复习哪一节」下拉标数量用。"""
+    stmt = (
+        select(Card.node_id, func.count(Card.id))
+        .where(Card.user_id == user_id)
+        .where(Card.project_id == project_id)
+        .group_by(Card.node_id)
+    )
+    return {int(nid): int(n) for nid, n in session.exec(stmt).all() if nid}
 
 
 def generate_cards_from_node(

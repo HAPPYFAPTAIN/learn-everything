@@ -1,0 +1,148 @@
+diff --git a/libs/kotaemon/kotaemon/llms/chats/endpoint_based.py b/libs/kotaemon/kotaemon/llms/chats/endpoint_based.py
+index 5ab1835..e1241c2 100644
+--- a/libs/kotaemon/kotaemon/llms/chats/endpoint_based.py
++++ b/libs/kotaemon/kotaemon/llms/chats/endpoint_based.py
+@@ -52,9 +52,24 @@ class EndpointChatLLM(ChatLLM):
+             else:
+                 return "user"
+ 
+-        request_json = {
+-            "messages": [{"content": m.text, "role": decide_role(m)} for m in input_]
+-        }
++        def to_payload(message: BaseMessage):
++            return {"content": message.text, "role": decide_role(message)}
++
++        payloads = [to_payload(m) for m in input_]
++
++        # 空内容的 assistant 消息会被 DeepSeek 这类端点整单拒绝
++        # (Invalid assistant message: content or tool_calls must be set)，直接跳过
++        def _blank(content) -> bool:
++            if content is None:
++                return True
++            if isinstance(content, str):
++                return not content.strip()
++            return False  # 多模态等结构化内容原样保留
++
++        filtered = [
++            p for p in payloads if p["role"] != "assistant" or not _blank(p["content"])
++        ]
++        request_json = {"messages": filtered or payloads[-1:]}
+ 
+         response = requests.post(self.endpoint_url, json=request_json).json()
+ 
+diff --git a/libs/kotaemon/kotaemon/llms/chats/openai.py b/libs/kotaemon/kotaemon/llms/chats/openai.py
+index a1f8854..6e5ed86 100644
+--- a/libs/kotaemon/kotaemon/llms/chats/openai.py
++++ b/libs/kotaemon/kotaemon/llms/chats/openai.py
+@@ -20,6 +20,60 @@ if TYPE_CHECKING:
+     )
+ 
+ 
++def sanitize_messages(messages):
++    """最后一道校验：剔除 OpenAI 兼容端点会整单拒绝的消息。
++
++    DeepSeek 等端点遇到 content 与 tool_calls 同时为空的 assistant 消息时，会直接
++    返回 400 Invalid assistant message: content or tool_calls must be set。
++    引用问答、会话命名、追问建议等历史回放逻辑很容易带进这种占位消息；一旦发出，
++    后续每次请求都会失败，所以在真正发请求前统一兜底。
++    """
++
++    def is_empty(value) -> bool:
++        if value is None:
++            return True
++        if isinstance(value, str):
++            return not value.strip()
++        if isinstance(value, (list, tuple, dict, set)):
++            return len(value) == 0
++        return False
++
++    if not messages:
++        return messages
++
++    cleaned = []
++    for message in messages:
++        if isinstance(message, dict) and (
++            message.get("role") == "assistant"
++            and not message.get("tool_calls")
++            and is_empty(message.get("content"))
++        ):
++            continue
++        cleaned.append(message)
++
++    if not cleaned:
++        # 兜底：优先保留最后一条非 assistant 消息；实在没有就补一句中性提问，
++        # 总之不能把空 messages 或空 assistant 发出去
++        tail = next(
++            (
++                m
++                for m in reversed(messages)
++                if not (isinstance(m, dict) and m.get("role") == "assistant")
++            ),
++            None,
++        )
++        cleaned = [tail] if tail is not None else [{"role": "user", "content": "请继续。"}]
++
++    if len(cleaned) != len(messages):
++        import logging  # noqa: WPS433
++
++        logging.getLogger(__name__).warning(
++            "已丢弃 %d 条空 assistant 消息，避免端点整单拒绝",
++            len(messages) - len(cleaned),
++        )
++    return cleaned
++
++
+ class BaseChatOpenAI(ChatLLM):
+     """Base interface for OpenAI chat model, using the openai library
+ 
+@@ -156,7 +210,19 @@ class BaseChatOpenAI(ChatLLM):
+             input_ = messages
+ 
+         for message in input_:
+-            output_.append(message.to_openai_format())
++            payload = message.to_openai_format()
++            # 空内容的 assistant 消息会被 DeepSeek 等 OpenAI 兼容端点整单拒绝
++            # (400 Invalid assistant message: content or tool_calls must be set)。
++            # 对话历史里可能出现空回复（模型无输出、中断、占位对），这类消息直接跳过。
++            if payload.get("role") == "assistant" and not payload.get("tool_calls"):
++                content = payload.get("content")
++                if content is None or (isinstance(content, str) and not content.strip()):
++                    continue
++            output_.append(payload)
++
++        # 兜底：全部被过滤时保留最后一条，避免发出空 messages
++        if not output_ and input_:
++            output_.append(input_[-1].to_openai_format())
+ 
+         return output_
+ 
+@@ -308,6 +374,9 @@ class ChatOpenAI(BaseChatOpenAI):
+         if "tools_pydantic" in kwargs:
+             kwargs.pop("tools_pydantic")
+ 
++        if "messages" in kwargs:
++            kwargs["messages"] = sanitize_messages(kwargs["messages"])
++
+         params_ = {
+             "model": self.model,
+             "temperature": self.temperature,
+@@ -383,6 +452,9 @@ class StructuredOutputChatOpenAI(ChatOpenAI):
+         if "tools_pydantic" in kwargs:
+             kwargs.pop("tools_pydantic")
+ 
++        if "messages" in kwargs:
++            kwargs["messages"] = sanitize_messages(kwargs["messages"])
++
+         params_ = {
+             "model": self.model,
+             "temperature": self.temperature,
+@@ -469,6 +541,9 @@ class AzureChatOpenAI(BaseChatOpenAI):
+         if "tools_pydantic" in kwargs:
+             kwargs.pop("tools_pydantic")
+ 
++        if "messages" in kwargs:
++            kwargs["messages"] = sanitize_messages(kwargs["messages"])
++
+         params_ = {
+             "model": self.azure_deployment,
+             "temperature": self.temperature,

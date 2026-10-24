@@ -136,6 +136,29 @@
     observer.observe(document.body, { childList: true, subtree: true });
   }
 
+  // 切回「学习首页」时，点一下屏幕外的刷新桥，让后端重算「有没有课程」——
+  // 没有课程时首页不该出现「进入学习工作台」这个入口，建完路线回来才该出现。
+  // 走桥不依赖 Gradio 的 tab 事件：4.44 的 Tab.select / Tabs.change 前端都不派发。
+  function bindHomeRefresh() {
+    if (bindHomeRefresh.done) return;
+    bindHomeRefresh.done = true;
+    document.addEventListener(
+      'click',
+      (ev) => {
+        const el = ev.target;
+        if (!el || !el.closest) return;
+        const btn = el.closest('#le-app-tabs > .tab-nav > button');
+        if (!btn || !/学习首页/.test(btn.textContent || '')) return;
+        setTimeout(() => {
+          const trigger = document.getElementById('le-home-refresh');
+          if (trigger) trigger.click();
+        }, 80);
+      },
+      true
+    );
+  }
+  bindHomeRefresh();
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', boot, { once: true });
   } else {
