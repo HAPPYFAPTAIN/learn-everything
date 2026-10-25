@@ -1,0 +1,196 @@
+{
+  "deepseek": {
+    "file": "deepseek.svg",
+    "source": "https://github.com/lobehub/lobe-icons",
+    "package": "@lobehub/icons-static-svg@1.100.0",
+    "original": "deepseek-color.svg"
+  },
+  "qwen": {
+    "file": "qwen.svg",
+    "source": "https://github.com/lobehub/lobe-icons",
+    "package": "@lobehub/icons-static-svg@1.100.0",
+    "original": "bailian-color.svg"
+  },
+  "bigmodel": {
+    "file": "bigmodel.svg",
+    "source": "https://github.com/lobehub/lobe-icons",
+    "package": "@lobehub/icons-static-svg@1.100.0",
+    "original": "zhipu-color.svg"
+  },
+  "minimax": {
+    "file": "minimax.svg",
+    "source": "https://github.com/lobehub/lobe-icons",
+    "package": "@lobehub/icons-static-svg@1.100.0",
+    "original": "minimax-color.svg"
+  },
+  "kimi": {
+    "file": "kimi.svg",
+    "source": "https://github.com/lobehub/lobe-icons",
+    "package": "@lobehub/icons-static-svg@1.100.0",
+    "original": "kimi-color.svg"
+  },
+  "volcengine": {
+    "file": "volcengine.svg",
+    "source": "https://github.com/lobehub/lobe-icons",
+    "package": "@lobehub/icons-static-svg@1.100.0",
+    "original": "volcengine-color.svg"
+  },
+  "siliconflow": {
+    "file": "siliconflow.svg",
+    "source": "https://github.com/lobehub/lobe-icons",
+    "package": "@lobehub/icons-static-svg@1.100.0",
+    "original": "siliconcloud-color.svg"
+  },
+  "opencode": {
+    "file": "opencode.svg",
+    "source": "https://github.com/lobehub/lobe-icons",
+    "package": "@lobehub/icons-static-svg@1.100.0",
+    "original": "opencode.svg"
+  },
+  "openrouter": {
+    "file": "openrouter.svg",
+    "source": "https://github.com/lobehub/lobe-icons",
+    "package": "@lobehub/icons-static-svg@1.100.0",
+    "original": "openrouter.svg"
+  },
+  "openai": {
+    "file": "openai.svg",
+    "source": "https://github.com/lobehub/lobe-icons",
+    "package": "@lobehub/icons-static-svg@1.100.0",
+    "original": "openai.svg"
+  },
+  "gemini": {
+    "file": "gemini.svg",
+    "source": "https://github.com/lobehub/lobe-icons",
+    "package": "@lobehub/icons-static-svg@1.100.0",
+    "original": "gemini-color.svg"
+  },
+  "groq": {
+    "file": "groq.svg",
+    "source": "https://github.com/lobehub/lobe-icons",
+    "package": "@lobehub/icons-static-svg@1.100.0",
+    "original": "groq.svg"
+  },
+  "together": {
+    "file": "together.svg",
+    "source": "https://github.com/lobehub/lobe-icons",
+    "package": "@lobehub/icons-static-svg@1.100.0",
+    "original": "together-color.svg"
+  },
+  "mistral": {
+    "file": "mistral.svg",
+    "source": "https://github.com/lobehub/lobe-icons",
+    "package": "@lobehub/icons-static-svg@1.100.0",
+    "original": "mistral-color.svg"
+  },
+  "xai": {
+    "file": "xai.svg",
+    "source": "https://github.com/lobehub/lobe-icons",
+    "package": "@lobehub/icons-static-svg@1.100.0",
+    "original": "xai.svg"
+  },
+  "stepfun": {
+    "file": "stepfun.svg",
+    "source": "https://github.com/lobehub/lobe-icons",
+    "package": "@lobehub/icons-static-svg@1.100.0",
+    "original": "stepfun-color.svg"
+  },
+  "modelscope": {
+    "file": "modelscope.svg",
+    "source": "https://github.com/lobehub/lobe-icons",
+    "package": "@lobehub/icons-static-svg@1.100.0",
+    "original": "modelscope-color.svg"
+  },
+  "tencent-tokenhub": {
+    "file": "tencent-tokenhub.svg",
+    "source": "https://github.com/lobehub/lobe-icons",
+    "package": "@lobehub/icons-static-svg@1.100.0",
+    "original": "tencentcloud-color.svg"
+  },
+  "qiniu-ai": {
+    "file": "qiniu-ai.svg",
+    "source": "https://github.com/lobehub/lobe-icons",
+    "package": "@lobehub/icons-static-svg@1.100.0",
+    "original": "qiniu-color.svg"
+  },
+  "longcat": {
+    "file": "longcat.svg",
+    "source": "https://github.com/lobehub/lobe-icons",
+    "package": "@lobehub/icons-static-svg@1.100.0",
+    "original": "longcat-color.svg"
+  },
+  "xiaomi": {
+    "file": "xiaomi.svg",
+    "source": "https://github.com/lobehub/lobe-icons",
+    "package": "@lobehub/icons-static-svg@1.100.0",
+    "original": "xiaomimimo.svg"
+  },
+  "nvidia": {
+    "file": "nvidia.svg",
+    "source": "https://github.com/lobehub/lobe-icons",
+    "package": "@lobehub/icons-static-svg@1.100.0",
+    "original": "nvidia-color.svg"
+  },
+  "novita-ai": {
+    "file": "novita-ai.svg",
+    "source": "https://github.com/lobehub/lobe-icons",
+    "package": "@lobehub/icons-static-svg@1.100.0",
+    "original": "novita-color.svg"
+  },
+  "fireworks-ai": {
+    "file": "fireworks-ai.svg",
+    "source": "https://github.com/lobehub/lobe-icons",
+    "package": "@lobehub/icons-static-svg@1.100.0",
+    "original": "fireworks-color.svg"
+  },
+  "upstage": {
+    "file": "upstage.svg",
+    "source": "https://github.com/lobehub/lobe-icons",
+    "package": "@lobehub/icons-static-svg@1.100.0",
+    "original": "upstage-color.svg"
+  },
+  "friendli": {
+    "file": "friendli.svg",
+    "source": "https://github.com/lobehub/lobe-icons",
+    "package": "@lobehub/icons-static-svg@1.100.0",
+    "original": "friendli.svg"
+  },
+  "zenmux": {
+    "file": "zenmux.svg",
+    "source": "https://github.com/lobehub/lobe-icons",
+    "package": "@lobehub/icons-static-svg@1.100.0",
+    "original": "zenmux.svg"
+  },
+  "302ai": {
+    "file": "302ai.svg",
+    "source": "https://github.com/lobehub/lobe-icons",
+    "package": "@lobehub/icons-static-svg@1.100.0",
+    "original": "ai302-color.svg"
+  },
+  "ollama-cloud": {
+    "file": "ollama-cloud.svg",
+    "source": "https://github.com/lobehub/lobe-icons",
+    "package": "@lobehub/icons-static-svg@1.100.0",
+    "original": "ollama.svg"
+  },
+  "zai": {
+    "file": "zai.svg",
+    "source": "https://github.com/lobehub/lobe-icons",
+    "package": "@lobehub/icons-static-svg@1.100.0",
+    "original": "zai.svg"
+  },
+  "ollama": {
+    "file": "ollama.svg",
+    "source": "https://github.com/lobehub/lobe-icons",
+    "package": "@lobehub/icons-static-svg@1.100.0",
+    "original": "ollama.svg"
+  },
+  "scaleway": {
+    "file": "scaleway.svg",
+    "source": "https://www.scaleway.com/favicon/website/favicon.svg"
+  },
+  "custom": {
+    "file": "custom.svg",
+    "source": "Learn Everything generic connection icon"
+  }
+}

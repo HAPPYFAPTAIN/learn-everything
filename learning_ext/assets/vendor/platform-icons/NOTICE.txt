@@ -1,0 +1,4 @@
+Platform logos identify their respective providers; trademarks belong to their owners.
+Lobe Icons SVG assets: @lobehub/icons-static-svg 1.100.0 (MIT; see LICENSE-lobe-icons).
+Scaleway favicon: https://www.scaleway.com/favicon/website/favicon.svg
+See manifest.json for per-file sources. Brand shapes and colors are preserved.

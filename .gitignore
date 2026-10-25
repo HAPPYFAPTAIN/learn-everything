@@ -21,3 +21,10 @@ nul
 
 # 测试截图：本地留档，不进仓库（体积大且每次都能重拍）
 output/_shots/
+vendor/preview/
+output/zcode-upstream/
+
+# 运行时调试产物：截图/日志/临时库/模型目录快照，本地留档，不进仓库
+output/runtime/
+# 第三方图标包压缩件：可从上游重新获取，已解压进 assets/vendor/platform-icons
+output/icons-package.tgz
