@@ -20,6 +20,7 @@ from datetime import datetime
 from pathlib import Path
 
 from learning_ext.agent.safety import blocked_reason, needs_approval
+from learning_ext.agent.zcode_core import Capability, permission
 
 MAX_OUTPUT = 6000
 _REPO = Path(__file__).resolve().parents[2]
@@ -609,9 +610,19 @@ def _launch_app(target: str) -> str:
 
 _NO_ARGS = {"type": "object", "properties": {}}
 
+
+def _inspect_learning_environment(task):
+    from learning_ext.environment_agent.service import audited_exploration
+    if not isinstance(task, str) or not 1 <= len(task) <= 18000:
+        raise ValueError("请提供当前学习任务")
+    return json.dumps(audited_exploration(task), ensure_ascii=False)
+
 TOOLS: dict[str, ToolSpec] = {
     spec.name: spec
     for spec in [
+        ToolSpec("inspect_learning_environment", "根据当前学习任务探索本机的软件、终端命令和版本，只读检查并保留证据，不安装或修改配置。",
+                 {"type": "object", "properties": {"task": {"type": "string", "description": "学习目标、当前课节和已明确的工具要求"}}, "required": ["task"], "additionalProperties": False},
+                 _inspect_learning_environment),
         ToolSpec(
             "run_command",
             "在这台电脑上执行一条命令行（Windows 默认走 powershell）。可以装包、运行脚本、"
@@ -849,7 +860,9 @@ def build_tool_specs() -> list[dict]:
 
 def tool_needs_approval(name: str) -> bool:
     if name in TOOLS:
-        return needs_approval(name)
+        ask = needs_approval(name)
+        decision, _ = permission(Capability(read_only=not ask, scope="system" if ask else "none", needs_approval=ask), plan=False)
+        return decision != "allow"
     return True  # MCP 工具来源不可控，一律确认
 
 
@@ -877,6 +890,7 @@ def execute_tool(name: str, args: dict) -> str:
 def tool_titles() -> dict[str, str]:
     """给前端的中文名。"""
     return {
+        "inspect_learning_environment": "检查学习环境",
         "run_command": "执行命令",
         "list_dir": "列出目录",
         "read_file": "读取文件",

@@ -8,54 +8,35 @@
 from __future__ import annotations
 
 import logging
+import json
 import os
 import subprocess
 from typing import Iterator
 
 from learning_ext.llm import chat_json
+from learning_ext.agent.prompts import SETUP
+from learning_ext.environment_agent.service import audited_exploration
+from learning_ext.practice.environment import skip_reason
 
 logger = logging.getLogger(__name__)
 
-SYSTEM_PROMPT = """你是一位 Windows 环境配置专家。用户有一份学习环境配置清单，你的任务是把它转换成**可以在 Windows 命令行直接执行**的脚本。
-
-输出格式：严格返回一个 JSON 数组，每个元素是一条命令：
-[
-  {
-    "cmd": "实际执行的命令 (PowerShell 命令)",
-    "desc": "这条命令做什么 (中文一句话)",
-    "danger": "low | medium | high"
-  }
-]
-
-规则：
-1. 只输出真正必要的命令，跳过"可选"项
-2. 优先用 winget（Windows 包管理器）装软件，格式：winget install --id <ID> -e --accept-source-agreements --accept-package-agreements
-3. 常见软件 winget ID：Python=Python.Python.3.12, Node.js=OpenJS.NodeJS.LTS, Git=Git.Git, VSCode=Microsoft.VisualStudioCode, Docker=Docker.DockerDesktop, Rust=Rustlang.Rustup, Go=GoLang.Go, Java=EclipseAdoptium.Temurin.21.JDK
-4. 设置环境变量用 PowerShell: [Environment]::SetEnvironmentVariable('Name','Value','User')
-5. 创建目录: New-Item -ItemType Directory -Force -Path <path>
-6. danger=high 标记可能破坏现有环境的命令 (如卸载、覆盖系统变量)
-7. 如果清单是理论类主题无需环境配置，返回空数组 []
-8. 只返回 JSON，不要任何解释、不要 markdown 代码块标记"""
+SYSTEM_PROMPT = SETUP
 
 
 def generate_install_commands(
     env_checklist_md: str, background: str = ""
 ) -> list[dict]:
     """让 AI 把环境清单转成可执行命令列表。"""
-    prompt = f"""请把以下环境配置清单转换成 Windows 可执行命令。
-
-【学习者背景】{background or "未知"}
-
-【环境配置清单】
-{env_checklist_md}
-
-请输出命令 JSON 数组。"""
+    report = audited_exploration({"lesson": env_checklist_md, "background": background}, planner=chat_json)
+    prompt = json.dumps({"checklist": env_checklist_md, "background": background, "environment": report}, ensure_ascii=False)
     result = chat_json(prompt, system=SYSTEM_PROMPT)
-    if isinstance(result, list):
-        return result
     if isinstance(result, dict) and "commands" in result:
-        return result["commands"]
-    return []
+        result = result["commands"]
+    if not isinstance(result, list):
+        raise ValueError("配置方案格式无效，请重新生成。")
+    if any(not isinstance(item, dict) or not isinstance(item.get("cmd"), str) or not item["cmd"].strip() for item in result):
+        raise ValueError("配置方案包含无效命令。")
+    return [item for item in result if not skip_reason({"title": str(item.get("desc", "")), "action": item["cmd"]}, report)]
 
 
 def run_command_streaming(cmd: str) -> Iterator[str]:

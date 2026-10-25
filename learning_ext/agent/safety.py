@@ -22,7 +22,14 @@ APPROVAL_TOOLS = {
     "press_keys",
     "type_text",
     "launch_app",
+    "open_url",
+    "read_file",
+    "clipboard_get",
+    "screenshot",
 }
+
+READ_ONLY_TOOLS = {"inspect_learning_environment", "list_dir", "search_files", "system_info",
+                   "list_windows", "observe_screen", "read_ui", "update_plan"}
 
 # 无论是否自动模式，一律拒绝
 _BLOCKED = [
@@ -52,4 +59,4 @@ def blocked_reason(command: str) -> str | None:
 
 
 def needs_approval(tool_name: str) -> bool:
-    return tool_name in APPROVAL_TOOLS
+    return tool_name not in READ_ONLY_TOOLS

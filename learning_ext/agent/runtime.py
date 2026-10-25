@@ -20,6 +20,8 @@ from __future__ import annotations
 import json
 import logging
 import time
+import hashlib
+import uuid
 from typing import Iterator
 
 from learning_ext.agent.tools import (
@@ -27,29 +29,14 @@ from learning_ext.agent.tools import (
     execute_tool,
     tool_needs_approval,
 )
+from learning_ext.agent.prompts import DESKTOP_COACH
+from learning_ext.agent.zcode_core import TurnMachine
 
 logger = logging.getLogger(__name__)
 
 MAX_STEPS = 12
 
-SYSTEM_PROMPT = """你是「动手学」的陪练教练，跑在用户自己的 Windows 电脑上，可以直接操作这台电脑：看当前窗口、读界面控件、点鼠标、敲键盘、启动程序、跑命令、读写文件。
-
-你的价值不是替用户点完了事，而是「边做边教」：让用户看着你怎么做，知道下一步该点什么。
-
-每轮都按这个顺序：
-1. 先看。动手前调 observe_screen（必要时 read_ui / list_windows），别凭空猜用户屏幕上开着什么。
-2. 先给步骤。用 update_plan 推一份 3~6 步的清单，每步一句话、是他能照着做的动作。
-3. 逐步执行。每次只做一步：先用一句话说「我来做：…」，再调工具；做完看结果，用 update_plan 把 index 推到下一步。
-4. 边做边讲。每步结尾告诉他这一步在界面上的哪里、为什么这么点，让他下次能自己做。
-5. 用户自己动手时，你说清楚「点哪个位置、看到什么算成功」，等他说好了再继续。
-
-硬性要求：
-- 看不到画面像素。屏幕上的信息只能来自 observe_screen / read_ui / 命令输出，不要编造你没读到的东西。
-- 点按钮前先 read_ui 拿坐标，别盲点。
-- 删除、覆盖、改系统设置这类操作，先说清后果。
-- 用户拒绝你的操作时，别硬来，改成口头教他点哪里。
-- 中文，短句。每步不超过 3 行，命令放 ``` 里。不要说客套话，结尾直接给下一步。
-"""
+SYSTEM_PROMPT = DESKTOP_COACH
 
 _FAIL_MARKS = ("已拒绝", "执行出错", "未知工具", "MCP 调用失败", "参数不匹配", "写入失败", "读取系统信息失败")
 
@@ -63,12 +50,35 @@ class Session:
         self.pending: list[dict] | None = None
         # 当前展示在界面上的步骤清单：{"steps": [...], "index": int}
         self.plan: dict | None = None
+        self.id = uuid.uuid4().hex
+        self.machine = None
+        self.pending_digest = None
+        self.pending_payload = ""
+        self.pending_at = 0
+        self.task = None
+
+    def record(self, event, **details):
+        from learning_ext.action_learning.service import Journal
+        if self.machine:
+            details.setdefault("trace_id", self.machine.trace_id)
+            details.setdefault("turn_id", self.machine.turn_id)
+        Journal().record({"id": self.id, "node": None, "index": (self.plan or {}).get("index", 0)}, event, **details)
+
+    def begin(self):
+        self.machine = TurnMachine(self.id, self.record)
+        self.machine.transition("processing_input")
 
     # -- 便捷方法 -------------------------------------------------
     def reset(self) -> None:
+        self.record("agent_reset")
         self.messages = [{"role": "system", "content": SYSTEM_PROMPT}]
         self.pending = None
         self.plan = None
+        self.machine = None
+        self.pending_digest = None
+        self.pending_payload = ""
+        self.task = None
+        self.auto = False
 
     def compact(self, keep: int = 16) -> None:
         """历史太长时丢掉中间的工具往返，只保留 system 与最近若干条。"""
@@ -78,13 +88,7 @@ class Session:
         # 截断后首条不能是 tool（必须有对应的 assistant tool_calls）
         while tail and tail[0].get("role") == "tool":
             tail = tail[1:]
-        self.messages = [head] + tail
-
-
-def _client():
-    from learning_ext.llm.client import _get_client
-
-    return _get_client()
+        self.messages = [head] + ([self.task] if self.task and self.task not in tail else []) + tail
 
 
 def _model_stream(session: Session) -> Iterator[dict]:
@@ -92,23 +96,16 @@ def _model_stream(session: Session) -> Iterator[dict]:
 
     代理/上游偶发抽风时，只要还没吐出任何字就整轮重来（最多 2 次）。
     """
-    from learning_ext.llm.client import _load_config, _transient, friendly_error
+    from learning_ext.llm.client import _transient, friendly_error
 
-    client, cfg = _client()
+    from learning_ext.llm.client import stream_tool_response
     text = ""
     slots: dict[int, dict] = {}
     attempt = 0
     while True:
         emitted = False
         try:
-            stream = client.chat.completions.create(
-                model=cfg["chat_model"],
-                messages=session.messages,
-                tools=build_tool_specs(),
-                tool_choice="auto",
-                temperature=0.3,
-                stream=True,
-            )
+            stream = stream_tool_response(session.messages, build_tool_specs())
             for chunk in stream:
                 choices = getattr(chunk, "choices", None) or []
                 if not choices:
@@ -135,6 +132,8 @@ def _model_stream(session: Session) -> Iterator[dict]:
         except Exception as exc:  # noqa: BLE001
             if emitted or attempt >= 2 or not _transient(exc):
                 logger.exception("模型调用失败")
+                if session.machine:
+                    session.machine.fail(type(exc).__name__)
                 yield {"kind": "error", "message": friendly_error(exc)}
                 return "", []
             wait = 1.2 * (attempt + 1)
@@ -151,9 +150,15 @@ def _model_stream(session: Session) -> Iterator[dict]:
         try:
             parsed = json.loads(raw)
             if not isinstance(parsed, dict):
-                parsed = {}
+                raise ValueError("Tool arguments must be an object")
         except json.JSONDecodeError:
-            parsed = {}
+            session.record("agent_invalid_arguments", tool=slot["name"])
+            yield {"kind": "error", "message": "工具参数不完整，本轮没有执行操作。请重试。"}
+            return "", []
+        except ValueError:
+            session.record("agent_invalid_arguments", tool=slot["name"])
+            yield {"kind": "error", "message": "工具参数格式无效，本轮没有执行操作。"}
+            return "", []
         calls.append(
             {
                 "id": slot["id"] or f"call_{index}",
@@ -173,12 +178,14 @@ def _model_stream(session: Session) -> Iterator[dict]:
             }
             for c in calls
         ]
-    session.messages.append(message)
+    if text or calls:
+        session.messages.append(message)
     return text, calls
 
 
 def _execute(session: Session, calls: list[dict]) -> Iterator[dict]:
     for call in calls:
+        session.record("agent_tool_started", call_id=call["id"], tool=call["name"], arguments=call["args"])
         # 步骤清单不走工具执行器，直接改成界面事件
         if call["name"] == "update_plan":
             steps = [str(s) for s in (call["args"].get("steps") or []) if str(s).strip()]
@@ -197,6 +204,7 @@ def _execute(session: Session, calls: list[dict]) -> Iterator[dict]:
                 }
             )
             yield {"kind": "plan", "steps": steps, "index": index}
+            session.record("agent_plan_updated", count=len(steps), index=index)
             continue
 
         yield {
@@ -209,6 +217,8 @@ def _execute(session: Session, calls: list[dict]) -> Iterator[dict]:
         output = execute_tool(call["name"], call["args"])
         output = output or "（无输出）"
         spent = int((time.time() - started) * 1000)
+        session.record("agent_tool_completed", call_id=call["id"], tool=call["name"], elapsed_ms=spent,
+                       ok=not output.startswith(_FAIL_MARKS), output=output[:8000])
         session.messages.append(
             {"role": "tool", "tool_call_id": call["id"], "content": output[:8000]}
         )
@@ -229,22 +239,56 @@ def _drive(session: Session) -> Iterator[dict]:
             yield {"kind": "need_approval", "calls": session.pending}
             return
         yield {"kind": "step"}
+        session.machine.transition("awaiting_model_response")
         text, calls = yield from _model_stream(session)
-        if not calls:
+        if session.machine.phase == "error":
             return
-        if not session.auto and any(tool_needs_approval(c["name"]) for c in calls):
+        session.machine.transition("streaming")
+        if not calls:
+            session.machine.transition("completing")
+            return
+        session.machine.transition("scheduling_tools")
+        if sum(tool_needs_approval(c["name"]) for c in calls) > 1:
+            session.record("agent_batch_denied", reason="one_action_at_a_time", count=len(calls))
+            for call in calls:
+                session.messages.append({"role": "tool", "tool_call_id": call["id"], "content": "未执行：每次只请求一个需要授权的动作。"})
+            session.machine.transition("executing_tools")
+            session.machine.transition("aggregating_results")
+            session.machine.transition("completing")
+            yield {"kind": "notice", "text": "这次包含多个操作，尚未执行。请先确认当前的一步。"}
+            return
+        if any(tool_needs_approval(c["name"]) for c in calls):
             session.pending = calls
+            session.pending_at = time.monotonic()
+            session.pending_digest = _digest(calls)
+            session.pending_payload = json.dumps(calls, ensure_ascii=False)
+            session.machine.transition("awaiting_permission")
+            session.record("agent_approval_requested", calls=calls)
             yield {"kind": "need_approval", "calls": calls}
             return
+        session.machine.transition("executing_tools")
         yield from _execute(session, calls)
+        session.machine.transition("aggregating_results")
+    session.machine.transition("completing")
     yield {"kind": "notice", "text": f"已连续执行 {MAX_STEPS} 步，先停一下。要继续就说一声。"}
 
 
 def run(session: Session, text: str | None) -> Iterator[dict]:
+    if session.pending:
+        yield {"kind": "notice", "text": "还有操作等待确认，请先允许或拒绝。"}
+        return
     if text:
-        session.messages.append({"role": "user", "content": text})
+        message = {"role": "user", "content": text}
+        session.messages.append(message)
+        if session.task is None:
+            session.task = message
     session.compact()
+    session.begin()
     yield from _drive(session)
+
+
+def _digest(calls):
+    return hashlib.sha256(json.dumps(calls, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
 
 
 def approve(session: Session, allow: bool) -> Iterator[dict]:
@@ -253,6 +297,14 @@ def approve(session: Session, allow: bool) -> Iterator[dict]:
     if not calls:
         yield {"kind": "notice", "text": "没有待确认的操作。"}
         return
+    valid = session.pending_digest == _digest(calls) and time.monotonic() - session.pending_at <= 90
+    if not valid and session.pending_payload:
+        calls = json.loads(session.pending_payload)
+    session.pending_payload = ""
+    session.pending_digest = None
+    allow = bool(allow and valid)
+    session.record("agent_approval_resolved", allowed=allow, valid=valid)
+    session.machine.transition("executing_tools")
     if allow:
         yield from _execute(session, calls)
     else:
@@ -274,4 +326,9 @@ def approve(session: Session, allow: bool) -> Iterator[dict]:
                 "ok": False,
                 "denied": True,
             }
+    session.machine.transition("aggregating_results")
+    if not allow:
+        session.machine.transition("completing")
+        yield {"kind": "notice", "text": "本次操作未执行。你可以继续提问或亲自完成这一步。"}
+        return
     yield from _drive(session)
