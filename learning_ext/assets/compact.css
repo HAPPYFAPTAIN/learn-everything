@@ -1,0 +1,228 @@
+#le-app-tabs > .tabitem { padding-block: 18px !important; }
+.gradio-container .le-editorial-head { padding: 0 0 12px !important; margin: 0 0 14px !important; min-height: 54px !important; }
+.gradio-container .le-editorial-head .le-section-label { display: none !important; }
+.gradio-container .le-editorial-copy h1 { font-size: clamp(24px,2vw,30px) !important; margin: 0 !important; }
+.gradio-container .le-editorial-art { flex-basis: 80px !important; }
+.gradio-container .le-editorial-head .le-editorial-art:has(.le-illustration) { flex-basis: 80px !important; height: 50px !important; }
+.gradio-container .le-editorial-art :is(img,svg) { width: 72px !important; height: 50px !important; object-fit: contain; }
+#le-app-tabs :is(#le-review-flow,#le-quiz-flow) { gap: 16px !important; }
+#le-app-tabs :is(#le-review-settings,#le-review-session,#le-quiz-settings,#le-quiz-session,.le-dashboard-panel,.le-help-card) { padding: 18px !important; gap: 12px !important; }
+#le-app-tabs :is(.le-metrics,.le-dashboard-grid,.le-help-cards) { gap: 12px !important; }
+#le-app-tabs :is(.le-metric,.le-dashboard-next) { padding: 16px 18px !important; }
+#le-app-tabs .le-section-heading h2 { font-size: 20px !important; }
+#le-app-tabs :is(#le-review-flow,#le-quiz-flow,#le-settings-form) button:not(.le-polish-button):not(.le-polish-undo):not([role=option]) { min-height: 38px !important; }
+#le-app-tabs :is(#le-review-flow,#le-quiz-flow) .le-empty-state { min-height: 170px !important; padding: 24px 18px !important; }
+
+#le-guided-home { gap: 16px !important; margin-bottom: 16px !important; }
+#le-guided-home .le-discovery-hero { min-height: 220px !important; padding: 8px 0 !important; gap: 16px !important; }
+#le-guided-home .le-hero-copy h1 { font-size: clamp(32px,3.2vw,46px) !important; line-height: 1.22 !important; margin: 12px 0 !important; }
+#le-guided-home .le-hero-art { height: 220px !important; }
+#le-guided-home .le-hero-actions { margin-top: 16px !important; gap: 16px !important; }
+#le-guided-home .le-hero-actions button { min-height: 42px !important; padding: 11px 16px !important; }
+#le-guided-home #le-resume-row { padding: 9px 14px !important; margin: 0 !important; }
+#le-guided-home .le-discovery-heading { margin: 0 0 10px !important; }
+#le-guided-home .le-discovery-heading h2 { font-size: 21px !important; margin: 0 !important; }
+#le-guided-home #le-discovery-cards { gap: 12px !important; margin-bottom: 12px !important; }
+#le-guided-home .le-direction-art { height: 86px !important; }
+#le-guided-home .le-direction-art img { height: 100% !important; object-fit: contain; }
+#le-guided-home .le-direction-button { padding: 12px 16px !important; min-height: 78px !important; line-height: 1.65 !important; }
+#le-guided-home .le-direction-button:first-line { font-size: 17px; }
+#le-guided-home #le-onboarding-card { padding: 18px 20px !important; gap: 8px !important; }
+#le-guided-home #le-onboarding-topic textarea { min-height: 54px !important; padding: 10px 12px !important; }
+#le-guided-home #le-home-journey .le-onboarding-steps { margin-bottom: 14px !important; }
+
+#le-app-tabs #le-left-col { padding: 10px 14px !important; gap: 12px !important; }
+#le-app-tabs #le-rhythm-bar { margin-block: 0 !important; }
+#le-app-tabs #le-center-content { padding-block: 16px !important; }
+#le-app-tabs #le-center-content h1 { font-size: clamp(23px,2vw,30px) !important; margin-block: 6px 12px !important; }
+#le-app-tabs #le-center-content .le-lesson-heading { padding: 8px 0 12px !important; }
+#le-app-tabs #le-center-content .le-lesson-heading h2 { font-size: clamp(23px,2vw,30px) !important; margin: 8px 0 12px !important; }
+#le-app-tabs #le-center-col { padding: 18px 24px !important; gap: 10px !important; }
+#le-app-tabs #le-guide-md { padding-top: 12px !important; }
+#le-app-tabs #le-guide-md .prose > :first-child { margin-top: 8px !important; }
+#le-app-tabs #le-learning-mode { margin-block: 8px !important; padding: 10px 14px !important; }
+#le-app-tabs #le-content-tabs > .tab-nav { padding: 4px !important; }
+#le-app-tabs #le-content-tabs > .tab-nav > button { padding-block: 9px !important; min-height: 38px !important; }
+#le-app-tabs #le-course-admin.le-panel-current > div:last-child { gap: 4px !important; }
+#le-app-tabs #le-course-refresh-actions { gap: 4px !important; }
+#le-app-tabs #le-course-admin.le-panel-current :is(#le-course-refresh-actions button,#le-adapt-open,#le-course-reload) {
+  display: flex !important; align-items: center; justify-content: flex-start; text-align: left;
+  min-height: 38px !important; padding: 8px 10px !important; border: 0 !important;
+  background: transparent !important; box-shadow: none !important; border-radius: 9px !important;
+  font-size: 14px !important; font-weight: 600 !important;
+}
+#le-app-tabs #le-course-admin.le-panel-current :is(#le-course-refresh-actions button,#le-adapt-open,#le-course-reload):hover { background: #eef6f9 !important; }
+#le-app-tabs #le-course-admin.le-panel-current > div:last-child > .le-settings-entry { margin-top: 2px; }
+#le-app-tabs :is(#le-course-add,#le-course-maintenance,#le-project-settings).le-panel-current > div:last-child { gap: 10px !important; padding: 0 !important; }
+#le-app-tabs #le-course-add.le-panel-current :is(textarea,input) { min-height: 38px !important; padding: 9px 11px !important; font-size: 14px !important; }
+#le-app-tabs #le-course-add.le-panel-current textarea { resize: vertical; }
+#le-app-tabs #le-course-add.le-panel-current [data-testid=block-label] { font-size: 13px !important; margin-bottom: 6px !important; }
+#le-app-tabs #le-course-add.le-panel-current .form { min-width: 0 !important; }
+#le-app-tabs #le-course-add-basics { gap: 10px !important; flex-wrap: nowrap !important; }
+#le-app-tabs #le-course-add-actions { gap: 8px !important; flex-wrap: nowrap !important; padding-top: 8px; border-top: 1px solid #e6eef2; }
+#le-app-tabs #le-course-add-actions button { min-width: 0 !important; min-height: 38px !important; font-size: 14px !important; padding: 8px 12px !important; }
+
+#le-app-tabs #le-platform-layout { gap: 22px !important; align-items: start; }
+#le-app-tabs #le-platform-directory { gap: 10px !important; }
+#le-app-tabs #le-platform-directory h2 { font-size: 16px !important; margin: 0 !important; }
+#le-app-tabs #le-settings-form { padding: 20px 24px !important; gap: 12px !important; }
+#le-app-tabs #le-settings-form .le-platform-heading { padding-bottom: 12px !important; gap: 12px !important; }
+#le-app-tabs #le-settings-form .le-platform-heading h2 { font-size: 25px !important; }
+#le-app-tabs #le-settings-form .le-platform-mark { width: 42px !important; height: 42px !important; }
+#le-app-tabs #le-my-connections { padding: 10px 12px !important; }
+#le-app-tabs #le-settings-form .le-action-bar { gap: 8px !important; padding-top: 12px !important; }
+#le-app-tabs #le-settings-form :is(input,.wrap-inner) { min-height: 40px !important; font-size: 14px !important; }
+#le-app-tabs #le-settings-form .le-saved-summary { padding: 12px 14px !important; }
+#le-app-tabs #le-platform-filter { gap: 7px !important; }
+#le-app-tabs #le-platform-picker label { min-height: 52px !important; padding-block: 8px !important; }
+#le-app-tabs #le-settings-form .le-connection-return { margin-top: 0 !important; padding-top: 0 !important; }
+
+#le-app-tabs #le-dashboard-toolbar { padding: 12px 16px !important; }
+#le-app-tabs #le-dashboard-toolbar [data-testid=block-label] { margin-bottom: 5px !important; }
+#le-app-tabs #le-dashboard-charts { gap: 16px !important; }
+#le-app-tabs .le-metric .val { font-size: 30px !important; }
+#le-app-tabs .le-metric .lbl { margin-top: 8px !important; font-size: 13px !important; }
+#le-app-tabs .le-metric { display: flex !important; flex-direction: row !important; align-items: center; gap: 14px !important; padding-block: 12px !important; }
+#le-app-tabs .le-metric .lbl { margin: 0 !important; }
+#le-app-tabs .le-settings-entry[hidden] { display: none !important; }
+#le-app-tabs .le-dashboard-next { margin-bottom: 12px !important; }
+#le-app-tabs .le-distribution { margin-bottom: 16px !important; }
+#le-app-tabs .le-activity-chart { height: 180px !important; margin-top: 10px !important; }
+#le-app-tabs .le-activity-summary { padding-block: 6px !important; }
+#le-app-tabs #learning-dashboard-tab > div { gap: 12px !important; }
+#le-app-tabs #learning-dashboard-tab .block { min-height: 0 !important; }
+#le-app-tabs #le-dashboard-toolbar { margin-top: 0 !important; }
+#le-app-tabs #le-dashboard-toolbar > .block { display: flex; align-items: center; gap: 12px; }
+#le-app-tabs #le-dashboard-toolbar > .block > label { display: flex; align-items: center; gap: 12px; width: 100%; }
+#le-app-tabs #le-dashboard-toolbar > .block > label > span { flex: none; margin: 0 !important; }
+#le-app-tabs #le-dashboard-toolbar > .block > label > div { flex: 1; }
+#le-app-tabs .le-dashboard-next { margin-top: 0 !important; padding-block: 10px !important; }
+#le-app-tabs .le-distribution { margin-bottom: 10px !important; }
+#le-app-tabs .le-distribution > div:first-child { margin-bottom: 5px !important; }
+#le-app-tabs .le-status-bars { padding-block: 0 !important; gap: 6px !important; }
+#le-app-tabs #le-dashboard-charts > .le-dashboard-panel { gap: 8px !important; }
+#le-app-tabs #le-dashboard-charts .le-dashboard-panel > .block { flex-grow: 0 !important; }
+#le-app-tabs #le-dashboard-charts .prose { padding: 0 !important; }
+#le-app-tabs #le-dashboard-charts .prose p:empty { display: none; }
+#le-app-tabs #le-coach { gap: 12px !important; }
+#le-app-tabs #le-coach .coach-intro { padding-block: 0 !important; }
+#le-app-tabs #le-coach .coach-mascot { width: 64px !important; height: 64px !important; }
+#le-app-tabs #le-coach .coach-courses { gap: 10px !important; }
+#le-app-tabs #le-coach .coach-courses button { padding: 12px 14px !important; min-height: 66px !important; }
+#le-app-tabs #le-coach :is(.coach-instruction,.coach-stage) { padding: 18px !important; min-height: 0 !important; }
+#le-app-tabs #le-coach #coach-title { font-size: 23px !important; margin-block: 12px !important; }
+#le-app-tabs #le-coach .coach-intro h1 { font-size: 29px !important; margin: 4px 0 !important; }
+#le-app-tabs #le-coach .coach-intro p { margin: 0 !important; font-size: 14px !important; }
+#le-app-tabs #le-coach .coach-boundary { margin: 0 !important; }
+#le-app-tabs #le-coach .coach-stage-head { margin-bottom: 12px !important; }
+#le-app-tabs #le-coach .coach-field { margin-bottom: 10px !important; }
+#le-app-tabs #le-coach .coach-field textarea { min-height: 64px !important; }
+#le-guided-home .le-sample > summary { padding-block: 10px !important; }
+#le-guided-home .le-guided-footer { padding-block: 4px !important; margin: 0 !important; }
+#le-app-tabs #le-dashboard-reflection { border: 0 !important; padding: 0 !important; }
+#le-app-tabs #le-dashboard-reflection > button { min-height: 38px !important; padding: 9px 14px !important; }
+
+#le-app-tabs #le-planner { max-width: 1160px !important; margin: 0 auto !important; }
+#le-app-tabs #le-plan-preview { padding: 18px 20px !important; gap: 10px !important; }
+#le-app-tabs #le-plan-preview .le-preview-heading { padding-bottom: 10px !important; }
+#le-app-tabs #le-route-output .le-route-focus { padding: 12px 16px !important; margin: 0 !important; gap: 16px !important; }
+#le-app-tabs #le-route-output .le-route-metrics { padding: 12px 0 !important; margin: 0 !important; }
+#le-app-tabs #le-route-output .le-route-metrics strong { font-size: 25px !important; }
+#le-app-tabs #le-route-output .le-route-intro { margin-block: 0 !important; }
+#le-app-tabs #le-route-output .le-route-intro > summary { padding: 9px 12px !important; }
+#le-app-tabs #le-route-output .le-route-stage { margin: 0 !important; align-self: start; }
+#le-app-tabs #le-route-output details.le-route-stage { padding: 0 !important; }
+#le-app-tabs #le-route-output .le-route-stage > summary { padding: 12px !important; gap: 8px !important; }
+#le-app-tabs #le-route-output .le-stage-number { width: 30px !important; height: 30px !important; min-width: 30px !important; font-size: 13px !important; }
+#le-app-tabs #le-route-output .le-stage-title { font-size: 16px !important; }
+#le-app-tabs #le-route-output .le-stage-courses { margin: 0 !important; padding: 6px 10px !important; max-height: 340px; overflow-y: auto; scrollbar-width: thin; }
+#le-app-tabs #le-route-output .le-route-course { margin: 0 !important; }
+#le-app-tabs #le-route-output .le-route-course > summary { min-height: 42px !important; padding: 9px 4px !important; gap: 8px !important; }
+#le-app-tabs #le-open-saved-course { position: static !important; order: -1; min-height: 40px !important; margin: 0 !important; }
+#le-app-tabs #le-plan-preview > .le-settings-entry { align-self: start; width: auto !important; }
+#le-app-tabs #le-route-output .le-route-map { display: grid; gap: 12px; }
+@media (min-width:1200px) {
+  #le-app-tabs #le-route-output .le-route-map { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  #le-app-tabs #le-route-output .le-route-focus { grid-column: 1/3; }
+  #le-app-tabs #le-route-output .le-route-metrics { grid-column: 3; align-items: center; border: 0; }
+  #le-app-tabs #le-route-output .le-route-intro { grid-column: 1/-1; padding: 0 !important; }
+  #le-app-tabs #le-route-output .le-stage-current { display: none; }
+  #le-app-tabs #le-route-output .le-course-time { font-size: 11px !important; }
+}
+
+#le-app-tabs #indices-tab { padding-top: 12px !important; }
+#indices-tab .block:has(.le-editorial-head), #indices-tab .le-editorial-head { display: none !important; }
+#indices-tab .le-library-layout.le-notebook { grid-template-columns: minmax(210px,250px) minmax(300px,1fr) 200px; gap: 12px !important; }
+#indices-tab .le-notebook > :is(.le-library-collection,.le-notebook-reader,.le-notebook-studio) { padding: 16px !important; border-radius: 16px !important; min-height: 0 !important; }
+#indices-tab .le-notebook > .le-library-collection { flex-wrap: nowrap !important; overflow-x: hidden !important; }
+#indices-tab .le-notebook > .le-library-collection > :is(.tabs,.le-library-toolbar) { flex: 0 0 auto !important; width: 100%; min-width: 0 !important; }
+#indices-tab .le-notebook-panel-head { padding-bottom: 10px !important; }
+#indices-tab .le-notebook-panel-head h2 { font-size: 17px !important; }
+#indices-tab .le-notebook-panel-head > span { display: none; }
+#indices-tab .le-notebook .le-library-toolbar { display: grid !important; grid-template-columns: 1fr auto; gap: 8px !important; }
+#indices-tab .le-library-toolbar .le-library-new { grid-column: 1/-1; grid-row: 2; }
+#indices-tab .le-library-toolbar .le-library-kind { grid-column: 2; grid-row: 1; }
+#indices-tab .le-library-kind { width: auto !important; padding: 5px 7px !important; min-height: 30px !important; margin-left: auto; }
+#indices-tab .le-library-kind .le-entry-title { font-size: 12px; }
+#indices-tab .le-library-kind .le-entry-icon { display: none; }
+#indices-tab .le-library-nav.le-panel-current { margin: 0 !important; padding: 0 !important; }
+#indices-tab .le-library-nav.le-panel-current:not(.le-library-extensions-open) [role=tab] { display: flex !important; width: 100%; text-align: left; padding: 10px !important; }
+#indices-tab .le-library-nav.le-panel-current .le-library-switch { display: none !important; }
+#indices-tab .le-notebook .le-source-title h3 { font-size: 20px !important; margin: 10px 0 !important; }
+#indices-tab .le-notebook .le-source-actions { margin-top: 14px !important; padding-top: 12px !important; border-top: 1px solid #e6eef2; }
+#indices-tab .le-notebook-studio-intro { padding: 16px 0 !important; }
+#indices-tab .le-notebook-studio-intro h3 { margin-top: 12px !important; font-size: 16px !important; }
+#indices-tab .le-notebook-prompts { gap: 8px !important; }
+#indices-tab .le-notebook-prompts button { padding: 12px 10px !important; }
+#indices-tab .le-notebook-selection-note { display: none !important; }
+#indices-tab .le-notebook .le-source-chat { margin-top: 14px !important; }
+#indices-tab .le-notebook-empty { min-height: 320px !important; }
+#indices-tab .le-original-toolbar { padding: 5px 7px !important; }
+#indices-tab .le-extracted-content { margin-top: 10px !important; padding-top: 10px !important; }
+
+#le-app-tabs #chat-tab #main-chat-bot > .wrap:not(.error) { display: none !important; }
+#le-app-tabs #main-chat-bot .prose { opacity: 1 !important; color: #243f4d !important; font-size: 16px !important; line-height: 1.85 !important; }
+#le-app-tabs #main-chat-bot .le-answer-waiting { display: none !important; }
+#le-app-tabs #main-chat-bot .message-wrap { gap: 16px !important; }
+#le-app-tabs #chat-tab #le-composer { flex: 0 0 auto !important; margin-top: 0 !important; border-radius: 18px !important; }
+#le-app-tabs #chat-tab #le-composer #chat-input { padding: 12px 14px 0 !important; }
+#le-app-tabs #chat-tab #chat-input textarea { min-height: 46px !important; max-height: 160px !important; font-size: 16px !important; }
+#le-app-tabs #chat-tab .le-composer-tools { padding: 4px 14px 10px 50px !important; }
+#le-app-tabs #chat-tab .le-composer-tools button { padding: 6px 10px !important; }
+#le-app-tabs #chat-tab #le-chat-plus { bottom: 8px !important; }
+#le-chat-stream-status { display: flex; flex: none; align-items: center; gap: 8px; color: #3e7082; font: 600 13px/1.5 var(--le-ui-font); padding: 0 8px; min-height: 22px; }
+#le-chat-stream-status[hidden] { display: none !important; }
+#le-chat-stream-status i { width: 7px; height: 7px; background: #1499b7; border-radius: 50%; box-shadow: 0 0 0 4px #1499b715; animation: le-chat-breathe 1.5s ease-in-out infinite; }
+@keyframes le-chat-breathe { 50% { opacity: .45; } }
+@media (min-width:1050px) {
+  #indices-tab .le-notebook > :is(.le-library-collection,.le-notebook-reader) { height: calc(100dvh - 150px) !important; max-height: none !important; overflow-y: auto !important; overscroll-behavior: contain; scrollbar-width: thin; }
+  #indices-tab .le-notebook-studio { align-self: start; grid-column: auto !important; }
+  #indices-tab .le-notebook-studio-intro { display: block !important; }
+  #indices-tab .le-notebook-prompts { grid-template-columns: 1fr !important; margin-top: 0 !important; }
+  #indices-tab .le-original-canvas { max-height: calc(100dvh - 350px); }
+  #indices-tab .le-notebook .table-wrap { max-height: calc(100dvh - 330px) !important; }
+}
+@media (min-width:801px) and (min-height:600px) {
+  #le-app-tabs #chat-tab { height: calc(100dvh - 58px) !important; min-height: 0 !important; overflow: hidden !important; }
+  #le-app-tabs #chat-tab #chat-area { height: calc(100dvh - 146px) !important; min-height: 0 !important; padding: 0 4px 4px !important; gap: 10px !important; margin-top: 56px !important; }
+  #le-app-tabs #chat-tab #chat-area.le-chat-empty { justify-content: center !important; }
+  #le-app-tabs #chat-tab #chat-area:not(.le-chat-empty) #main-chat-bot { flex: 1 1 0 !important; min-height: 0 !important; height: 0 !important; overflow: hidden !important; }
+  #le-app-tabs #chat-tab #main-chat-bot > .wrapper { height: 100% !important; overflow: hidden !important; }
+  #le-app-tabs #chat-tab #main-chat-bot .bubble-wrap { height: 100% !important; overflow-y: auto !important; scrollbar-width: thin; overscroll-behavior: contain; padding: 12px 8px !important; }
+  #le-app-tabs #chat-tab #chat-area:not(.le-chat-empty) > #le-composer { position: relative !important; bottom: auto !important; }
+}
+@media (max-width:1049px) {
+  #indices-tab .le-library-layout.le-notebook { grid-template-columns: 220px minmax(0,1fr); }
+  #indices-tab .le-notebook-studio { grid-column: 1/-1; padding: 12px !important; }
+  #indices-tab .le-notebook-studio .le-notebook-panel-head { display: none; }
+}
+@media (max-width:760px) {
+  #le-app-tabs > .tabitem { padding-block: 12px !important; }
+  #le-guided-home .le-hero-art { display: none; }
+  #le-guided-home .le-discovery-hero { grid-template-columns: 1fr !important; min-height: 0 !important; }
+  #le-guided-home .le-hero-copy h1 { font-size: 32px !important; }
+  #indices-tab .le-library-layout.le-notebook { grid-template-columns: 1fr; }
+  #indices-tab .le-notebook-reader { max-height: none !important; }
+  #le-app-tabs #le-settings-form { padding: 16px !important; }
+}
+@media (prefers-reduced-motion:reduce) { #le-chat-stream-status i { animation: none; } }

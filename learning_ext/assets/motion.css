@@ -1,0 +1,65 @@
+.gradio-container {
+  --le-motion-fast: 140ms;
+  --le-motion-normal: 200ms;
+  --le-motion-slow: 280ms;
+  --le-ease: cubic-bezier(.22,1,.36,1);
+}
+#le-app-tabs > :is(.tabitem,[role=tabpanel]):not([hidden]),
+#le-chat-history[open] > section,#le-answer-references[open] > #chat-info-panel,
+#le-action-learning .le-action-card { animation: none !important; }
+#le-app-tabs :is(.le-settings-deck,#le-chat-flyout) .label-wrap.open + div { animation: none !important; }
+@media (prefers-reduced-motion:no-preference) {
+#le-app-tabs :is(button.primary,button.secondary,.le-settings-entry,#le-chat-model-trigger,.le-chat-starters button,.coach-courses button,#le-step-entry) {
+  transition: transform var(--le-motion-fast) var(--le-ease), box-shadow var(--le-motion-normal) var(--le-ease), background-color var(--le-motion-fast) ease, border-color var(--le-motion-fast) ease !important;
+}
+#le-discovery-cards > .le-direction-card,
+#le-coach .coach-courses button {
+  transition: transform var(--le-motion-normal) var(--le-ease), box-shadow var(--le-motion-normal) var(--le-ease), border-color var(--le-motion-fast) ease, background-color var(--le-motion-fast) ease !important;
+}
+#le-app-tabs :is(.le-illustration,.le-stage-chevron,.le-course-chevron,.le-entry-chevron) {
+  transition: transform var(--le-motion-normal) var(--le-ease) !important;
+}
+#le-app-tabs .le-settings-entry[aria-expanded=true] .le-entry-chevron { transform: rotate(90deg); }
+#le-app-tabs #le-chat-model-trigger[aria-expanded=true] .le-entry-chevron { transform: rotate(270deg) !important; }
+#le-app-tabs :is(.tab-nav button,.le-settings-deck button,#le-chat-tool-menu button,#le-platform-picker label,.le-platform-categories button,ul.options li[role=option]) {
+  transition: background-color var(--le-motion-fast) ease, border-color var(--le-motion-fast) ease, color var(--le-motion-fast) ease, box-shadow var(--le-motion-fast) ease !important;
+}
+#le-app-tabs :is(.le-resume-progress-track i,.le-wizard-track i,.le-plan-bar i),
+#le-app-tabs progress::-webkit-progress-value { transition: width var(--le-motion-slow) var(--le-ease) !important; }
+#le-app-tabs :is(#le-composer,.coach-field textarea,.coach-field input:not([type=range]),.block textarea) {
+  transition: border-color var(--le-motion-fast) ease, box-shadow var(--le-motion-fast) ease !important;
+}
+#le-app-tabs input[type=checkbox],#le-app-tabs input[type=radio] {
+  transition: border-color var(--le-motion-fast) ease, background-color var(--le-motion-fast) ease !important;
+}
+@media (hover:hover) and (pointer:fine) {
+  #le-app-tabs :is(button.primary,#le-step-entry):not(:disabled):hover { transform: translateY(-1px); }
+  #le-discovery-cards > .le-direction-card:hover { transform: translateY(-3px) !important; }
+  #le-discovery-cards > .le-direction-card:hover .le-illustration { transform: translateY(-2px) scale(1.015); }
+  #le-app-tabs .le-help-cards button:hover .le-illustration { transform: translateY(-2px); }
+  #le-app-tabs .le-chat-starters button:hover { transform: translateY(-2px); }
+}
+#le-app-tabs :is(button.primary,button.secondary,.le-settings-entry,#le-chat-model-trigger,.le-chat-starters button,.coach-courses button,#le-step-entry):not(:disabled):active {
+  transform: scale(.985) !important;
+  transition-duration: 70ms !important;
+}
+#le-app-tabs ul.options[role=listbox] {
+  transform-origin: top center;
+  animation: le-menu-enter 150ms var(--le-ease);
+}
+#le-app-tabs .label-wrap.open + div { animation: le-disclosure-enter 180ms var(--le-ease); }
+@keyframes le-disclosure-enter {
+  from { opacity: .4; transform: translateY(-3px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes le-menu-enter {
+  from { opacity: .3; transform: translateY(-3px) scale(.99); }
+  to { opacity: 1; transform: none; }
+}
+}
+@media (prefers-reduced-motion:reduce) {
+  #le-app-tabs :is(button,.le-direction-card,.le-illustration,.le-entry-chevron,.le-stage-chevron,.le-course-chevron,.le-resume-progress-track i,.le-wizard-track i,input,textarea,ul.options li),
+  #le-app-tabs progress::-webkit-progress-value { transition: none !important; }
+  #le-app-tabs :is(button.primary,#le-step-entry,.le-direction-card,.le-illustration,.le-chat-starters button,.coach-courses button):is(:hover,:active) { transform: none !important; }
+  #le-app-tabs ul.options[role=listbox],#le-app-tabs .label-wrap.open + div { animation: none !important; }
+}

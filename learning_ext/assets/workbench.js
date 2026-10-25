@@ -44,17 +44,61 @@
 })();
 
 (() => {
-  let signature='', targets=[];
+  const SMALL_KEY='le.toc.mobileOpen';
+  let signature='', targets=[], observedOpen=null, desktop=innerWidth>1000, currentFrame=0;
+  function storedSmallOpen(){
+    try{const value=localStorage.getItem(SMALL_KEY);return value===null?null:value==='1';}catch(e){return null;}
+  }
+  function setOpen(nav,open){observedOpen=open;nav.open=open;}
+  function syncViewport(nav,force=false){
+    const next=innerWidth>1000;
+    if(!force&&next===desktop)return;
+    desktop=next;
+    setOpen(nav,desktop||storedSmallOpen()===true);
+  }
+  function bindOutline(nav){
+    observedOpen=nav.open;
+    nav.addEventListener('toggle',()=>{
+      const open=nav.open;
+      if(open===observedOpen)return;
+      observedOpen=open;
+      if(innerWidth<=1000){try{localStorage.setItem(SMALL_KEY,open?'1':'0');}catch(e){}}
+    });
+  }
+  function markCurrent(button){
+    document.querySelectorAll('[data-lesson-section]').forEach(b=>b.setAttribute('aria-current',b===button?'location':'false'));
+  }
+  function updateCurrent(){
+    currentFrame=0;
+    const guide=document.querySelector('#le-guide-md');
+    if(!guide||!guide.getClientRects().length)return;
+    const buttons=[...document.querySelectorAll('#le-lesson-outline [data-lesson-section]')];
+    if(!targets.length||buttons.length!==targets.length)return;
+    const offset=innerWidth<=800?140:180;
+    let index=0;
+    targets.forEach((h,i)=>{if(h.getBoundingClientRect().top<=offset)index=i;});
+    markCurrent(buttons[index]);
+  }
+  function scheduleCurrent(){
+    if(!currentFrame)currentFrame=requestAnimationFrame(updateCurrent);
+  }
   function update(){
     const row=document.querySelector('#le-workbench-row'),guide=document.querySelector('#le-guide-md');
     if(!row||!guide)return;
     if(window.__leFoldAnswers) window.__leFoldAnswers(guide);
     if(window.__leMaybeOpenContentTools) window.__leMaybeOpenContentTools(guide);
     let nav=document.querySelector('#le-lesson-outline');
-    if(!nav){nav=document.createElement('details');nav.id='le-lesson-outline';nav.open=innerWidth>1000;nav.innerHTML='<summary>本节目录</summary><nav aria-label="本节章节"></nav><p>选中文字，可随时查看解释。</p>';row.insertBefore(nav,document.querySelector('#le-center-col'));}
+    if(!nav){
+      nav=document.createElement('details');nav.id='le-lesson-outline';nav.open=innerWidth>1000;
+      nav.innerHTML='<summary>本节目录</summary><nav aria-label="本节章节"></nav>';
+      row.insertBefore(nav,document.querySelector('#le-center-col'));
+      bindOutline(nav);
+      syncViewport(nav,true);
+    }
     const headings=[...guide.querySelectorAll('h2')];
     const next=headings.map(h=>h.textContent).join('|');
     targets=headings;
+    scheduleCurrent();
     if(next===signature&&nav.querySelector('nav').children.length)return;
     signature=next;const list=nav.querySelector('nav');list.replaceChildren();
     headings.forEach((h,i)=>{const b=document.createElement('button');b.type='button';b.textContent=h.textContent;b.dataset.lessonSection=i;list.append(b);});
@@ -66,9 +110,11 @@
     const h=targets[Number(button.dataset.lessonSection)];
     let tries=0;
     function jump(){if(h&&!h.getClientRects().length&&tries++<30){requestAnimationFrame(jump);return;}
-    if(h){h.setAttribute('tabindex','-1');h.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});h.focus({preventScroll:true});document.querySelectorAll('[data-lesson-section]').forEach(b=>b.setAttribute('aria-current',b===button?'location':'false'));}}
+    if(h){h.setAttribute('tabindex','-1');h.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});h.focus({preventScroll:true});markCurrent(button);}}
     requestAnimationFrame(jump);
   });
+  window.addEventListener('scroll',scheduleCurrent,{passive:true});
+  window.addEventListener('resize',()=>{const nav=document.querySelector('#le-lesson-outline');if(nav)syncViewport(nav);scheduleCurrent();},{passive:true});
   const ready=setInterval(()=>{const guide=document.querySelector('#le-guide-md');if(!guide)return;clearInterval(ready);update();new MutationObserver(update).observe(guide,{childList:true,subtree:true,characterData:true});},300);
 })();
 
@@ -111,6 +157,51 @@
   new MutationObserver(()=>{
     if(document.getElementById('le-tabs-toggle'))paint();else mount();
   }).observe(document.documentElement,{childList:true,subtree:true});
+})();
+
+(() => {
+  const ID='le-master-shortcut';
+  let frame=0, observedCenter=null, centerObserver=null;
+  function schedule(){if(!frame)frame=requestAnimationFrame(update);}
+  function reading(){
+    const tab=document.getElementById('le-lookup-zone-button');
+    return !!tab&&(tab.classList.contains('selected')||tab.getAttribute('aria-selected')==='true');
+  }
+  function update(){
+    frame=0;
+    const b=document.getElementById(ID),master=document.getElementById('le-master-btn'),guide=document.getElementById('le-guide-md');
+    if(!b||!master||!guide)return;
+    const r=master.getBoundingClientRect();
+    const masterVisible=r.width>0&&r.height>0&&r.bottom>0&&r.top<innerHeight;
+    const active=reading()&&guide.getClientRects().length>0&&!!(guide.innerText||'').trim();
+    b.hidden=!active||masterVisible;
+    b.disabled=master.disabled;
+  }
+  function mount(){
+    const n=document.querySelector('#le-content-tabs>.tab-nav'),master=document.getElementById('le-master-btn'),c=document.getElementById('le-center-col');
+    if(!n||!master||!c)return false;
+    let b=document.getElementById(ID);
+    if(!b){
+      b=document.createElement('button');
+      b.id=ID;b.type='button';b.textContent='完成本节';
+      b.title='已掌握本节（仍需通过过关检查）';b.setAttribute('aria-label',b.title);
+      b.addEventListener('click',()=>{const current=document.getElementById('le-master-btn');if(current)current.click();});
+      n.insertBefore(b,document.getElementById('le-tabs-toggle'));
+    }
+    if(observedCenter!==c){
+      if(centerObserver)centerObserver.disconnect();
+      observedCenter=c;
+      centerObserver=new MutationObserver(schedule);
+      centerObserver.observe(c,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['class','style']});
+    }
+    update();
+    return true;
+  }
+  document.addEventListener('click',e=>{if(e.target.closest('#le-content-tabs>.tab-nav'))schedule();});
+  window.addEventListener('scroll',schedule,{passive:true});
+  window.addEventListener('resize',schedule,{passive:true});
+  mount();
+  new MutationObserver(()=>{if(!document.getElementById(ID))mount();else schedule();}).observe(document.documentElement,{childList:true,subtree:true});
 })();
 
 /* 选段改写：选中正文里的一段，浮出「讲浅一点 / 加个例子…」；
@@ -169,6 +260,7 @@
     const input = document.createElement('textarea');
     input.rows = 2;
     input.className = 'le-bar-input';
+    input.dataset.lePolishKind = 'instruction';
     input.placeholder = '想怎么改？回车确认（Shift+回车换行）';
     input.hidden = true;
     b.appendChild(input);
@@ -196,6 +288,7 @@
         // 同一段上重复打开时保留上次没写完的草稿，别因为手滑点没了就白写
         const keepDraft = draftTarget === target && draftMode === act && input.value.trim();
         mode = act;
+        input.dataset.lePolishKind = act === 'annotate' ? 'note' : 'instruction';
         if (!keepDraft) input.value = '';
         input.placeholder = act === 'annotate'
           ? '写一句批注，回车保存（Shift+回车换行）'
@@ -260,6 +353,7 @@
   function typingInBar() {
     const b = document.getElementById(BAR);
     if (!b || b.hidden) return false;
+    if (document.querySelector('.le-polish-popover[open]')) return true;
     const t = b.querySelector('.le-bar-input');
     // 只要光标在框里就算在用，不要求已经写了字——空框被收起来后
     // 焦点仍留在隐藏的输入框上，接着打字会打进一个看不见的地方
@@ -625,6 +719,7 @@
     const body = item.querySelector('.le-card-body');
     const ta = document.createElement('textarea');
     ta.rows = 3;
+    ta.dataset.lePolishKind = 'note';
     ta.value = body ? body.textContent : '';
     if (body) body.replaceWith(ta);
     const actions = item.querySelector('.le-card-actions');
@@ -796,4 +891,20 @@
     const timer = setInterval(() => { if (bind()) clearInterval(timer); }, 700);
     setTimeout(() => clearInterval(timer), 20000);
   }
+})();
+
+(() => {
+  function updateEnvironment() {
+    const root=document.getElementById('le-env-setup');
+    if(!root)return;
+    const busy=root.querySelector('.le-env-state')?.getAttribute('aria-busy')==='true';
+    const log=root.querySelector('#le-env-log');
+    if(log)log.classList.toggle('le-env-no-log',!log.querySelector('.cm-content')?.textContent.trim());
+    root.querySelectorAll('#le-env-generate,#le-env-confirm,#le-env-execute').forEach(button=>{
+      if(busy && !button.dataset.envLocked){button.dataset.envLocked=String(button.disabled);button.disabled=true;}
+      else if(!busy && button.dataset.envLocked){button.disabled=button.dataset.envLocked==='true';delete button.dataset.envLocked;}
+    });
+  }
+  new MutationObserver(updateEnvironment).observe(document.documentElement,{childList:true,subtree:true});
+  updateEnvironment();
 })();

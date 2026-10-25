@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 from learning_ext.presentation import project_display_name, project_choices
+from learning_ext.page_design import page_intro, section_heading, practice_empty
 import gradio as gr
 from ktem.app import BasePage
 from ktem.db.engine import engine
@@ -55,12 +56,10 @@ class QuizPage(BasePage):
         self.question_index = gr.State(0)
 
     def on_building_ui(self):
-        gr.Markdown(
-            "# 检验你的理解\n选定项目，完成一组练习。逐题查看解析，找到需要回顾的知识点。"
-        )
+        gr.HTML(page_intro("quiz"))
         with gr.Row(elem_id="le-quiz-flow"):
             with gr.Column(elem_id="le-quiz-settings", scale=1, min_width=280):
-                gr.Markdown("### 测验设置\n选择学习范围，再决定练习方式。")
+                gr.HTML(section_heading("01", "测验设置"))
                 self.project_id = gr.Dropdown(label="学习项目", choices=[], interactive=True)
                 self.refresh = gr.Button("更新项目列表", size="sm", elem_id="le-quiz-refresh")
                 # 测什么比测几道更重要：先定范围，再定题型。
@@ -93,16 +92,16 @@ class QuizPage(BasePage):
                     visible=False,
                     interactive=True,
                 )
-                self.count = gr.Slider(label="题目数量", minimum=1, maximum=20, value=5, step=1)
-                self.qtype = gr.Dropdown(label="题型", choices=[("混合", "mixed"), ("选择", "choice"), ("填空", "fill"), ("简答", "short"), ("实操", "practice")], value="mixed")
+                with gr.Accordion("题量与题型 · 5 题 / 混合", open=False):
+                    self.count = gr.Slider(label="题目数量", minimum=1, maximum=20, value=5, step=1)
+                    self.qtype = gr.Dropdown(label="题型", choices=[("混合", "mixed"), ("选择", "choice"), ("填空", "fill"), ("简答", "short"), ("实操", "practice")], value="mixed")
                 self.btn_gen = gr.Button("开始测验 →", variant="primary")
                 with gr.Accordion("继续上次测验", open=False):
-                    gr.Markdown("载入当前项目上次未完成的测验。")
                     self.resume = gr.Button("继续作答")
             with gr.Column(elem_id="le-quiz-answer", scale=2, min_width=360):
-                gr.Markdown("### 题目与作答")
-                self.status = gr.Markdown("先在左侧选择学习项目，然后开始测验。")
-                self.question = gr.Markdown("准备好后，题目将在这里显示。", elem_id="le-quiz-question")
+                gr.HTML(section_heading("02", "作答区"))
+                self.status = gr.Markdown("")
+                self.question = gr.Markdown(practice_empty("quiz", ""), elem_id="le-quiz-question")
                 self.choices = gr.Radio(label="选择答案", choices=[], visible=False, interactive=True)
                 self.answer = gr.Textbox(label="你的回答", placeholder="写下你的理解、推导过程或操作步骤…", lines=5)
                 with gr.Row(elem_id="le-quiz-actions"):
@@ -110,7 +109,7 @@ class QuizPage(BasePage):
                     self.next = gr.Button("下一题 →", interactive=False)
                 self.feedback = gr.Markdown("")
                 with gr.Accordion("作答记录", open=False):
-                    self.history = gr.Markdown("完成测验后可在这里查看本轮记录。")
+                    self.history = gr.Markdown("")
 
     def on_register_events(self):
         self.refresh.click(self._projects, outputs=self.project_id).then(

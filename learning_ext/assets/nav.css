@@ -43,6 +43,11 @@
 
 @media (max-width: 800px) {
   #le-nav-toggle { display: none !important; }
+  #le-app-tabs>.tab-nav>button#le-more-nav[aria-expanded] {
+    margin-top: 0 !important;
+    border-top: 0 !important;
+    border-radius: 8px !important;
+  }
 }
 
 @media (min-width: 801px) {

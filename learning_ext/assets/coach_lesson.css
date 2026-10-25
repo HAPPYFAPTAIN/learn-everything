@@ -1,0 +1,663 @@
+#le-coach {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  color: var(--le-ink);
+}
+
+#le-coach .coach-intro {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 6px 2px 4px;
+}
+
+#le-coach .coach-mascot {
+  flex: 0 0 64px;
+  width: 64px;
+  height: 64px;
+  border: 1px solid #bde4ec;
+  border-radius: 20px 20px 20px 6px;
+  background: #f7fbfe url("__ASSETS__/coach-mascot.png") center / 88% no-repeat;
+  box-shadow: 0 10px 24px #123e5214;
+}
+
+#le-coach .coach-eyebrow {
+  display: block;
+  margin-bottom: 5px;
+  color: #397485;
+  font-family: var(--le-num);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: .12em;
+}
+
+#le-coach .coach-intro h1 {
+  margin: 0 !important;
+  color: #123e52 !important;
+  font-size: clamp(28px, 3vw, 38px) !important;
+  line-height: 1.25 !important;
+  letter-spacing: -.04em !important;
+}
+
+#le-coach .coach-intro p {
+  margin: 8px 0 0 !important;
+  color: #55727e !important;
+  font-size: 14px !important;
+}
+
+#le-coach .coach-courses {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+#le-coach .coach-courses button {
+  min-width: 0;
+  padding: 15px 17px;
+  border: 1px solid #d3e2e8;
+  border-radius: 16px 16px 16px 4px;
+  background: #fff;
+  color: #244b5c;
+  font-family: var(--le-font);
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.5;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .16s, background .16s, transform .16s;
+}
+
+#le-coach .coach-courses button:hover {
+  border-color: #6ebccb;
+  transform: translateY(-1px);
+}
+
+#le-coach .coach-courses button[aria-pressed="true"] {
+  border-color: #1d6073;
+  background: #123e52;
+  color: #fff;
+  box-shadow: inset 3px 0 #35d8f7;
+}
+
+#le-coach .coach-courses button span {
+  display: block;
+  margin-top: 5px;
+  color: #6a8793;
+  font-size: 11px;
+  font-weight: 400;
+}
+
+#le-coach .coach-courses button[aria-pressed="true"] span {
+  color: #b9dce5;
+}
+
+#le-coach .coach-boundary {
+  margin: -4px 0 0 !important;
+  color: #5b7681 !important;
+  font-size: 12px !important;
+  line-height: 1.6 !important;
+}
+
+#le-coach .coach-layout {
+  display: grid;
+  grid-template-columns: minmax(300px, 370px) minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+#le-coach .coach-instruction,
+#le-coach .coach-stage {
+  min-width: 0;
+  border: 1px solid #d4e2e8;
+  border-radius: 20px 20px 20px 6px;
+  background: #fff;
+  box-shadow: 0 10px 28px #123e5208;
+}
+
+#le-coach .coach-instruction {
+  position: sticky;
+  top: 82px;
+  padding: 22px;
+}
+
+#le-coach .coach-stage {
+  min-height: 420px;
+  padding: 22px;
+  background-image: linear-gradient(#78cbd808 1px, transparent 1px), linear-gradient(90deg, #78cbd808 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+#le-coach .coach-progress {
+  display: grid;
+  gap: 8px;
+}
+
+#le-coach #coach-count {
+  color: #52717f;
+  font-family: var(--le-num);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+#le-coach #coach-progress {
+  width: 100%;
+  height: 7px;
+  border: 0;
+  border-radius: 6px;
+  background: #dfeef2;
+  overflow: hidden;
+  appearance: none;
+}
+
+#le-coach #coach-progress::-webkit-progress-bar {
+  background: #dfeef2;
+  border-radius: 6px;
+}
+
+#le-coach #coach-progress::-webkit-progress-value {
+  border-radius: 6px;
+  background: linear-gradient(90deg, #1da8c3, #35d8f7);
+  transition: width .25s ease;
+}
+
+#le-coach #coach-progress::-moz-progress-bar {
+  border-radius: 6px;
+  background: linear-gradient(90deg, #1da8c3, #35d8f7);
+}
+
+#le-coach .coach-stage-label {
+  display: inline-flex;
+  margin-top: 18px;
+  padding: 4px 9px;
+  border: 1px solid #d1e5eb;
+  border-radius: 7px;
+  background: #eef7f9;
+  color: #3b7181;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+#le-coach .coach-stage-label.is-error {
+  border-color: #efd2cc;
+  background: #fff4f1;
+  color: #9b4b42;
+}
+
+#le-coach .coach-stage-label.is-success {
+  border-color: #c6e5db;
+  background: #edf8f2;
+  color: #276b55;
+}
+
+#le-coach #coach-title {
+  margin: 13px 0 10px !important;
+  color: #153e50 !important;
+  font-size: 23px !important;
+  line-height: 1.45 !important;
+}
+
+#le-coach #coach-title:focus {
+  outline: 2px solid #1b9db7;
+  outline-offset: 4px;
+}
+
+#le-coach #coach-body {
+  margin: 0 !important;
+  color: #4c6673 !important;
+  font-size: 14px !important;
+  line-height: 1.8 !important;
+}
+
+#le-coach #coach-hint-wrap {
+  margin-top: 18px;
+  border-top: 1px solid #e1eaee;
+  padding-top: 12px;
+}
+
+#le-coach #coach-hint-wrap summary {
+  color: #397485;
+  font-size: 13px;
+  font-weight: 550;
+  cursor: pointer;
+}
+
+#le-coach #coach-hint {
+  margin: 10px 0 0 !important;
+  color: #5c7480 !important;
+  font-size: 13px !important;
+  line-height: 1.75 !important;
+}
+
+#le-coach #coach-feedback {
+  min-height: 26px;
+  margin: 14px 0 0 !important;
+  color: #4b6b77 !important;
+  font-size: 13px !important;
+  font-weight: 550 !important;
+  line-height: 1.65 !important;
+}
+
+#le-coach #coach-feedback.is-error {
+  color: #9b4b42 !important;
+}
+
+#le-coach #coach-feedback.is-success {
+  color: #276b55 !important;
+}
+
+#le-coach .coach-actions,
+#le-coach .coach-summary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+#le-coach .coach-actions button,
+#le-coach .coach-summary-actions button {
+  min-height: 42px;
+  padding: 10px 16px;
+  border: 1px solid #123e52;
+  border-radius: 11px 11px 11px 3px;
+  background: #123e52;
+  color: #fff;
+  font-family: var(--le-font);
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+#le-coach .coach-actions button:hover,
+#le-coach .coach-summary-actions button:hover {
+  background: #176078;
+}
+
+#le-coach .coach-actions button:disabled {
+  opacity: .45;
+  cursor: default;
+}
+
+#le-coach .coach-actions #coach-next {
+  border-color: #35d8f7;
+  background: #35d8f7;
+  color: #0d3545;
+}
+
+#le-coach .coach-quiet {
+  margin-top: 12px;
+  padding: 6px 0;
+  border: 0;
+  background: transparent;
+  color: #55727e;
+  font-family: var(--le-font);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+#le-coach .coach-stage-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+  color: #55727e;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+#le-coach #coach-stage-state {
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #edf5f7;
+  color: #397485;
+  font-size: 11px;
+}
+
+#le-coach .coach-field {
+  margin-bottom: 18px;
+}
+
+#le-coach .coach-field > label,
+#le-coach .coach-field-label {
+  display: block;
+  margin-bottom: 7px;
+  color: #355664;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+#le-coach .coach-field input[type="text"],
+#le-coach .coach-field input[type="number"],
+#le-coach .coach-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #c8d9e0;
+  border-radius: 10px;
+  background: #fff;
+  color: #173e50;
+  font-family: var(--le-font);
+  font-size: 15px;
+  line-height: 1.65;
+  padding: 11px 12px;
+}
+
+#le-coach .coach-field textarea {
+  min-height: 104px;
+  resize: vertical;
+}
+
+#le-coach .coach-field input:focus,
+#le-coach .coach-field textarea:focus {
+  border-color: #25a9c2;
+  outline: 2px solid #25a9c233;
+  outline-offset: 1px;
+}
+
+#le-coach .coach-field input[type="range"] {
+  width: 100%;
+  accent-color: #159bb5;
+}
+
+#le-coach .coach-switch-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 14px;
+  border: 1px solid #d7e4e9;
+  border-radius: 12px;
+  background: #f3f8fa;
+}
+
+#le-coach .coach-switch-row input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  margin: 0;
+  accent-color: #159bb5;
+}
+
+#le-coach .coach-switch-row label {
+  color: #274c5b;
+  font-size: 14px;
+  font-weight: 550;
+  cursor: pointer;
+}
+
+#le-coach .coach-range-value,
+#le-coach .coach-result {
+  margin-top: 12px;
+  padding: 13px 15px;
+  border-left: 3px solid #25b5cd;
+  border-radius: 0 10px 10px 0;
+  background: #eaf5f7;
+  color: #17475b;
+  font-family: var(--le-num);
+  font-size: 20px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+#le-coach .coach-result small {
+  display: block;
+  margin-bottom: 4px;
+  color: #5d7b87;
+  font-family: var(--le-font);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+#le-coach .coach-formula {
+  font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace !important;
+  font-size: 17px !important;
+  letter-spacing: .02em;
+}
+
+#le-coach .coach-table {
+  width: 100%;
+  margin-bottom: 18px;
+  border-collapse: collapse;
+  background: #fff;
+}
+
+#le-coach .coach-table th,
+#le-coach .coach-table td {
+  padding: 10px;
+  border-bottom: 1px solid #e1eaee;
+  text-align: center;
+}
+
+#le-coach .coach-table th {
+  color: #426472;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+#le-coach .coach-table td input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  border: 1px solid #c8d9e0;
+  border-radius: 8px;
+  padding: 9px;
+  color: #173e50;
+  font-family: var(--le-num);
+  font-size: 16px;
+  text-align: center;
+}
+
+#le-coach .coach-independent-note {
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  border: 1px solid #ead7aa;
+  border-radius: 12px 12px 12px 4px;
+  background: #fff8e9;
+  color: #72551c;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+#le-coach #coach-summary {
+  padding: 23px;
+  border: 1px solid #1b5b6e;
+  border-radius: 20px 20px 20px 6px;
+  background: linear-gradient(125deg, #10394b, #16566a);
+  color: #eff9fc;
+  box-shadow: 0 14px 32px #123e5216;
+}
+
+#le-coach #coach-summary[hidden],
+#le-coach #coach-next[hidden] {
+  display: none !important;
+}
+
+#le-coach .coach-summary-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+#le-coach .coach-summary-head span {
+  color: #b9d8e1;
+  font-size: 12px;
+  letter-spacing: .1em;
+}
+
+#le-coach .coach-summary-head strong {
+  color: #62e1f1;
+  font-size: 22px;
+}
+
+#le-coach #coach-summary-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 22px;
+  margin-top: 16px;
+  color: #d2e8ee;
+  font-family: var(--le-num);
+  font-size: 13px;
+}
+
+#le-coach #coach-summary-mistakes {
+  margin-top: 18px;
+  padding: 14px 16px;
+  border: 1px solid #ffffff1f;
+  border-radius: 12px;
+  background: #ffffff0a;
+  color: #d5e9ee;
+  font-size: 13px;
+  line-height: 1.75;
+}
+
+#le-coach #coach-summary-mistakes ul {
+  margin: 8px 0 0;
+  padding-left: 20px;
+}
+
+#le-coach #coach-summary-mistakes li + li {
+  margin-top: 5px;
+}
+
+#le-coach .coach-summary-actions button {
+  border-color: #35d8f7;
+  background: #35d8f7;
+  color: #0d3545;
+}
+
+#le-coach .coach-summary-actions #coach-redo {
+  border-color: #ffffff30;
+  background: #ffffff0d;
+  color: #fff;
+}
+
+#le-desktop-coach {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 24px;
+  border: 1px solid #d3e2e8;
+  border-radius: 20px 20px 20px 6px;
+  background: #fff;
+  box-shadow: 0 10px 28px #123e5208;
+}
+
+#le-desktop-coach .le-desktop-head {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #dfeaf0;
+}
+
+#le-desktop-coach .le-desktop-head span {
+  display: block;
+  margin-bottom: 6px;
+  color: #397485;
+  font-family: var(--le-num);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: .12em;
+}
+
+#le-desktop-coach .le-desktop-head h2 {
+  margin: 0 !important;
+  color: #123e52 !important;
+  font-size: 28px !important;
+}
+
+#le-desktop-coach .le-desktop-head p {
+  margin: 7px 0 0 !important;
+  color: #55727e !important;
+  font-size: 13px !important;
+}
+
+#le-desktop-coach #le-desktop-actions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+}
+
+#le-desktop-coach #le-desktop-actions > button {
+  flex: 1 1 160px !important;
+  min-height: 42px !important;
+  border-radius: 11px 11px 11px 3px !important;
+}
+
+#le-desktop-coach input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: #159bb5;
+}
+
+#le-desktop-coach textarea {
+  font-family: var(--le-font) !important;
+  font-size: 14px !important;
+  line-height: 1.65 !important;
+}
+
+#le-desktop-coach .le-desktop-log {
+  color: #3d5b68;
+  font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace !important;
+  font-size: 13px !important;
+  line-height: 1.65 !important;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 900px) {
+  #le-coach .coach-layout {
+    grid-template-columns: 1fr;
+  }
+
+  #le-coach .coach-instruction {
+    position: static;
+  }
+
+  #le-coach .coach-stage {
+    min-height: 0;
+  }
+}
+
+@media (max-width: 620px) {
+  #le-coach .coach-courses {
+    grid-template-columns: 1fr;
+  }
+
+  #le-coach .coach-intro {
+    gap: 13px;
+  }
+
+  #le-coach .coach-mascot {
+    flex-basis: 52px;
+    width: 52px;
+    height: 52px;
+    border-radius: 16px 16px 16px 5px;
+  }
+
+  #le-coach .coach-intro h1 {
+    font-size: 27px !important;
+  }
+
+  #le-coach .coach-instruction,
+  #le-coach .coach-stage,
+  #le-coach #coach-summary {
+    padding: 18px;
+  }
+
+  #le-coach .coach-actions button,
+  #le-coach .coach-summary-actions button {
+    flex: 1 1 100%;
+  }
+
+  #le-coach .coach-summary-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #le-coach .coach-courses button,
+  #le-coach #coach-progress::-webkit-progress-value {
+    transition: none;
+  }
+}

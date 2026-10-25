@@ -1,4 +1,4 @@
-/* AI 助教：可拖动悬浮球 + 可拖动、可缩放的全局浮层对话框。
+/* 以太小助：学习页悬浮球、其他页面顶栏入口，以及可调整的全局浮层对话框。
    面板挂在应用根级（不在任何标签容器内），所以切页时对话和内容都不会丢；
    几何位置全部走 CSS 变量（由 assistant.js 写入 documentElement），
    避免与其它固定定位规则硬碰。 */
@@ -14,7 +14,11 @@
   padding: 0;
   border: 1px solid #dbe7f3;
   border-radius: 50%;
-  background: #f7fbfe url("__ASSETS__/coach-mascot.png") center / 82% no-repeat;
+  background-color: #f7fbfe;
+  background-image: url("__ASSETS__/coach-mascot.png") !important;
+  background-position: center !important;
+  background-size: 82% !important;
+  background-repeat: no-repeat !important;
   color: transparent;
   font-size: 0;
   display: flex;
@@ -68,9 +72,13 @@
   top: var(--le-dlg-y, 96px) !important;
   right: auto !important;
   bottom: auto !important;
+  box-sizing: border-box !important;
+  min-width: 0 !important;
   width: var(--le-dlg-w, 420px) !important;
   height: var(--le-dlg-h, 560px) !important;
-  max-height: none !important;
+  max-width: calc(100vw - 24px) !important;
+  max-height: calc(100vh - 24px) !important;
+  max-height: calc(100dvh - 24px) !important;
   overflow: hidden !important;
   display: none !important;
   flex-direction: column !important;
@@ -103,8 +111,22 @@ body.le-assistant-open #le-global-assistant {
 }
 #le-global-assistant .le-assistant-heading h3 {
   margin: 0 !important;
-  font-size: 15px !important;
-  color: #2b3b4e;
+  font-size: 16px !important;
+  font-weight: 650 !important;
+  color: #163e52;
+}
+#le-global-assistant .le-assistant-identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+#le-global-assistant .le-assistant-avatar {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border: 1px solid #cde4ec;
+  border-radius: 11px;
+  background: #f7fbfe url("__ASSETS__/coach-mascot.png") center / 88% no-repeat;
 }
 #le-global-assistant .le-assistant-heading .le-kicker {
   display: none;
@@ -134,9 +156,82 @@ body.le-assistant-open #le-global-assistant {
 }
 
 /* 消息区撑满，输入区固定在下 */
+#le-global-assistant #le-assistant-empty {
+  box-sizing: border-box;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  margin: 10px 12px 0 !important;
+  padding: 20px !important;
+  border: 1px solid #e3e7ec !important;
+  border-radius: 10px !important;
+  background: #f8fafc !important;
+  overflow-y: auto !important;
+}
+#le-global-assistant #le-assistant-empty[hidden],
+#le-global-assistant #le-assistant-chat.le-assistant-chat-empty {
+  display: none !important;
+}
+#le-assistant-empty .le-assistant-empty-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+#le-assistant-empty .le-assistant-context {
+  padding: 14px;
+  border: 1px solid #e2eaf2;
+  border-radius: 10px;
+  background: #fff;
+}
+#le-assistant-empty [data-le-assistant-context-label] {
+  display: block;
+  margin-bottom: 8px;
+  color: #6b7f94;
+  font-size: 12px;
+  line-height: 1.5;
+}
+#le-assistant-empty [data-le-assistant-context-title] {
+  display: block;
+  color: #2b435d;
+  font-size: 15px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+#le-assistant-empty [data-le-assistant-context-detail] {
+  margin: 8px 0 0;
+  color: #64768a;
+  font-size: 13px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+#le-assistant-empty .le-assistant-quick-title {
+  color: #6b7f94;
+  font-size: 13px;
+}
+#le-assistant-empty .le-assistant-quick-list {
+  display: grid;
+  gap: 8px;
+}
+#le-assistant-empty [data-le-assistant-suggestion] {
+  width: 100%;
+  min-height: 40px;
+  padding: 9px 12px;
+  border: 1px solid #dce6f0;
+  border-radius: 9px;
+  background: #fff;
+  color: #365f88;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: left;
+  cursor: pointer;
+}
+#le-assistant-empty [data-le-assistant-suggestion]:hover {
+  border-color: #bacfe3;
+  background: #f0f6fb;
+}
 #le-global-assistant #le-assistant-chat {
   flex: 1 1 auto !important;
-  min-height: 140px !important;
+  min-height: 0 !important;
   height: auto !important;
   margin: 10px 12px 0 !important;
   border: 1px solid #e3e7ec !important;
@@ -150,7 +245,21 @@ body.le-assistant-open #le-global-assistant {
 }
 #le-global-assistant #le-chat-compose {
   flex: none;
+  min-width: 0 !important;
+  gap: 8px !important;
+  align-items: flex-end !important;
   padding: 10px 12px 12px;
+}
+#le-global-assistant #le-chat-input {
+  min-width: 0 !important;
+}
+#le-global-assistant #le-chat-compose textarea {
+  min-height: 48px !important;
+  max-height: 96px !important;
+  overflow-y: auto !important;
+}
+#le-global-assistant #le-chat-send {
+  flex: 0 0 64px !important;
 }
 
 /* 右下角缩放手柄 */
@@ -179,10 +288,101 @@ body.le-assistant-open #le-global-assistant {
   border-color: #6f87a6;
 }
 
+#le-assistant-fab.le-fab-docked {
+  position: relative;
+  inset: auto;
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 94px;
+  height: 42px;
+  padding: 0 13px 0 43px;
+  margin-left: 12px;
+  margin-right: 18px;
+  border: 1px solid #cde4ec !important;
+  border-radius: 13px;
+  background-position: 10px center !important;
+  background-size: 30px !important;
+  box-shadow: 0 3px 12px #1d35581a, inset 0 0 0 2px #fff;
+  cursor: pointer;
+  touch-action: auto;
+}
+#le-assistant-fab.le-fab-docked::after {
+  content: '小助';
+  color: #163e52;
+  font: 650 13px var(--le-font, 'Microsoft YaHei', sans-serif);
+  letter-spacing: .02em;
+}
+#le-assistant-fab.le-fab-docked:hover {
+  transform: translateY(-1px);
+}
+
+@media (max-width: 1100px) {
+  .le-topbar:has(> #le-assistant-fab.le-fab-docked) .le-local {
+    display: none;
+  }
+  #le-assistant-fab.le-fab-docked {
+    margin-left: auto;
+  }
+}
+
 @media (max-width: 800px) {
-  #le-assistant-fab {
-    right: 16px;
-    bottom: 16px;
+  #le-assistant-fab.le-fab-docked {
+    flex: 0 0 40px;
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    padding: 0;
+    margin-right: 0;
+    background-position: center !important;
+    background-size: 82% !important;
+  }
+  #le-assistant-fab.le-fab-docked::after {
+    display: none;
+  }
+  #le-assistant-fab.le-fab-docked:hover {
+    transform: none;
+  }
+  #le-global-assistant .le-assistant-heading {
+    cursor: default;
+    touch-action: auto;
+  }
+  #le-assistant-resize {
+    display: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .le-topbar:has(> #le-assistant-fab.le-fab-docked:not(.le-fab-off)) .le-app-title {
+    display: none;
+  }
+  #le-assistant-fab.le-fab-docked {
+    margin-left: auto;
+  }
+}
+
+@media (max-height: 420px) {
+  #le-global-assistant .le-assistant-heading {
+    padding: 6px 8px 6px 12px;
+  }
+  #le-global-assistant #le-assistant-empty,
+  #le-global-assistant #le-assistant-chat {
+    margin: 6px 8px 0 !important;
+  }
+  #le-global-assistant #le-assistant-empty {
+    padding: 12px !important;
+  }
+  #le-global-assistant #le-chat-compose {
+    padding: 6px 8px 8px;
+  }
+  #le-global-assistant #le-chat-compose textarea {
+    min-height: 40px !important;
+    max-height: 48px !important;
+  }
+  #le-global-assistant #le-chat-send {
+    min-height: 40px !important;
+  }
+  #le-assistant-resize {
+    display: none;
   }
 }
 

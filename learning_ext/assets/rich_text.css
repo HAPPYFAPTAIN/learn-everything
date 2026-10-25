@@ -1,0 +1,26 @@
+.le-rich-text {white-space:normal;overflow-wrap:anywhere;line-height:1.75;}
+.le-rich-text > :first-child {margin-top:0!important;}
+.le-rich-text > :last-child {margin-bottom:0!important;}
+.le-rich-text p {margin:0 0 12px!important;}
+.le-rich-text :is(ul,ol) {padding-left:1.5em;margin:10px 0;}
+.le-rich-text li {margin:5px 0;}
+.le-rich-text :not(pre) > code {padding:2px 6px;border-radius:5px;background:#eaf3f6;color:#176078;font: .9em/1.5 Consolas,"Cascadia Code",monospace;}
+.le-rich-text strong {font-weight:700;}
+.le-rich-text a {color:#087fa3;text-decoration:underline;text-underline-offset:3px;}
+.le-code-block {margin:14px 0 18px;border:1px solid #cddfe7;border-radius:13px;overflow:hidden;background:#f5f9fb;box-shadow:0 3px 12px #183e5306;max-width:100%;min-width:0;}
+.le-code-toolbar {display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 12px 8px 16px;background:#edf4f7;border-bottom:1px solid #dce8ee;}
+.le-code-language {font:600 12px/1.4 var(--font-sans,system-ui,sans-serif);color:#557584;letter-spacing:.02em;}
+.le-code-block .le-code-copy {display:inline-flex!important;align-items:center;gap:6px;flex:none!important;min-width:0!important;min-height:28px!important;width:auto!important;height:auto!important;margin:0!important;padding:4px 9px!important;border:1px solid transparent!important;border-radius:7px!important;background:transparent!important;box-shadow:none!important;color:#315a6a!important;font:600 12px/1.4 var(--font-sans,system-ui,sans-serif)!important;cursor:pointer;transition:background .15s,color .15s;}
+.le-code-block .le-code-copy svg {width:14px;height:14px;flex:none;}
+.le-code-block .le-code-copy:hover {background:#dceef4!important;color:#087fa3!important;}
+.le-code-block .le-code-copy:focus-visible {outline:2px solid #0b91af;outline-offset:2px;}
+.le-code-block .le-code-copy[data-copied=true] {background:#dceef4!important;color:#087fa3!important;opacity:1!important;}
+.le-code-block pre {margin:0!important;padding:17px 18px!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;overflow-x:auto!important;white-space:pre!important;tab-size:4;font:14px/1.8 Consolas,"Cascadia Code","Courier New",monospace!important;}
+.le-code-block pre code {display:block;padding:0!important;border:0!important;background:transparent!important;color:#1d4355!important;white-space:pre!important;word-break:normal!important;overflow-wrap:normal!important;font:inherit!important;}
+.le-code-block :is(.k,.kc,.kd,.kn,.kp,.kr,.kt,.ow) {color:#6754a3;font-weight:600;}
+.le-code-block :is(.nb,.nf,.nc,.nt) {color:#087d9c;}
+.le-code-block :is(.s,.s1,.s2,.sa,.sb,.sc,.sd,.se,.sh,.si,.sr,.ss) {color:#9a5a23;}
+.le-code-block :is(.m,.mi,.mf,.mh,.mo,.il) {color:#7655a7;}
+.le-code-block :is(.c,.c1,.cm,.cp,.cs) {color:#6f8590;font-style:italic;}
+.le-code-block :is(.nv,.vc,.vg,.vi) {color:#216984;}
+@media(prefers-reduced-motion:reduce){.le-code-block .le-code-copy{transition:none}}

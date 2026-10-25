@@ -424,8 +424,8 @@ class CoachPage(BasePage):
         yield from self._approve(False)
 
     def _on_allow_always(self):
-        self.session.auto = True
-        self.items.append({"type": "note", "text": "已开启自动执行：后面的操作不再逐条确认。"})
+        self.session.auto = False
+        self.items.append({"type": "note", "text": "仅允许当前操作。后续操作需要重新确认。"})
         yield from self._consume(runtime.approve(self.session, True))
 
     def _on_clear(self):
@@ -453,7 +453,7 @@ class CoachPage(BasePage):
                     self.allow_btn = gr.Button("允许执行", elem_id="le-coach-allow", size="sm")
                     self.deny_btn = gr.Button("拒绝", elem_id="le-coach-deny", size="sm")
                     self.always_btn = gr.Button(
-                        "这次对话都允许", elem_id="le-coach-always", size="sm"
+                        "仅允许本次", elem_id="le-coach-always", size="sm", visible=False
                     )
             with gr.Row(elem_id="le-coach-composer"):
                 self.input = gr.Textbox(

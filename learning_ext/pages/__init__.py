@@ -1,6 +1,7 @@
 """learning_ext 的 Gradio Tab 页面集合。"""
 
 from learning_ext.pages.coach import CoachPage
+from learning_ext.pages.coach_lesson import CoachLessonPage
 from learning_ext.pages.dashboard import DashboardPage
 from learning_ext.pages.path_generator import PathGeneratorPage
 from learning_ext.pages.quick_setup import QuickSetupPage
@@ -16,4 +17,5 @@ __all__ = [
     "QuizPage",
     "DashboardPage",
     "CoachPage",
+    "CoachLessonPage",
 ]

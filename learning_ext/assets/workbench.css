@@ -38,6 +38,10 @@
 #le-course-admin>button.label-wrap>span:first-child{font-size:14px!important}
 #le-course-admin>div:last-child{position:absolute!important;right:0!important;top:calc(100% + 8px)!important;width:min(400px,78vw)!important;max-height:min(72vh,540px)!important;overflow:auto!important;background:#fff!important;border:1px solid #dde5ee!important;border-radius:14px!important;box-shadow:0 22px 60px #1c324333!important;padding:14px!important;z-index:44!important}
 #le-course-admin .gap{gap:10px!important}
+#le-project-settings{border-top:1px solid #e5e0de!important;padding-top:12px!important}
+#le-project-settings .le-delete-warning .prose{font-size:13px!important;line-height:1.65!important;color:#8a5048!important}
+#le-delete-project{width:100%!important;border-radius:10px 10px 10px 3px!important}
+#le-delete-status .prose{font-size:13px!important;line-height:1.6!important}
 #le-lesson-outline{grid-column:1;grid-row:2;position:sticky;top:76px;padding:0 0 14px;color:#485d75;max-height:calc(100vh - 110px);overflow:auto;scrollbar-width:thin}
 #le-lesson-outline summary{font-size:18px;font-weight:600;cursor:pointer;padding:0 12px 16px;list-style:none}
 #le-lesson-outline summary::after{content:'⌄';float:right;color:#8492a3}
@@ -52,8 +56,8 @@
 #le-lesson-actions{padding-top:24px!important;border-top:1px solid #dfe6ee!important;margin-top:28px!important}#le-note-zone textarea{min-height:340px!important;font-size:19px!important;line-height:1.9!important}
 #le-workbench-row.le-assistant-open #le-right-col{position:fixed!important;grid-column:auto!important;right:24px!important;top:96px!important;bottom:24px!important;width:min(420px,calc(100vw - 32px))!important;max-height:calc(100vh - 120px)!important;overflow:auto!important;z-index:50!important;border-radius:22px!important;padding:26px!important;box-shadow:0 20px 70px #1c324333!important;animation:le-surface-enter .2s ease-out}
 @media(max-width:1000px){#le-workbench-row,#le-workbench-row.le-assistant-open{grid-template-columns:minmax(0,1fr)!important;gap:18px!important}#le-lesson-outline{grid-column:1;grid-row:2;position:static;max-height:260px;background:#f6f8fb;border:1px solid #d8e1eb;border-radius:14px;padding:16px}#le-lesson-outline summary{padding-bottom:0}#le-lesson-outline[open] summary{padding-bottom:14px}#le-center-col{grid-column:1;grid-row:3;padding:26px!important}}
-@media(max-width:900px){#le-left-col{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:8px 10px!important;padding:10px!important;align-items:center!important}#le-left-col>.form{width:auto!important;min-width:0!important}#le-left-col>.form:first-child,#le-left-col>.form:not(:first-child){width:auto!important;flex:none!important}#le-left-col #le-course-progress{grid-column:1;margin:0!important;padding:0 4px!important}#le-course-admin{grid-column:2;justify-self:end!important;margin:0!important}}
-@media(max-width:650px){#le-left-col{grid-template-columns:1fr!important;padding:20px!important}#le-project-picker,#le-course-picker,#le-course-admin,#le-left-col #le-course-progress{grid-column:1!important}.le-course-strip-heading{display:block}.le-course-strip-heading span{display:block;margin-top:6px}#le-center-col{padding:22px 18px!important}#le-center-content h3{font-size:24px!important}#le-content-tabs>.tab-nav button{font-size:17px!important}#le-guide-md .prose{font-size:18px!important}}
+@media(max-width:1000px){#le-left-col{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:8px 10px!important;padding:10px!important;align-items:center!important}#le-left-col>.form{width:auto!important;min-width:0!important}#le-left-col>.form:first-child,#le-left-col>.form:not(:first-child){width:auto!important;flex:none!important}#le-left-col #le-project-picker{width:100%!important}#le-left-col #le-course-progress{grid-column:1;margin:0!important;padding:0 4px!important}#le-course-admin{grid-column:2;justify-self:end!important;margin:0!important}}
+@media(max-width:650px){#le-left-col{grid-template-columns:minmax(0,1fr) auto!important;padding:12px!important}#le-left-col>.form{grid-column:1/-1!important}#le-left-col #le-course-progress{grid-column:1!important}#le-course-admin{grid-column:2!important}.le-course-strip-heading{display:block}.le-course-strip-heading span{display:block;margin-top:6px}#le-center-col{padding:22px 18px!important}#le-center-content h3{font-size:24px!important}#le-content-tabs>.tab-nav button{font-size:17px!important}#le-guide-md .prose{font-size:18px!important}}
 @media(prefers-reduced-motion:reduce){#le-workbench-row.le-assistant-open #le-right-col{animation:none!important}}
 
 #le-guide-md .prose>h1:first-child{display:none!important}
@@ -77,6 +81,11 @@
 #le-content-tabs>.tab-nav>#le-tabs-toggle{flex:none!important;width:30px!important;height:30px!important;min-width:0!important;padding:0!important;margin-left:2px!important;border:1px solid #d8e1eb!important;border-radius:8px!important;background:#fff!important;color:#6b7c92!important;display:flex!important;align-items:center!important;justify-content:center!important;cursor:pointer;box-shadow:0 1px 4px #20324b12!important}
 #le-content-tabs>.tab-nav>#le-tabs-toggle:hover{color:#365f98!important;border-color:#bcccdd!important}
 #le-content-tabs>.tab-nav>#le-tabs-toggle svg{width:14px;height:14px;display:block;transition:transform .18s ease}
+#le-content-tabs>.tab-nav>#le-master-shortcut{flex:0 0 auto!important;min-width:0!important;padding:7px 11px!important;margin-left:4px!important;border:1px solid #365f98!important;background:#365f98!important;color:#fff!important;font-size:13px!important;line-height:1.2!important;white-space:nowrap!important;box-shadow:none!important}
+#le-content-tabs>.tab-nav>#le-master-shortcut:hover{background:#294f7d!important;border-color:#294f7d!important}
+#le-content-tabs>.tab-nav>#le-master-shortcut[hidden]{display:none!important}
+#le-content-tabs>.tab-nav>#le-master-shortcut:disabled{opacity:.55;cursor:not-allowed}
+@media(max-width:650px){#le-content-tabs>.tab-nav:has(#le-master-shortcut:not([hidden]))>button:not(#le-tabs-toggle):not(#le-master-shortcut){min-width:0!important;padding-left:4px!important;padding-right:4px!important;font-size:15px!important}#le-content-tabs>.tab-nav>#le-master-shortcut{padding:7px 8px!important;margin-left:0!important;font-size:12px!important}}
 
 /* 收起态：标签栏缩成一枚箭头，贴内容区右上角 */
 #le-center-col.le-tabs-collapsed>#le-content-tabs>.tab-nav{width:42px!important;padding:4px!important;gap:0!important;margin-left:auto!important;margin-right:0!important;box-shadow:0 2px 8px #20324b14!important}
@@ -109,7 +118,7 @@
 /* ===== 选段改写 =====
    Gradio 4.44 没有 visible="hidden"，这一行用「移出可视区」的方式藏起来，
    但元素仍留在 DOM 里，前端脚本才能把请求写进去再点按钮。 */
-#le-rewrite-bridge{position:fixed!important;left:-200vw!important;top:0!important;width:1px!important;height:1px!important;overflow:hidden!important;margin:0!important;padding:0!important;opacity:0!important;pointer-events:none!important;gap:0!important}
+#le-rewrite-bridge{position:fixed!important;left:-200vw!important;top:0!important;width:1px!important;height:1px!important;overflow:hidden!important;margin:0!important;padding:0!important;opacity:0!important;pointer-events:none!important;visibility:hidden!important;gap:0!important}
 
 /* 选中文字后浮出的操作条 */
 #le-sel-bar{position:fixed;z-index:70;display:flex;align-items:center;gap:2px;padding:4px;background:#fff;border:1px solid #d5dfeb;border-radius:12px;box-shadow:0 10px 28px #1c324329;font:400 14px var(--le-font,system-ui);animation:le-sel-in .13s ease-out;flex-wrap:wrap;max-width:calc(100vw - 24px)}
@@ -148,7 +157,7 @@
 
 /* ===== 划词批注 ===== */
 /* 批注通道也用移出可视区的办法藏起来，元素仍在 DOM 里 */
-#le-time-bridge,#le-anno-bridge,#le-snooze-bridge{position:fixed!important;left:-200vw!important;top:0!important;width:1px!important;height:1px!important;overflow:hidden!important;margin:0!important;padding:0!important;opacity:0!important;pointer-events:none!important;gap:0!important}
+#le-time-bridge,#le-anno-bridge,#le-snooze-bridge{position:fixed!important;left:-200vw!important;top:0!important;width:1px!important;height:1px!important;overflow:hidden!important;margin:0!important;padding:0!important;opacity:0!important;pointer-events:none!important;visibility:hidden!important;gap:0!important}
 
 /* 有批注的段落：左侧细色条，只作为“这段有笔记”的提示，点击不再弹窗 */
 #le-guide-md .prose > [data-anno-pin]{position:relative!important;margin-left:-10px;padding-left:10px;box-shadow:inset 3px 0 0 #e6c97a;cursor:default}

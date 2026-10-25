@@ -30,9 +30,9 @@
 (() => {
   let step = 0, panel, previousFocus;
   const learningSteps = [
-    {tab:'quick-setup-tab',target:'#le-settings-form',title:'先让 AI 连上',body:'选择服务商，填好模型和密钥。点「测试连接」，成功后「保存并启用」。已经配好可以直接下一步。'},
-    {tab:'learning-path-tab',target:'#le-plan-input',title:'写一句你想学什么',body:'填写一个学习方向，点「继续」逐步选择基础、目标和节奏；可选内容可以跳过。最后点「生成我的学习路线」。'},
-    {tab:'learning-path-tab',target:'#le-plan-preview',title:'看一眼路线，再保存',body:'等路线生成后，确认内容合适后点「保存路线，开始学习」。保存完成后再进入下一步。'},
+    {tab:'quick-setup-tab',target:'#le-settings-form',title:'先让 AI 连上',body:'选择平台，填好密钥和模型。点「测试连接」，成功后点「启用连接」。已保存的连接可以直接选择。'},
+    {tab:'learning-guide-tab',target:'#le-onboarding-card',title:'告诉我们你的学习目标',body:'在首页填写目标，可选填基础与时间。确认学习安排后生成路线。'},
+    {tab:'learning-path-tab',target:'#le-plan-preview',title:'看一眼路线，再保存',body:'等路线生成后，确认内容合适后点「就按这个学」。保存完成后点「打开这门课程」。'},
     {tab:'learning-workbench-tab',target:'#le-left-col',title:'选一节，开始学',body:'选中刚保存的项目和第一节课，在右侧阅读。不懂就点右下角的助教悬浮球，对话框可以随意拖动和缩放。学会后点「已掌握本节」。'}
   ];
   const tours = {
@@ -43,7 +43,7 @@
       {tab:'learning-dashboard-tab',target:'#le-dashboard-toolbar',title:'看看最近的进展',body:'选择同一个项目查看进展。下方可以切换最近 3 天或 30 天的学习时长，也可以导出全部记录。'}
     ],
     documents: [
-      {tab:'indices-tab',target:'#indices-tab',title:'先添加一份资料',body:'在「文件资料」上传 PDF、文档或笔记，再点「上传并建立索引」。等处理完成后，选中文件，点「使用此资料提问」。'},
+      {tab:'indices-tab',target:'#indices-tab',title:'先添加一份资料',body:'点「添加资料」，选择文件或网页，再点「加入资料库」。整理完成后就可以阅读原件，也可以用这份资料提问。'},
       {tab:'chat-tab',target:'#le-composer',title:'直接问你的问题',body:'在输入框写下问题并发送。用左侧加号选择参考资料；回答出现后，可在下方展开引用，核对原文。'}
     ]
   };
@@ -103,67 +103,48 @@
   install();
 })();
 
-(() => {
-  let index=0;
-  const fields=['le-wizard-topic','le-wizard-background','le-wizard-goal','le-wizard-hours'];
-  const titles=['想学点什么？','从你的起点出发','学完后，你想做到什么？','选择舒服的学习节奏'];
-  const hints=['从一个想解决的问题开始，一句话就够。','完全零基础也没关系；不确定可以跳过。','例如：完成一个小项目，或读懂一篇论文。可以先留空。','不用一次投入很多，稳定的小步更容易坚持。'];
-  function render(feedback=''){
-    const planner=document.getElementById('le-planner');if(!planner)return;
-    planner.classList.add('le-wizard');planner.classList.remove('le-show-preview');
-    fields.forEach((id,i)=>document.getElementById(id)?.classList.toggle('le-wizard-current',i===index));
-    document.querySelector('[data-wizard-title]').textContent=titles[index];
-    document.querySelector('[data-wizard-hint]').textContent=hints[index];
-    document.querySelector('[data-wizard-count]').textContent=`0${index+1} / 04`;
-    document.querySelector('.le-wizard-track i').style.width=`${index*100/4}%`;
-    document.querySelector('[data-wizard-feedback]').textContent=feedback;
-    const back=document.querySelector('[data-wizard-back]');back.disabled=index===0;
-    const next=document.querySelector('[data-wizard-next]');next.hidden=index===3;
-    next.textContent=index===0?'继续 →':'继续 / 跳过 →';
-    document.getElementById('le-wizard-generate').classList.toggle('le-wizard-ready',index===3);
-  }
-  function init(){if(!document.getElementById('le-wizard-topic')){setTimeout(init,300);return;}render();}
-  document.addEventListener('click',e=>{
-    if(e.target.closest('[data-wizard-next]')){
-      const input=document.querySelector('#le-wizard-topic textarea');
-      if(index===0&&!input?.value.trim()){document.querySelector('[data-wizard-feedback]').textContent='先写下一个想学的方向。';input?.focus();return;}
-      const filled=document.querySelector('#'+fields[index]+' textarea')?.value.trim();
-      index=Math.min(3,index+1);render(filled?'已填写，向前一步。':'已跳过，之后也可以补充。');
-      document.getElementById('le-wizard-header')?.scrollIntoView({block:'start',behavior:'smooth'});
-    }
-    if(e.target.closest('[data-wizard-back]')){index=Math.max(0,index-1);render();}
-    if(e.target.closest('[data-wizard-edit]')){render();}
-    if(e.target.closest('#le-route-regenerate, #le-route-refine, #le-route-load'))document.getElementById('le-planner')?.classList.add('le-show-preview');
-    if(e.target.closest('#le-wizard-generate')&&!e.target.closest('button')?.disabled){
-      if(document.querySelector('#le-wizard-topic textarea')?.value.trim())document.getElementById('le-planner').classList.add('le-show-preview');
-    }
-  });
-  init();
-})();
+
 
 (() => {
   function install(){
     const area=document.getElementById('chat-area'),settings=document.getElementById('chat-settings-expand'),input=document.getElementById('chat-input'),bot=document.getElementById('main-chat-bot');
     if(!area||!settings||!input||!bot){setTimeout(install,300);return;}
     if(document.getElementById('le-composer'))return;
-    // Move the original bound model control; preserve its Gradio callbacks.
     const modelInput=settings.querySelector('input[aria-label="回答模型"]');
-    const modelBlock=modelInput?.closest('.block');
+    const modelBlock=document.getElementById('le-chat-connection-controls') || modelInput?.closest('.block');
     if(modelBlock){
-      const header=document.createElement('header');header.id='le-chat-model-header';header.setAttribute('aria-label','回答模型');
+      const header=document.createElement('div');header.id='le-chat-model-header';
       document.getElementById('chat-tab').prepend(header);header.append(modelBlock);
-      modelInput.setAttribute('title','选择回答模型');
+      modelInput?.setAttribute('title','选择回答模型');
     }
-    const title=document.createElement('div');title.id='le-chat-welcome';title.innerHTML='<h1>今天想学点什么？</h1>';
+    const title=document.createElement('div');title.id='le-chat-welcome';
+    title.innerHTML='<div class="le-chat-hero-art" aria-hidden="true"></div><h1>把问题，聊明白。</h1>';
+    const starters=document.createElement('div');starters.className='le-chat-starters';
+    starters.innerHTML='<button type="button" data-le-prompt="请用一个生活中的例子，帮我解释这个概念："><span aria-hidden="true">✦</span><strong>讲懂一个概念</strong><b aria-hidden="true">↗</b></button><button type="button" data-le-source-starter data-le-prompt="请帮我梳理已选资料中的核心观点，并标出对应来源。"><span aria-hidden="true">▤</span><strong>读懂一份资料</strong><b aria-hidden="true">↗</b></button><button type="button" data-le-prompt="我想检查自己的理解。请先问我一个问题，等我回答后再给反馈。主题是："><span aria-hidden="true">✓</span><strong>检验我的理解</strong><b aria-hidden="true">↗</b></button>';
+    starters.addEventListener('click',event=>{
+      const starter=event.target.closest('[data-le-prompt]');
+      const textarea=input.querySelector('textarea');
+      if(!starter||!textarea)return;
+      if(textarea.value.trim()){textarea.focus();return;}
+      textarea.value=starter.dataset.lePrompt;
+      textarea.dispatchEvent(new Event('input',{bubbles:true}));
+      textarea.focus();
+      textarea.setSelectionRange(textarea.value.length,textarea.value.length);
+      if(starter.hasAttribute('data-le-source-starter'))sourceButton.click();
+    });
     const composer=document.createElement('div');composer.id='le-composer';input.before(composer);composer.append(input);composer.before(title);
     const suggestions=document.getElementById('le-chat-suggestions');
-    area.append(title,composer);
+    area.append(title,composer,starters);
+    const sourceTools=document.createElement('div');sourceTools.className='le-composer-tools';
+    const sourceButton=document.createElement('button');sourceButton.type='button';sourceButton.className='le-source-shortcut';sourceButton.textContent='选择参考资料';sourceButton.setAttribute('aria-expanded','false');
+    const libraryButton=document.createElement('button');libraryButton.type='button';libraryButton.className='le-library-shortcut';libraryButton.textContent='打开资料库 ↗';libraryButton.dataset.leNav='indices-tab';
+    sourceTools.append(sourceButton,libraryButton);composer.append(sourceTools);
     if(suggestions)area.append(suggestions);
     document.querySelector('#suggest-chat-checkbox input')?.setAttribute('role','switch');
     const plus=document.createElement('button');plus.id='le-chat-plus';plus.type='button';plus.textContent='+';plus.setAttribute('aria-label','打开问答工具');plus.setAttribute('aria-expanded','false');composer.append(plus);
     const menu=document.createElement('div');menu.id='le-chat-tool-menu';menu.hidden=true;
-    const options=[['sources','参考资料','选择文件与检索范围'],['answer','检索方式','选择适合问题的检索方式'],['citation','来源展示','选择引用原文的呈现方式'],['mindmap','思维导图','把回答中的要点整理成图']];
-    menu.innerHTML='<div class="le-menu-caption">问答工具</div>'+options.map(([key,label,desc])=>`<button type="button" data-chat-menu="${key}"><span>${label}<small>${desc}</small></span><span aria-hidden="true">›</span></button>`).join('');composer.append(menu);composer.append(settings);
+    const options=[['sources','参考资料'],['answer','回答方式'],['citation','引用展示'],['mindmap','思维导图']];
+    menu.innerHTML='<div class="le-menu-caption">问答工具</div>'+options.map(([key,label])=>`<button type="button" data-chat-menu="${key}"><span>${label}</span><span aria-hidden="true">›</span></button>`).join('');composer.append(menu);composer.append(settings);
     const flyout=document.createElement('section');flyout.id='le-chat-flyout';flyout.hidden=true;flyout.setAttribute('aria-label','问答工具设置');
     flyout.innerHTML='<div class="le-flyout-head"><button type="button" data-flyout-back>‹ 返回</button><strong></strong><button type="button" data-flyout-close aria-label="关闭工具菜单">×</button></div>';
     composer.append(flyout);
@@ -175,6 +156,18 @@
       function updateReferences(){
         cancelAnimationFrame(frame);frame=requestAnimationFrame(()=>{
           const content=document.getElementById('html-info-panel');
+          content?.querySelectorAll('summary').forEach(summary=>{
+            const walk=document.createTreeWalker(summary,NodeFilter.SHOW_TEXT);
+            while(walk.nextNode()){
+              const node=walk.currentNode;
+              let next=node.textContent;
+              if(node.parentElement?.tagName==='I')next=next.replace(/^Image from /,'图片 · ').replace(/^Table from /,'表格 · ').replace(/^(图片 · |表格 · )?\[Page (\d+)\]/,'$1第 $2 页 ·');
+              else if(node.parentElement?.closest('a.pdf-link')&&next.trim()==='[Preview]')next='查看原页';
+              else if(next.trim()==='Relevance score')next='相关度详情';
+              else if(/^\s*\[score: [\d.]+\]\s*$/.test(next))next=next.replace(/\[score: ([\d.]+)\]/,' · 相关度 $1');
+              if(next!==node.textContent)node.textContent=next;
+            }
+          });
           const hasAnswer=!!bot.querySelector('[data-testid="bot"], [data-testid="assistant"]');
           const busy=!!bot.querySelector('.wrap:not(.hide).translucent, .wrap.generating, .message.pending');
           const referenceText=content?.textContent.trim()||'';
@@ -218,38 +211,96 @@
       });
 
       document.addEventListener('click',e=>{if(!e.composedPath().includes(history))history.open=false;});
-      document.addEventListener('keydown',e=>{if(e.key==='Escape'&&history.open){history.open=false;history.querySelector('summary').focus();}});
-      const advanced=document.createElement('details');advanced.className='le-source-advanced';advanced.innerHTML='<summary>高级检索</summary><p>仅在需要图谱或关联检索时使用。</p>';
-      sources.append(advanced);['index-1','index-2','report-accordion'].forEach(id=>{const el=document.getElementById(id);if(el)advanced.append(el);});
+      document.addEventListener('keydown',e=>{if(e.key==='Escape'&&history.open&&!e.defaultPrevented&&!document.querySelector('dialog[open]')){e.preventDefault();history.open=false;history.querySelector('summary').focus({preventScroll:true});}});
+      const advanced=document.createElement('section');advanced.className='le-source-preferences';advanced.dataset.lePanel='检索偏好';advanced.dataset.leIcon='tune';
+      sources.append(advanced);['index-1','index-2'].forEach(id=>{const el=document.getElementById(id);if(el)advanced.append(el);});
+      const report=document.getElementById('report-accordion');if(report)sources.append(report);
+      const suggestedQuestions=document.getElementById('suggest-chat-checkbox');
+      if(suggestedQuestions)advanced.append(suggestedQuestions);
+      function sourceSelection(){
+        const files=document.getElementById('index-0');
+        const mode=files?.querySelector('input[type="radio"]:checked')?.value;
+        const chosen=[...(files?.querySelectorAll('.token > span')||[])].map(node=>node.textContent.trim());
+        const text=mode==='all'?'参考资料 · 全部文件':mode==='select'&&chosen.length?`参考资料 · ${chosen.length} 份`:'选择参考资料';
+        if(sourceButton.textContent!==text)sourceButton.textContent=text;
+        sourceButton.title=mode==='select'&&chosen.length?chosen.join('、'):'选择回答时参考的资料';
+      }
+      let sourceFrame;
+      const scheduleSourceSelection=()=>{cancelAnimationFrame(sourceFrame);sourceFrame=requestAnimationFrame(sourceSelection);};
+      sources.addEventListener('change',scheduleSourceSelection);
+      new MutationObserver(scheduleSourceSelection).observe(sources,{childList:true,subtree:true,attributes:true,attributeFilter:['aria-checked']});
+      sourceSelection();
       const note=document.createElement('p');note.className='le-source-note';note.textContent='选择参考资料，回答会基于你的检索范围。';sources.prepend(note);
       function localize(){sources.querySelectorAll('input[placeholder="Browse conversation"]').forEach(el=>el.setAttribute('placeholder','选择历史对话'));const walk=document.createTreeWalker(sources,NodeFilter.SHOW_TEXT);const words={'Browse conversation':'选择历史对话','Search All':'全部资料','Search In File(s)':'指定文件','Drop File Here':'将文件拖到这里','Click to Upload':'点击上传'};while(walk.nextNode()){const key=walk.currentNode.textContent.trim();if(words[key])walk.currentNode.textContent=words[key];}}
       localize();new MutationObserver(localize).observe(sources,{subtree:true,childList:true,characterData:true});
     }
-    function position(){if(flyout.hidden)return;const rect=menu.getBoundingClientRect();const width=Math.min(420,innerWidth-32);const fits=rect.right+width+20<=innerWidth;flyout.style.width=width+'px';flyout.style.left=(fits?rect.right+10:Math.max(16,Math.min(rect.left,innerWidth-width-16)))+'px';flyout.style.top=Math.max(16,Math.min(rect.top,innerHeight-280))+'px';flyout.style.maxHeight=(innerHeight-parseFloat(flyout.style.top)-16)+'px';}
+    let directSources=false;
+    function position(){
+      if(!window.LEPanels)return;
+      if(!menu.hidden)window.LEPanels.place(menu,plus,'bottom',224);
+      if(flyout.hidden)return;
+      flyout.dataset.direct=String(directSources);
+      const anchor=directSources?sourceButton:menu.querySelector('[aria-expanded="true"]') || menu;
+      window.LEPanels.place(flyout,anchor,directSources?'bottom':'side',320);
+    }
+    new ResizeObserver(position).observe(flyout);
     let hoverTimer;
-    function close(){clearTimeout(hoverTimer);menu.hidden=true;flyout.hidden=true;settings.dataset.menu='';plus.setAttribute('aria-expanded','false');document.getElementById('chat-tab')?.classList.remove('le-chat-sources-open','le-chat-evidence-open');menu.querySelectorAll('button').forEach(el=>el.setAttribute('aria-expanded','false'));}
+    function close(){clearTimeout(hoverTimer);menu.hidden=true;flyout.hidden=true;settings.dataset.menu='';plus.setAttribute('aria-expanded','false');sourceButton.setAttribute('aria-expanded','false');document.getElementById('chat-tab')?.classList.remove('le-chat-sources-open','le-chat-evidence-open');menu.querySelectorAll('button').forEach(el=>el.setAttribute('aria-expanded','false'));}
+    function backSubmenu(){
+      if(directSources){close();sourceButton.focus({preventScroll:true});return;}
+      const opener=menu.querySelector('[aria-expanded="true"]');
+      clearTimeout(hoverTimer);flyout.hidden=true;settings.dataset.menu='';
+      menu.querySelectorAll('button').forEach(el=>el.setAttribute('aria-expanded','false'));
+      (opener||plus).focus({preventScroll:true});
+    }
+    plus.setAttribute('aria-controls',menu.id);
+    sourceButton.setAttribute('aria-controls',flyout.id);
     close();
-    plus.addEventListener('click',()=>{const open=menu.hidden;close();menu.hidden=!open;plus.setAttribute('aria-expanded',String(open));});
-    function openSubmenu(button){clearTimeout(hoverTimer);if(!button||menu.hidden)return;const kind=button.dataset.chatMenu;
-      const changed=flyout.hidden||flyout.dataset.panel!==kind;
+    plus.addEventListener('click',()=>{const open=menu.hidden;close();directSources=false;menu.hidden=!open;plus.setAttribute('aria-expanded',String(open));position();});
+    plus.addEventListener('keydown',event=>{
+      if(!['ArrowDown','ArrowUp'].includes(event.key))return;
+      event.preventDefault();
+      clearTimeout(hoverTimer);
+      if(menu.hidden)plus.click();
+      const items=Array.from(menu.querySelectorAll('[data-chat-menu]'));
+      (event.key==='ArrowUp'?items.at(-1):items[0])?.focus({preventScroll:true});
+    });
+    sourceButton.addEventListener('click',()=>{const open=flyout.hidden||!directSources;close();directSources=true;if(open){openSubmenu(menu.querySelector('[data-chat-menu="sources"]'));sourceButton.setAttribute('aria-expanded','true');}});
+    function openSubmenu(button){clearTimeout(hoverTimer);if(!button||(menu.hidden&&!directSources))return;const kind=button.dataset.chatMenu;
       flyout.hidden=false;flyout.dataset.panel=kind;settings.dataset.menu=['sources','evidence'].includes(kind)?'':kind;
       flyout.querySelector('strong').textContent=options.find(item=>item[0]===kind)[1];
       menu.querySelectorAll('button').forEach(el=>el.setAttribute('aria-expanded',String(el===button)));
       const toggle=settings.querySelector(':scope>.label-wrap');if(toggle&&!toggle.classList.contains('open'))toggle.click();position();
-      if(changed&&!matchMedia('(prefers-reduced-motion: reduce)').matches){flyout.getAnimations().forEach(animation=>animation.cancel());flyout.animate([{opacity:0,transform:'translateX(-5px)'},{opacity:1,transform:'translateX(0)'}],{duration:160,easing:'ease-out'});}
     }
     menu.addEventListener('click',e=>openSubmenu(e.target.closest('[data-chat-menu]')));
     menu.addEventListener('pointerover',e=>{if(e.pointerType!=='mouse')return;const button=e.target.closest('[data-chat-menu]');if(!button||button.contains(e.relatedTarget))return;clearTimeout(hoverTimer);hoverTimer=setTimeout(()=>openSubmenu(button),140);});
     menu.addEventListener('pointerout',e=>{const button=e.target.closest('[data-chat-menu]');if(button&&!button.contains(e.relatedTarget))clearTimeout(hoverTimer);});
-    menu.addEventListener('focusin',e=>openSubmenu(e.target.closest('[data-chat-menu]')));
-    menu.addEventListener('keydown',e=>{if(e.key==='ArrowRight'){openSubmenu(e.target.closest('[data-chat-menu]'));flyout.querySelector('[data-flyout-back]').focus();e.preventDefault();}});
-    flyout.querySelector('[data-flyout-close]').addEventListener('click',()=>{close();plus.focus();});
-    flyout.querySelector('[data-flyout-back]').addEventListener('click',()=>{flyout.hidden=true;settings.dataset.menu='';menu.querySelectorAll('button').forEach(el=>el.setAttribute('aria-expanded','false'));});
+    menu.addEventListener('keydown',event=>{
+      const items=Array.from(menu.querySelectorAll('[data-chat-menu]'));
+      const button=event.target.closest('[data-chat-menu]');
+      if(!button)return;
+      if(event.key==='ArrowRight'){
+        openSubmenu(button);flyout.querySelector('[data-flyout-back]').focus({preventScroll:true});event.preventDefault();return;
+      }
+      if(!['ArrowDown','ArrowUp','Home','End'].includes(event.key))return;
+      event.preventDefault();
+      clearTimeout(hoverTimer);
+      const index=items.indexOf(button);
+      const next=event.key==='Home'?0:event.key==='End'?items.length-1:(index+(event.key==='ArrowDown'?1:-1)+items.length)%items.length;
+      if(!flyout.hidden){clearTimeout(hoverTimer);flyout.hidden=true;settings.dataset.menu='';items.forEach(item=>item.setAttribute('aria-expanded','false'));}
+      items[next]?.focus({preventScroll:true});
+    });
+    flyout.querySelector('[data-flyout-close]').addEventListener('click',()=>{close();(directSources?sourceButton:plus).focus();});
+    flyout.querySelector('[data-flyout-back]').addEventListener('click',backSubmenu);
     window.addEventListener('resize',position);window.addEventListener('scroll',position,true);
     function sync(){area.classList.toggle('le-chat-empty',!!bot.querySelector('.placeholder-container'));}
     new MutationObserver(sync).observe(bot,{subtree:true,childList:true});sync();
-    document.addEventListener('click',e=>{if(!e.composedPath().includes(composer))close();});
-    document.addEventListener('keydown',e=>{if(e.key==='Escape'){close();}});
+    document.addEventListener('click',e=>{if(!e.composedPath().includes(composer)&&!e.target.closest('[data-le-source-starter],.le-settings-deck'))close();});
+    document.addEventListener('keydown',event=>{
+      if(event.key!=='Escape'||event.defaultPrevented||document.querySelector('dialog[open]'))return;
+      if(!flyout.hidden){event.preventDefault();backSubmenu();}
+      else if(!menu.hidden){event.preventDefault();close();plus.focus({preventScroll:true});}
+    });
   }
   install();
 })();

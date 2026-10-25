@@ -27,7 +27,9 @@ from learning_ext.fsrs_review.service import (
     get_review_stats,
     review_card,
 )
+from learning_ext.page_design import page_intro, section_heading, practice_empty
 from learning_ext.presentation import project_choices
+from learning_ext.progress.study import course_code_sort_key
 
 logger = logging.getLogger(__name__)
 
@@ -61,65 +63,38 @@ class ReviewPage(BasePage):
     # ==================== UI ====================
 
     def on_building_ui(self):
-        gr.Markdown(
-            "# 今日复习\n先选要复习的那一节，再开始。先回忆，再看答案，最后按难度评分。"
-        )
-        with gr.Column(elem_id="le-review-flow"):
-            with gr.Row(elem_id="le-review-scope"):
-                self.project = gr.Dropdown(
-                    label="学习项目",
-                    choices=[],
-                    interactive=True,
-                    scale=3.6,
-                    # 两个下拉都带一行说明，标签和输入框才能在一条线上对齐；
-                    # 只有一个带 info 时，它的标签会被自己的说明顶高一截。
-                    info="先选项目，下一栏才有可复习的章节。",
-                )
+        gr.HTML(page_intro("review"))
+        with gr.Row(elem_id="le-review-flow"):
+            with gr.Column(elem_id="le-review-scope", scale=1, min_width=270):
+                gr.HTML(section_heading("01", "复习范围"))
+                self.project = gr.Dropdown(label="学习项目", choices=[], interactive=True)
                 self.node = gr.Dropdown(
-                    label="复习哪一节",
-                    choices=[],
-                    value=None,
-                    interactive=True,
-                    scale=4,
-                    info="选一节只复习这一节；也可以选「全部章节」一次刷完。",
+                    label="复习哪一节", choices=[], value=None, interactive=True,
                 )
-                self.btn_start = gr.Button(
-                    "开始复习 →", variant="primary", scale=1.5, elem_id="le-review-start"
+                self.btn_start = gr.Button("开始复习 →", variant="primary", elem_id="le-review-start")
+                with gr.Accordion("写一张自己的卡片", open=False):
+                    self.front = gr.Textbox(label="问题", lines=2)
+                    self.back = gr.Textbox(label="答案", lines=3)
+                    self.add = gr.Button("保存这张卡", size="sm")
+                    self.add_status = gr.Markdown("")
+            with gr.Column(elem_id="le-review-session", scale=2, min_width=320):
+                gr.HTML(section_heading("02", "回忆卡片"))
+                self.stats = gr.Markdown("", elem_id="le-review-stats")
+                self.card_front = gr.Markdown(
+                    practice_empty("review", "选好项目与章节，点「开始复习」。"), elem_id="le-review-card"
                 )
-            self.stats = gr.Markdown("", elem_id="le-review-stats")
-            self.card_front = gr.Markdown(
-                "选好项目与章节，点「开始复习」。", elem_id="le-review-card"
-            )
-            self.card_back = gr.Markdown("", visible=False, elem_id="le-review-answer")
-            with gr.Row(elem_id="le-review-actions"):
-                self.reveal = gr.Button("显示答案", interactive=False)
-                self.gen_cards = gr.Button(
-                    "为这一节生成 5 张卡", variant="secondary", visible=False
-                )
-            with gr.Row(elem_id="le-review-ratings"):
-                self.ratings = [
-                    gr.Button(
-                        label,
-                        interactive=False,
-                        variant="primary" if n == 3 else "secondary",
-                    )
-                    for n, label in enumerate(
-                        [
-                            "重来 · 没有想起",
-                            "困难 · 勉强想起",
-                            "良好 · 正常回忆",
-                            "简单 · 轻松掌握",
-                        ],
-                        1,
-                    )
-                ]
-            self.status = gr.Markdown("", elem_id="le-review-status")
-            with gr.Accordion("手动写一张卡片", open=False):
-                gr.Markdown("给当前选中的这一节加一张自己的问答卡。")
-                self.front = gr.Textbox(label="问题", lines=2)
-                self.back = gr.Textbox(label="答案", lines=3)
-                self.add = gr.Button("保存这张卡", size="sm")
-                self.add_status = gr.Markdown("")
+                self.card_back = gr.Markdown("", visible=False, elem_id="le-review-answer")
+                with gr.Row(elem_id="le-review-actions"):
+                    self.reveal = gr.Button("翻开答案 →", interactive=False, visible=False, variant="primary")
+                    self.gen_cards = gr.Button("生成卡片（5 张）", variant="primary", visible=False, elem_id="le-review-generate")
+                with gr.Row(elem_id="le-review-ratings"):
+                    self.ratings = [
+                        gr.Button(label, interactive=False, visible=False, variant="primary" if n == 3 else "secondary")
+                        for n, label in enumerate(
+                            ["重来 · 没有想起", "困难 · 勉强想起", "良好 · 正常回忆", "简单 · 轻松掌握"], 1
+                        )
+                    ]
+                self.status = gr.Markdown("", elem_id="le-review-status")
 
     # ==================== 事件 ====================
 
@@ -208,10 +183,10 @@ class ReviewPage(BasePage):
             ).all()
             counts = cards_per_node(session, int(pid))
         choices = [("全部章节", ALL_NODES)]
-        for n in ns:
+        for n in sorted(ns, key=lambda node: course_code_sort_key(node.code)):
             cnt = counts.get(n.id, 0)
-            tail = f"{cnt} 张" if cnt else "还没卡片"
-            choices.append((f"{n.code} · {n.title}　·　{tail}", str(n.id)))
+            tail = f" · {cnt} 张卡片" if cnt else ""
+            choices.append((f"{n.code} · {n.title}{tail}", str(n.id)))
         # 默认落到「全部章节」，想按节复习自己选
         return gr.update(choices=choices, value=ALL_NODES)
 
@@ -228,7 +203,7 @@ class ReviewPage(BasePage):
         nid_i = int(nid) if nid and nid != ALL_NODES else None
         return pid_i, nid_i
 
-    def _load_next(self, pid, nid, notice=""):
+    def _load_next(self, pid, nid=ALL_NODES, notice=""):
         pid_i, nid_i = self._scope(pid, nid)
         with Session(engine) as session:
             stats = get_review_stats(session, project_id=pid_i, node_id=nid_i)
@@ -272,14 +247,14 @@ class ReviewPage(BasePage):
         elif peek:
             if need_cards:
                 front = (
-                    "这一节还没有复习卡片，点下方「为这一节生成 5 张卡」。"
+                    "这一节还没有复习卡片。点击下方「生成卡片（5 张）」，或在左侧手写一张。"
                     if nid_i
-                    else "这个项目还没有复习卡片，先在上方选一节。"
+                    else "这个项目还没有复习卡片。请先在左侧「复习哪一节」选择具体一节，再生成卡片。"
                 )
             elif due == 0:
                 front = f"这一节暂时没有到期卡片，下次到期：{_local_date(stats.get('next_due'))}。"
             else:
-                front = f"有 {due} 张卡等着复习，点右上角「开始复习 →」。"
+                front = f"有 {due} 张卡等着复习，点「开始复习 →」。"
             back = gr.update(value="", visible=False)
             reveal_btn = gr.update(interactive=False)
         else:
@@ -287,7 +262,7 @@ class ReviewPage(BasePage):
                 front = (
                     "这一节暂时没有到期的卡片了。"
                     if total
-                    else "这一节还没有复习卡片，点下方「为这一节生成 5 张卡」。"
+                    else "这一节还没有复习卡片。点击下方「生成卡片（5 张）」，或在左侧手写一张。"
                 )
             else:
                 front = "没有取到卡片，可以再点一次「开始复习」。"
@@ -295,12 +270,16 @@ class ReviewPage(BasePage):
             reveal_btn = gr.update(interactive=False)
 
         # 「生成卡片」只在没有卡、且选定具体某一节时露出来
-        gen_btn = gr.update(visible=bool(need_cards and nid_i))
+        can_generate = bool(need_cards and nid_i)
+        gen_btn = gr.update(visible=can_generate, interactive=can_generate)
         # 没卡可复习时，收起「显示答案」和评分，避免空页面上摆一排灰按钮。
         # 注意：不要再动态改「开始复习」这个按钮——Gradio 会把它的更新错位到
         # 后面第一个按钮（评分第一颗）上，实测过。文案引导交给卡片区。
         has_card = card is not None
         reveal_btn = gr.update(interactive=has_card, visible=has_card)
+
+        if card is None:
+            front = practice_empty("review", front)
 
         return (
             front,
@@ -323,9 +302,11 @@ class ReviewPage(BasePage):
 
     # ==================== 评分 ====================
 
-    def _rate(self, cid, shown, pid, nid, rating):
+    def _rate(self, cid, shown, pid, nid=ALL_NODES, rating=None):
+        if rating is None:
+            rating, nid = nid, ALL_NODES
         if not cid or not shown:
-            return self._load_next(pid, nid, "请先点「显示答案」，再按回忆难度评分。")
+            return self._load_next(pid, nid, "请先点「翻开答案」，再按回忆难度评分。")
         try:
             with Session(engine) as session:
                 card = session.get(Card, int(cid))

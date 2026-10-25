@@ -7,6 +7,7 @@ import json
 from datetime import datetime
 import logging
 import re
+from learning_ext.environment_view import environment_state
 from learning_ext.presentation import (
     project_display_name,
     project_choices,
@@ -58,6 +59,7 @@ from learning_ext.progress import gate
 from learning_ext.progress.audit import audit_node_content
 from learning_ext.llm.client import friendly_error
 from learning_ext.pages.adapt_panel import AdaptPanel
+from learning_ext.pages.action_learning import ActionLearningPanel
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +97,7 @@ function(...args){
 
 WORKBENCH_CSS = """
 <style>
-#le-selected-term {position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;overflow:hidden!important;pointer-events:none!important;}
+#le-selected-term {position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;overflow:hidden!important;pointer-events:none!important;visibility:hidden!important;}
 #le-term-result {display:none!important;}
 #le-guide-md {overflow-wrap:anywhere;word-break:break-word;}
 </style>
@@ -138,57 +140,67 @@ class StudyWorkbenchPage(BasePage):
                     elem_classes=["le-caption"], elem_id="le-course-hint",
                 )
                 with gr.Accordion("管理", open=False, elem_id="le-course-admin"):
-                    with gr.Row():
+                    with gr.Row(elem_id="le-course-refresh-actions"):
                         self.refresh_btn = gr.Button("刷新项目", size="sm")
                         self.load_list_btn = gr.Button("刷新课程", size="sm")
                     self.adapt_open_btn = gr.Button(
                         "课程适配度调整", size="sm", elem_id="le-adapt-open"
                     )
-                    self.view_btn = gr.Button("重新载入当前课程", size="sm")
+                    self.view_btn = gr.Button("重新载入当前课程", size="sm", elem_id="le-course-reload")
                     with gr.Accordion("环境配置", open=False, elem_id="le-env-setup"):
-                        self.env_status = gr.Markdown("")
+                        self.env_status = gr.HTML(environment_state(), elem_id="le-env-status")
                         self.auto_setup_plan = gr.State(value=None)
-                        self.auto_setup_btn = gr.Button("生成配置方案", size="sm")
-                        self.execute_setup_btn = gr.Button("执行这份配置方案", size="sm", visible=False)
-                        self.apply_env_btn = gr.Button("已完成配置", size="sm")
-                        self.auto_setup_output = gr.Code(
-                            label="配置方案与执行记录",
-                            language="shell",
-                            visible=False,
-                            interactive=False,
-                        )
-                    with gr.Accordion("内容维护", open=False):
+                        self.execute_setup_btn = gr.Button("确认并执行方案", size="sm", variant="primary", visible=False, elem_id="le-env-execute")
+                        with gr.Row(elem_id="le-env-actions"):
+                            self.auto_setup_btn = gr.Button("生成方案", size="sm", variant="primary", elem_id="le-env-generate")
+                            self.apply_env_btn = gr.Button("我已配置好", size="sm", elem_id="le-env-confirm")
+                        with gr.Accordion("查看命令与执行记录", open=False, elem_id="le-env-log"):
+                            self.auto_setup_output = gr.Code(
+                                label="命令与执行记录", show_label=False,
+                                language="shell", visible=False, interactive=False,
+                            )
+                    with gr.Accordion("内容维护", open=False, elem_id="le-course-maintenance"):
                         self.regen_all_btn = gr.Button("补全缺失内容", size="sm")
                         self.regen_all_force_btn = gr.Button(
                             "重新生成全部内容", size="sm", variant="stop"
                         )
                         self.regen_all_status = gr.Markdown("")
-                    with gr.Accordion("添加课程", open=False):
+                    with gr.Accordion("添加课程", open=False, elem_id="le-course-add"):
                         self.add_title = gr.Textbox(
-                            label="课程标题", placeholder="例如：分布式训练进阶"
+                            label="课程标题", placeholder="例如：分布式训练进阶", lines=1
                         )
-                        self.add_stage = gr.Dropdown(
-                            label="阶段",
-                            choices=[
-                                ("基础", "base"),
-                                ("强化", "strengthen"),
-                                ("冲刺", "sprint"),
-                            ],
-                            value="base",
-                        )
-                        self.add_code = gr.Textbox(
-                            label="编号 · 可选", placeholder="例如：1.6"
-                        )
-                        self.add_difficulty = gr.Slider(
-                            label="难度", minimum=1, maximum=5, value=3, step=1
-                        )
-                        self.add_hours = gr.Number(
-                            label="预估学时", value=2, precision=0
-                        )
-                        self.add_desc = gr.Textbox(label="课程说明", lines=2)
-                        self.add_ai_btn = gr.Button("AI 生成并添加", size="sm")
-                        self.add_btn = gr.Button("添加课程", size="sm")
+                        self.add_desc = gr.Textbox(label="想学什么", placeholder="写下重点，或让 AI 帮你补充", lines=2)
+                        with gr.Row(elem_id="le-course-add-basics"):
+                            self.add_stage = gr.Dropdown(
+                                label="阶段", min_width=130,
+                                choices=[("基础", "base"), ("强化", "strengthen"), ("冲刺", "sprint")], value="base",
+                            )
+                            self.add_hours = gr.Number(label="预计小时", value=2, precision=0, min_width=100)
+                        with gr.Accordion("编号与难度", open=False, elem_id="le-course-add-options"):
+                            self.add_code = gr.Textbox(label="课程编号", placeholder="自动安排，也可以填写 1.6", lines=1)
+                            self.add_difficulty = gr.Slider(label="难度", minimum=1, maximum=5, value=3, step=1)
+                        with gr.Row(elem_id="le-course-add-actions"):
+                            self.add_btn = gr.Button("直接添加", size="sm")
+                            self.add_ai_btn = gr.Button("AI 生成并添加", size="sm", variant="primary")
                         self.add_status = gr.Markdown("")
+                    with gr.Accordion("项目设置", open=False, elem_id="le-project-settings"):
+                        gr.Markdown(
+                            "删除当前项目及其课程、卡片、测验、笔记和学习记录。此操作不可撤销。",
+                            elem_classes=["le-delete-warning"],
+                        )
+                        self.delete_confirm = gr.Textbox(
+                            label="输入 DELETE 确认删除",
+                            placeholder="DELETE",
+                            lines=1,
+                            elem_id="le-delete-confirm",
+                        )
+                        self.delete_btn = gr.Button(
+                            "删除当前项目",
+                            variant="stop",
+                            interactive=False,
+                            elem_id="le-delete-project",
+                        )
+                        self.delete_status = gr.Markdown("", elem_id="le-delete-status")
             with gr.Column(scale=4, min_width=320, elem_id="le-center-col"):
                 self.selected_term = gr.Textbox(
                     elem_id="le-selected-term",
@@ -198,6 +210,7 @@ class StudyWorkbenchPage(BasePage):
                 )
                 # 学习节奏条：到期复习 / 今天学了多久 / 该做查漏了
                 self.rhythm_bar = gr.HTML("", elem_id="le-rhythm-bar")
+                self.action_learning = ActionLearningPanel(self).build()
                 with gr.Tabs(elem_id="le-content-tabs"):
                     with gr.TabItem("阅读", elem_id="le-lookup-zone"):
                         self.node_guide = gr.Markdown(
@@ -261,7 +274,7 @@ class StudyWorkbenchPage(BasePage):
                         self.start_btn = gr.Button("标记为学习中", size="sm")
                         self.skip_btn = gr.Button("跳过本节", size="sm")
                     self.master_btn = gr.Button(
-                        "已掌握本节 ✓", variant="primary", size="sm"
+                        "已掌握本节 ✓", variant="primary", size="sm", elem_id="le-master-btn"
                     )
                 self.action_status = gr.Markdown("")
         # 过关检查弹窗：点「已掌握」没过时弹出。两关缺一条就不让标已掌握，
@@ -361,6 +374,7 @@ class StudyWorkbenchPage(BasePage):
     # ==================== 事件绑定 ====================
 
     def on_register_events(self):
+        self.action_learning.register()
         # 项目变化: 刷新进度 + 课程下拉框 + 环境状态
         project_outputs = [
             self.progress_display,
@@ -463,16 +477,19 @@ class StudyWorkbenchPage(BasePage):
             fn=self._prepare_setup,
             inputs=[self.current_project_id],
             outputs=[self.auto_setup_output, self.env_status, self.auto_setup_plan, self.execute_setup_btn],
+            show_progress="hidden",
         )
         self.execute_setup_btn.click(
             fn=self._execute_setup,
             inputs=[self.current_project_id, self.auto_setup_plan],
             outputs=[self.auto_setup_output, self.env_status, self.auto_setup_plan, self.execute_setup_btn],
+            show_progress="hidden",
         )
         self.apply_env_btn.click(
             fn=self._apply_env,
             inputs=[self.current_project_id],
             outputs=[self.env_status],
+            show_progress="hidden",
         )
 
         # 重新生成
@@ -667,7 +684,7 @@ class StudyWorkbenchPage(BasePage):
         )
 
         # 页面加载后自动初始化: 填充项目+课程+预加载第一节内容
-        load_outputs = [
+        load_outputs = self.load_outputs = [
             self.project_id,  # 0: 项目下拉框
             self.progress_display,  # 1: 进度
             self.course_drop,  # 2: 课程下拉框
@@ -682,6 +699,21 @@ class StudyWorkbenchPage(BasePage):
             self.annotation_md,  # 11: 正文批注（刷新页面后不该消失）
             self.prep_timer,  # 12: 备课轮询开关
         ]
+        self.project_id.input(
+            lambda: ("", gr.update(interactive=False)),
+            outputs=[self.delete_confirm, self.delete_btn],
+        )
+        self.delete_confirm.input(
+            lambda text: gr.update(interactive=(text or "").strip() == "DELETE"),
+            inputs=[self.delete_confirm],
+            outputs=[self.delete_btn],
+        )
+        self.delete_btn.click(
+            fn=self._delete_current_project,
+            inputs=[self.current_project_id, self.delete_confirm],
+            outputs=[*load_outputs, self.delete_confirm, self.delete_btn, self.delete_status],
+            concurrency_limit=1,
+        )
         try:
             self._app.app.load(
                 fn=self._auto_init,
@@ -698,11 +730,9 @@ class StudyWorkbenchPage(BasePage):
     # ==================== 业务函数 ====================
 
     def _build_node_header(self, node, proj):
-        return (
-            f"### [{node.code}] {node.title}\n\n"
-            f"`{node.est_hours}h` `难度{node.difficulty}/5` "
-            f"`{STATUS_LABEL.get(node.status, node.status)}`"
-        )
+        from html import escape
+        level = {1: "轻松入门", 2: "基础入门", 3: "进阶探索", 4: "深入实践", 5: "挑战提升"}.get(node.difficulty, "循序渐进")
+        return f'<div class="le-lesson-heading"><span class="le-lesson-kicker">LESSON {escape(str(node.code))}</span><h2>{escape(node.title)}</h2><div class="le-lesson-meta"><span>◷ 约 {node.est_hours:g} 小时</span><span>{level}</span><span class="le-lesson-state">{escape(STATUS_LABEL.get(node.status, node.status))}</span></div></div>'
 
     def _build_progress_md(self, prog):
         # 工具条里只有一行，详细拆分留给看板
@@ -763,9 +793,9 @@ class StudyWorkbenchPage(BasePage):
         ).first()
         if env_task:
             return env_task.description or "", (
-                "✅ 环境已配置" if env_task.status == "done" else "⚠️ 环境待配置"
+                environment_state("done", "环境已配置", "可以回到课程，继续这一节。") if env_task.status == "done" else environment_state()
             )
-        return "", ""
+        return "", environment_state("empty", "暂时无需准备", "当前项目还没有环境配置清单，可先阅读课程。")
 
     def _render_resources_md(self, resources):
         lines = []
@@ -792,8 +822,9 @@ class StudyWorkbenchPage(BasePage):
         return task.description
 
     # ---- 自动初始化 (页面加载时执行, 预加载第一节内容) ----
-    def _auto_init(self):
+    def _auto_init(self, project_id=None):
         """页面加载后: 填充项目/课程下拉框 + 预加载第一个可学节点的教学内容。"""
+        self._pending_node = None
         try:
             with Session(engine) as s:
                 projs = s.exec(
@@ -801,9 +832,9 @@ class StudyWorkbenchPage(BasePage):
                 ).all()
                 if not projs:
                     return [
-                        gr.update(),
+                        gr.update(choices=[], value=None),
                         "",
-                        gr.update(),
+                        gr.update(choices=[], value=None),
                         None,
                         "",
                         None,
@@ -815,7 +846,7 @@ class StudyWorkbenchPage(BasePage):
                         self._annotation_empty(),
                         self._timer_update(),
                     ]
-                pid = projs[0].id
+                pid = next((p.id for p in projs if str(p.id) == str(project_id)), projs[0].id)
                 dd_update = gr.update(
                     choices=project_choices(projs),
                     value=str(pid),
@@ -908,6 +939,51 @@ class StudyWorkbenchPage(BasePage):
             ]
 
     # ---- 项目相关 ----
+    def _delete_current_project(self, project_id, confirm):
+        confirmation = (confirm or "").strip()
+
+        def failure(message):
+            return [gr.update() for _ in range(13)] + [
+                gr.update(value=confirm or ""),
+                gr.update(interactive=confirmation == "DELETE"),
+                message,
+            ]
+
+        try:
+            pid = int(project_id)
+        except (TypeError, ValueError):
+            return failure("请先选择要删除的项目")
+        if pid <= 0:
+            return failure("请先选择要删除的项目")
+        if confirmation != "DELETE":
+            return failure("请输入 DELETE 确认删除")
+        with Session(engine) as session:
+            project = session.get(LearningProject, pid)
+            if project is None or project.user_id != "default":
+                return failure("项目不存在或无权删除")
+            name = project_display_name(project)
+        from learning_ext.progress import prep
+
+        if prep.is_busy(pid):
+            return failure("当前项目正在备课，完成后再删除")
+        try:
+            from learning_ext.project_ops import delete_project
+
+            with Session(engine) as session:
+                delete_project(session, pid)
+        except Exception:
+            logger.exception("删除项目失败 #%s", pid)
+            return failure("删除失败，请稍后重试")
+        getattr(self, "_prep_kicked", set()).discard(pid)
+        getattr(self, "_pending_nodes", {}).clear()
+        self._pending_node = None
+        refreshed = self._auto_init()
+        return list(refreshed) + [
+            "",
+            gr.update(interactive=False),
+            f"已删除项目「{html.escape(name)}」及其学习记录",
+        ]
+
     def _refresh_projects(self):
         try:
             with Session(engine) as session:
@@ -921,6 +997,7 @@ class StudyWorkbenchPage(BasePage):
             return gr.update()
 
     def _on_project_change(self, project_id):
+        self._pending_node = None
         if not project_id:
             return "*请先选择项目*", gr.update(), None, ""
         try:
@@ -1027,6 +1104,7 @@ class StudyWorkbenchPage(BasePage):
     # ---- 课程加载 (按钮触发, 普通函数) ----
     def _on_node_select(self, node_id):
         """「查看课程」按钮触发: 读取 Dropdown 选中的节点 ID, 加载教学内容。"""
+        self._pending_node = None
         logger.info(f"[工作台] _on_node_select 被调用, node_id={node_id!r}")
         if not node_id or node_id == "__stage__":
             return (
@@ -1128,7 +1206,9 @@ class StudyWorkbenchPage(BasePage):
         现在一律不阻塞，写完由定时器自动替换。
         """
         current = guide or ""
+        self._pending_node = None
         if is_content_valid(current):
+            getattr(self, "_pending_nodes", {}).pop(node_id, None)
             return current
         try:
             nid = int(node_id)
@@ -1152,8 +1232,6 @@ class StudyWorkbenchPage(BasePage):
             nid = int(node_id)
         except (TypeError, ValueError):
             return
-        if nid in self._pending_nodes:
-            return
         with Session(engine) as session:
             node = session.get(KnowledgeNode, nid)
             if not node:
@@ -1173,9 +1251,11 @@ class StudyWorkbenchPage(BasePage):
             pid = int(pid)
         except (TypeError, ValueError):
             return
-        if pid in self._prep_kicked:
+        kicked = getattr(self, "_prep_kicked", None)
+        if kicked is None:
+            kicked = self._prep_kicked = set()
+        if pid in kicked:
             return
-        self._prep_kicked.add(pid)
         try:
             with Session(engine) as session:
                 nodes = session.exec(
@@ -1185,6 +1265,7 @@ class StudyWorkbenchPage(BasePage):
         except Exception:
             logger.exception("扫描缺失教学内容失败")
             return
+        kicked.add(pid)
         if missing:
             prep.start(pid, missing, topic)
             logger.info("[工作台] 项目#%s 后台补备 %d 节", pid, len(missing))
@@ -1195,6 +1276,8 @@ class StudyWorkbenchPage(BasePage):
         gr.Timer 不会传输入，所以用 self._pending_node 记住当前在等哪一节；
         替换成功后清掉，避免每 3 秒重复推同一份内容。
         """
+        from learning_ext.progress import prep
+
         nid = self._pending_node
         if not nid:
             # 没在等任何一节：顺手把轮询关掉，别让它在后台空转
@@ -1202,12 +1285,28 @@ class StudyWorkbenchPage(BasePage):
         try:
             with Session(engine) as session:
                 node = session.get(KnowledgeNode, int(nid))
-                if not node or not is_content_valid(node.description):
+                if self._pending_node != nid:
+                    return gr.update(), gr.update(), gr.update()
+                if not node:
+                    self._pending_node = None
+                    self._pending_nodes.pop(int(nid), None)
+                    return "这节课程已移除，请选择其他章节。", "", gr.update(active=False)
+                if not is_content_valid(node.description):
+                    if prep.node_status(node.project_id, int(nid)) in {"failed", "done"}:
+                        self._pending_node = None
+                        self._pending_nodes.pop(int(nid), None)
+                        return (
+                            "这一节暂时没能准备好。检查模型连接后，重新选择这节课程即可重试。",
+                            gr.update(),
+                            gr.update(active=False),
+                        )
                     return gr.update(), gr.update(), gr.update()
                 practice_md = self._render_practice_md(get_practice_task(session, int(nid)))
                 body = node.description or ""
         except Exception:
             logger.exception("读取备课结果失败")
+            return gr.update(), gr.update(), gr.update()
+        if self._pending_node != nid:
             return gr.update(), gr.update(), gr.update()
         self._pending_node = None
         self._pending_nodes.pop(int(nid), None)
@@ -1542,24 +1641,24 @@ class StudyWorkbenchPage(BasePage):
                 project = session.get(LearningProject, pid)
                 task = session.exec(select(Task).where(Task.project_id == pid, Task.task_type == "env")).first()
                 if not project or not task or not task.description:
-                    yield hidden, "当前项目还没有环境配置清单。", None, hidden
+                    yield hidden, environment_state("empty", "暂时无需准备", "当前项目还没有环境配置清单，可先阅读课程。"), None, hidden
                     return
                 description, background = task.description, project.background or ""
-            yield gr.update(visible=True, value="正在整理配置方案，尚未执行任何命令。"), "正在生成方案…", None, hidden
+            yield hidden, environment_state("loading", "正在整理配置方案", "根据当前课程准备步骤，尚未执行任何命令。"), None, hidden
             commands = generate_install_commands(description, background)
             if not commands:
-                yield gr.update(visible=True, value="这份清单无需自动配置。"), "可按课程说明直接开始学习。", None, hidden
+                yield hidden, environment_state("done", "无需额外配置", "可按课程说明直接开始学习。"), None, hidden
                 return
             if not isinstance(commands, list) or any(not isinstance(c, dict) or not str(c.get("cmd") or "").strip() for c in commands):
                 raise ValueError("生成的配置命令不完整，请重新生成。")
             preview = "\n\n".join(f"# {i}. {c.get('desc', '配置步骤')}\n{c['cmd']}" for i, c in enumerate(commands, 1))
             plan = {"project_id": pid, "fingerprint": hashlib.sha256(description.encode()).hexdigest(), "commands": commands}
-            yield gr.update(visible=True, value=preview), "请检查上方方案。点击执行后，才会在本机安装软件或修改配置。", plan, gr.update(visible=True)
+            yield gr.update(visible=True, value=preview), environment_state("ready", f"已准备 {len(commands)} 个步骤", "展开下方命令检查。确认执行后，才会在本机安装软件或修改配置。", commands), plan, gr.update(visible=True)
         except (TypeError, ValueError) as exc:
-            yield hidden, str(exc) if project_id else "请先选择学习项目。", None, hidden
+            yield hidden, environment_state("error", "还不能生成方案", str(exc) if project_id else "请先选择学习项目。"), None, hidden
         except Exception:
             logger.exception("Failed to prepare environment setup")
-            yield hidden, "配置方案生成失败，请检查模型连接后重试。", None, hidden
+            yield hidden, environment_state("error", "方案暂未生成", "配置方案生成失败，请检查模型连接后重试。"), None, hidden
 
     def _execute_setup(self, project_id, plan):
         import hashlib
@@ -1569,28 +1668,28 @@ class StudyWorkbenchPage(BasePage):
         try:
             pid = int(project_id)
             if not isinstance(plan, dict) or plan.get("project_id") != pid or not plan.get("commands"):
-                yield gr.update(), "请先为当前项目生成配置方案。", None, hidden
+                yield gr.update(), environment_state("error", "请重新准备方案", "请先为当前项目生成配置方案。"), None, hidden
                 return
             with Session(engine) as session:
                 task = session.exec(select(Task).where(Task.project_id == pid, Task.task_type == "env")).first()
                 fingerprint = hashlib.sha256((task.description or "").encode()).hexdigest() if task else None
             if fingerprint != plan.get("fingerprint"):
-                yield gr.update(), "环境清单已更新，请重新生成方案。", None, hidden
+                yield gr.update(), environment_state("error", "配置清单有变化", "环境清单已更新，请重新生成方案。"), None, hidden
                 return
         except (TypeError, ValueError):
-            yield gr.update(), "请先选择学习项目。", None, hidden
+            yield gr.update(), environment_state("error", "尚未选择课程", "请先选择学习项目。"), None, hidden
             return
-        yield gr.update(visible=True, value="开始执行已确认的配置方案…"), "正在执行…", None, hidden
+        yield gr.update(visible=True, value="开始执行已确认的配置方案…"), environment_state("running", "正在配置学习环境", "正在执行你确认的方案，详细输出保留在执行记录中。"), None, hidden
         lines, outcome = [], {}
         for chunk in run_all_commands(plan["commands"], outcome=outcome):
             lines.append(chunk.rstrip("\n"))
-            yield gr.update(visible=True, value="\n".join(lines)), "正在执行…", None, hidden
-        status = ("部分配置失败，请查看执行记录。" if outcome.get("failed") else "命令执行成功，请验证环境后点击「已完成配置」。")
+            yield gr.update(visible=True, value="\n".join(lines)), environment_state("running", "正在配置学习环境", "正在执行你确认的方案，详细输出保留在执行记录中。"), None, hidden
+        status = environment_state("error", "有步骤未完成", "部分配置失败，请查看执行记录。") if outcome.get("failed") else environment_state("review", "配置步骤已完成", "命令执行成功，请验证环境后点击「我已配置好」。")
         yield gr.update(visible=True, value="\n".join(lines)), status, None, hidden
 
     def _apply_env(self, project_id):
         if not project_id:
-            return "⚠️ 请先选择项目"
+            return environment_state("error", "尚未选择课程", "请先选择项目")
         try:
             with Session(engine) as s:
                 t = s.exec(
@@ -1599,14 +1698,15 @@ class StudyWorkbenchPage(BasePage):
                     .where(Task.task_type == "env")
                 ).first()
                 if not t:
-                    return "当前项目还没有环境配置清单。"
+                    return environment_state("empty", "暂时无需准备", "当前项目还没有环境配置清单。")
                 if t:
                     t.status = "done"
                     s.add(t)
                     s.commit()
-            return "✅ 环境已配置"
+            return environment_state("done", "环境已配置", "可以回到课程，继续这一节。")
         except Exception as e:
-            return f"❌ {e}"
+            logger.exception("Failed to confirm environment setup")
+            return environment_state("error", "暂时未能保存", "请稍后重试，配置状态尚未更新。")
 
     # ---- 重新生成 ----
     def _regen_current_node(self, node_id, project_id):

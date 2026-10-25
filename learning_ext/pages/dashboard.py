@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import logging
+import os
 
+from learning_ext.page_design import page_intro
 import gradio as gr
 import csv
 import math
@@ -27,9 +29,9 @@ class DashboardPage(BasePage):
         super().__init__(app)
 
     def on_building_ui(self):
-        gr.Markdown("# 学习看板\n了解当前进展，找到下一步值得投入的地方。")
+        gr.HTML(page_intro("dashboard"))
         with gr.Row(elem_id="le-dashboard-toolbar"):
-            self.project_id = gr.Dropdown(label="学习项目", choices=[], value=None, interactive=True, scale=5)
+            self.project_id = gr.Dropdown(label="学习项目", show_label=False, choices=[], value=None, interactive=True, scale=5)
             self.refresh_btn = gr.Button("更新数据", size="sm", scale=0, min_width=120)
         self.metric_html = gr.HTML("")
         with gr.Row(elem_id="le-dashboard-charts"):
@@ -44,13 +46,14 @@ class DashboardPage(BasePage):
                 self.heatmap = gr.HTML("")
                 self.export_file = gr.File(label="完整学习时长记录 · CSV", visible=False, interactive=False)
                 self.export_status = gr.Markdown("")
-        with gr.Column(elem_classes="le-dashboard-panel"):
-            gr.Markdown("### 学习回顾")
+        with gr.Accordion("学习回顾", open=False, elem_id="le-dashboard-reflection"):
             self.report = gr.Markdown("")
         self.status = gr.Markdown("")
-        with gr.Accordion("查看演示功能", open=False):
-            gr.Markdown("演示项目独立保存，数据不代表真实学习进度。")
-            self.seed_btn = gr.Button("创建演示项目", size="sm")
+        self.seed_btn = None
+        if os.environ.get("LE_ENABLE_DEMO") == "1":
+            with gr.Accordion("查看演示功能", open=False):
+                gr.Markdown("演示项目独立保存，数据不代表真实学习进度。")
+                self.seed_btn = gr.Button("创建演示项目", size="sm")
 
     def on_register_events(self):
         outputs = [
@@ -74,11 +77,8 @@ class DashboardPage(BasePage):
         self.period.change(self._load_activity, inputs=[self.project_id, self.period], outputs=self.heatmap)
         self.export_btn.click(self._export_activity, inputs=[self.project_id], outputs=[self.export_file, self.export_status])
         self.project_id.change(lambda: (gr.update(value=None, visible=False), ""), inputs=[], outputs=[self.export_file, self.export_status])
-        self.seed_btn.click(
-            fn=self._seed_demo_data,
-            inputs=[],
-            outputs=outputs,
-        )
+        if self.seed_btn is not None:
+            self.seed_btn.click(fn=self._seed_demo_data, inputs=[], outputs=outputs)
         try:
             self._app.app.load(fn=self._load_dashboard, inputs=[], outputs=outputs)
         except Exception as e:
@@ -99,7 +99,7 @@ class DashboardPage(BasePage):
         value = str(data["project_id"]) if data["project_id"] is not None else None
         return (
             gr.update(choices=project_choices(session.exec(select(LearningProject).where(LearningProject.user_id == "default").order_by(LearningProject.id.desc())).all()), value=value),
-            self._render_metrics(data["metrics"]) + self._next_steps(data),
+            self._next_steps(data) + self._render_metrics(data["metrics"]),
             self._render_status(data["status_counts"]),
             self._build_heatmap(self._activity_rows(session, data["project_id"], days)),
             data["latest_report"],
@@ -118,10 +118,13 @@ class DashboardPage(BasePage):
     @staticmethod
     def _render_metrics(metrics: dict) -> str:
         avg_mastery = metrics["avg_mastery"] * 100
+        mastered_class = "le-metric le-metric-mastered"
+        if not metrics["mastered_nodes"]:
+            mastered_class += " is-empty"
         return f"""
 <div class="le-metrics">
   <div class="le-metric"><span class="val">{metrics["total_nodes"]}</span><span class="lbl">知识点总数</span></div>
-  <div class="le-metric"><span class="val">{metrics["mastered_nodes"]}</span><span class="lbl">已掌握</span></div>
+  <div class="{mastered_class}"><span class="val">{metrics["mastered_nodes"]}</span><span class="lbl">已掌握</span></div>
   <div class="le-metric"><span class="val">{avg_mastery:.0f}%</span><span class="lbl">平均掌握度</span></div>
   <div class="le-metric"><span class="val">{metrics["week_minutes"]:.0f}</span><span class="lbl">近 7 天学习（分钟）</span></div>
   <div class="le-metric"><span class="val">{metrics["due_cards"]}/{metrics["total_cards"]}</span><span class="lbl">待复习 / 全部卡片</span></div>
@@ -132,15 +135,16 @@ class DashboardPage(BasePage):
     def _next_steps(data):
         m = data["metrics"]
         if m["due_cards"]:
-            title, text, tab = "先巩固，再前进", f"有 {m['due_cards']} 张卡片已到复习时间。", "learning-review-tab"
+            title, text, tab = "先巩固，再前进", f"{m['due_cards']} 张卡片到期", "learning-review-tab"
             action = "开始复习"
         elif data["status_counts"].get("weak", 0):
-            title, text, tab = "回顾薄弱知识点", "通过练习确认理解，再回到课程补齐遗漏。", "learning-quiz-tab"
+            title, text, tab = "回顾薄弱知识点", "", "learning-quiz-tab"
             action = "进入测验"
         else:
-            title, text, tab = "继续你的学习", "进入课程，专注完成下一个知识点。", "learning-workbench-tab"
+            title, text, tab = "继续你的学习", "", "learning-workbench-tab"
             action = "进入工作台"
-        return f'<div class="le-dashboard-next"><div><strong>{title}</strong><p>{text}</p></div><button data-le-nav="{tab}">{action} →</button></div>'
+        detail = f"<p>{text}</p>" if text else ""
+        return f'<div class="le-dashboard-next"><div><strong>{title}</strong>{detail}</div><button data-le-nav="{tab}">{action} →</button></div>'
 
     @staticmethod
     def _render_status(status_counts: dict) -> str:

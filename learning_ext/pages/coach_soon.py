@@ -77,6 +77,7 @@ def coming_soon_html() -> str:
     <span class="soon-badge"><i></i>开发中 · 敬请期待</span>
     <h1>动手学</h1>
     <p class="soon-lead">让 AI 坐在你旁边，看着你操作电脑。<br/>走错了当场叫停，做完给你一份复盘。</p>
+    <button type="button" class="soon-study-link" data-le-nav="learning-workbench-tab">先去工作台，继续学习 →</button>
   </header>
 
   <section class="soon-grid" aria-label="这个功能会做什么">

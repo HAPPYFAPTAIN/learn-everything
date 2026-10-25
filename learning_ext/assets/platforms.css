@@ -1,0 +1,63 @@
+#quick-setup-tab #le-platform-layout { gap: 28px !important; align-items: flex-start !important; }
+#quick-setup-tab #le-platform-directory { max-width: 290px; min-width: 230px !important; padding: 12px 0 !important; background: transparent !important; border: 0 !important; }
+#quick-setup-tab #le-platform-directory h2 { font-size: 18px !important; margin: 0 0 18px !important; }
+#quick-setup-tab #le-platform-picker { padding: 0 !important; background: transparent !important; border: 0 !important; box-shadow: none !important; }
+#quick-setup-tab #le-platform-picker { max-height: min(620px,65vh) !important; min-height: 0 !important; overflow-y: auto !important; overflow-x: hidden !important; overscroll-behavior: contain; scrollbar-gutter: stable; touch-action: pan-y; scrollbar-width: thin; scrollbar-color: #94bdcc #edf5f8; padding: 3px !important; }
+#quick-setup-tab #le-platform-picker label.le-platform-filtered { display: none !important; }
+#le-platform-filter input { width: 100%; padding: 12px 14px; border: 1px solid #d4e3ea; border-radius: 12px; color: #244957; background: #fff; font: 14px var(--le-font); outline: none; }
+#le-platform-filter input:focus { border-color: #3cabc1; box-shadow: 0 0 0 3px #4bbbd41a; }
+#le-platform-filter .le-platform-categories { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+#le-platform-filter .le-platform-categories button { border: 0; border-radius: 7px; padding: 6px 8px; background: transparent; color: #6b8997; font: 12px var(--le-font); cursor: pointer; }
+#le-platform-filter .le-platform-categories button[aria-pressed=true] { background: #dff2f8; color: #157a97; font-weight: 600; }
+#le-platform-filter .le-platform-count { display: block; font-size: 11px; color: #7995a1; margin: 0 0 5px; }
+#quick-setup-tab #le-platform-picker .wrap:has(> label) { display: grid !important; grid-template-columns: 1fr; gap: 6px !important; }
+#quick-setup-tab #le-platform-picker label { position: relative; display: flex; align-items: center; min-height: 68px; width: 100%; padding: 12px 14px 12px 66px !important; border: 1px solid transparent !important; border-radius: 14px !important; background: transparent !important; box-shadow: none !important; transition: background .18s,border-color .18s; cursor: pointer; }
+#quick-setup-tab #le-platform-picker label:hover { background: #eaf3f6 !important; }
+#quick-setup-tab #le-platform-picker label:has(input:checked) { background: #fff !important; border-color: #a8d3e0 !important; box-shadow: 0 4px 18px #193e5008 !important; }
+#quick-setup-tab #le-platform-picker label:focus-within { outline: 2px solid #29a4be; outline-offset: 2px; }
+#quick-setup-tab #le-platform-picker input { position: absolute; opacity: 0; width: 1px !important; height: 1px !important; }
+#quick-setup-tab #le-platform-picker label::before { content: ""; position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 37px; height: 37px; border-radius: 9px; background: var(--platform-icon) center / 30px 30px no-repeat; }
+#quick-setup-tab #le-platform-picker label span { min-width: 0; overflow-wrap: anywhere; font-size: 15px !important; font-weight: 600; line-height: 1.5; color: #244957 !important; }
+#quick-setup-tab #le-platform-picker label span::after { content: var(--platform-tag); display: block; font-size: 11px; font-weight: 400; color: #74909c; margin-top: 2px; }
+#quick-setup-tab #le-settings-form { padding: 32px 36px !important; border: 1px solid #d8e5eb !important; border-radius: 24px !important; background: #fff !important; gap: 18px !important; }
+#quick-setup-tab #le-my-connections { padding: 16px !important; border: 1px solid #d9ebf1 !important; border-radius: 16px !important; background: #f3fafc !important; }
+#quick-setup-tab #le-remember-status p { margin: 0 !important; color: #337f96; font-size: 13px !important; }
+#quick-setup-tab #le-remember-status:has(.prose:empty) { display: none; }
+#quick-setup-tab .le-platform-heading { display: flex; align-items: center; gap: 16px; padding-bottom: 20px; border-bottom: 1px solid #e3ecef; margin-bottom: 8px; }
+#quick-setup-tab .le-platform-heading h2 { margin: 3px 0 0 !important; font-size: 28px !important; line-height: 1.3; }
+#quick-setup-tab .le-platform-heading > div > span { font-size: 12px; color: #71909e; }
+#quick-setup-tab .le-platform-mark { display: grid; place-items: center; width: 52px; height: 52px; flex: 0 0 52px; border-radius: 15px; background: #e8f6fa; color: #1689a3; font: 650 22px var(--le-font); }
+#quick-setup-tab .le-connection-badge { margin-left: auto; font-size: 12px; padding: 6px 10px; background: #f1f6f8; color: #68818c; border-radius: 7px; white-space: nowrap; }
+#quick-setup-tab .le-platform-links { display: flex; gap: 24px; margin-top: -8px; }
+#quick-setup-tab .le-platform-links a { font-size: 13px; color: #267e99; text-decoration: none; }
+#quick-setup-tab .le-platform-links a:hover { text-decoration: underline; }
+#quick-setup-tab #le-model-choice-row { align-items: flex-end !important; gap: 12px !important; }
+#quick-setup-tab #le-fetch-models { min-height: 48px !important; padding: 10px 16px !important; margin-bottom: 0 !important; border-radius: 12px !important; font-size: 13px !important; white-space: nowrap; }
+#quick-setup-tab #le-platform-note p,#quick-setup-tab #le-model-fetch-status p { margin: 0 !important; font-size: 13px !important; color: #688592 !important; line-height: 1.7; }
+#quick-setup-tab #le-model-fetch-status:has(.prose:empty) { display: none; }
+#quick-setup-tab #le-settings-form .le-action-bar { margin-top: 8px !important; padding-top: 22px !important; border-top: 1px solid #e3ecef; }
+#quick-setup-tab .le-saved-summary { display: flex; align-items: center; gap: 12px; padding: 18px; border-radius: 14px; background: #f1f7f9; }
+#quick-setup-tab .le-saved-dot { width: 8px; height: 8px; border-radius: 50%; background: #4ca7ba; flex-shrink: 0; }
+#quick-setup-tab .le-saved-summary strong { font-size: 13px; color: #456776; }
+#quick-setup-tab .le-saved-summary p { margin: 5px 0 0 !important; font-size: 14px !important; color: #234d5f !important; overflow-wrap: anywhere; }
+#quick-setup-tab .le-saved-summary > span:last-child { margin-left: auto; font-size: 12px; color: #688592; }
+#quick-setup-tab #le-settings-form .le-connection-return { border: 0 !important; padding: 0 !important; }
+@media(max-width:850px) {
+  #quick-setup-tab #le-platform-layout { flex-direction: column; }
+  #quick-setup-tab #le-platform-directory { max-width: none; width: 100%; }
+  #quick-setup-tab #le-platform-picker .wrap:has(> label) { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  #quick-setup-tab #le-platform-picker label { min-width: 0; padding-left: 54px !important; }
+  #quick-setup-tab #le-platform-picker label::before { left: 8px; }
+  #quick-setup-tab #le-settings-form { width: 100%; padding: 24px !important; }
+  #quick-setup-tab .le-saved-summary { flex-wrap: wrap; }
+}
+@media(max-width:640px) {
+  #quick-setup-tab #le-platform-picker .wrap:has(> label) { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  #quick-setup-tab #le-platform-picker { max-height: min(360px,42vh) !important; }
+  #quick-setup-tab .le-platform-heading h2 { font-size: 23px !important; }
+  #quick-setup-tab .le-connection-badge { display: none; }
+}
+
+
+#quick-setup-tab .le-platform-heading .le-platform-mark { background: #fff; border: 1px solid #e4edf1; }
+#quick-setup-tab .le-platform-mark img { width: 36px; height: 36px; object-fit: contain; }
