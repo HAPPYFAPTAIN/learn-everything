@@ -14,7 +14,6 @@ import json
 import os
 import re
 import time
-import threading
 from pathlib import Path
 from typing import Iterator, Optional
 
@@ -24,7 +23,9 @@ _ENV_FILE = Path(__file__).resolve().parent.parent.parent / "kotaemon" / ".env"
 # 配置缓存 (5 秒内复用，配置页保存后最多 5 秒生效)
 _cache: dict = {"ts": 0.0, "data": {}}
 _CACHE_TTL = 5.0
-_REQUEST_SLOT = threading.BoundedSemaphore(1)
+from learning_ext.llm.request_gate import RequestGate
+
+_REQUEST_SLOT = RequestGate()
 
 
 def invalidate_cache() -> None:
@@ -150,6 +151,9 @@ def chat(
         if model.lower().startswith("glm-5"):
             kwargs["max_tokens"] = max(8192, max_tokens * 3)
 
+    from learning_ext.model_platforms import adapt_chat_params
+    kwargs = adapt_chat_params(cfg["base_url"], kwargs)
+
     if stream:
         def generate():
             # 流式也要重试：代理/上游偶发抽风时，只要还没吐字就可以整体重来
@@ -200,7 +204,7 @@ def chat(
             if not content.strip():
                 raise RuntimeError(
                     f"模型 `{model}` 返回了空回复。可能是模型名错误或内容被过滤。"
-                    f"请到「⚡ 模型配置」检查模型名 (DeepSeek 应为 deepseek-chat)。"
+                    "请到「模型配置」检查模型名称和输出额度。"
                 )
             return content
         except RuntimeError:
@@ -285,6 +289,17 @@ def friendly_error(exc: Exception) -> str:
         if re.search(pattern, text):
             return f"{message}（原始信息：{str(exc)[:160]}）"
     return f"模型调用失败：{type(exc).__name__}: {str(exc)[:200]}"
+
+
+def stream_tool_response(messages, tools):
+    from learning_ext.chat_messages import sanitize_messages
+    from learning_ext.model_platforms import adapt_chat_params
+    client, cfg = _get_client()
+    params = adapt_chat_params(cfg["base_url"], {"model": cfg["chat_model"],
+        "messages": sanitize_messages(messages), "tools": tools, "tool_choice": "auto", "temperature": 0.3})
+    with _REQUEST_SLOT:
+        with client.chat.completions.create(stream=True, **params) as response:
+            yield from response
 
 
 def chat_json(

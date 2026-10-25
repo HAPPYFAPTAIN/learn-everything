@@ -1,0 +1,211 @@
+{
+  "stepfun": {
+    "name": "阶跃星辰",
+    "mark": "Step",
+    "tag": "StepFun (China)",
+    "group": "国内平台",
+    "profiles": {
+      "中国站": "https://api.stepfun.com/v1",
+      "国际站": "https://api.stepfun.ai/v1"
+    },
+    "models": [],
+    "key_url": "",
+    "docs": "https://platform.stepfun.com/docs/zh/overview/concept",
+    "note": "读取可用模型，或填写平台提供的完整模型 ID。"
+  },
+  "modelscope": {
+    "name": "魔搭 ModelScope",
+    "mark": "魔",
+    "tag": "ModelScope",
+    "group": "国内平台",
+    "profiles": {
+      "官方接口": "https://api-inference.modelscope.cn/v1"
+    },
+    "models": [],
+    "key_url": "",
+    "docs": "https://modelscope.cn/docs/model-service/API-Inference/intro",
+    "note": "读取可用模型，或填写平台提供的完整模型 ID。"
+  },
+  "tencent-tokenhub": {
+    "name": "腾讯 TokenHub",
+    "mark": "T",
+    "tag": "Tencent TokenHub",
+    "group": "国内平台",
+    "profiles": {
+      "官方接口": "https://tokenhub.tencentmaas.com/v1"
+    },
+    "models": [],
+    "key_url": "",
+    "docs": "https://cloud.tencent.com/document/product/1823/130050",
+    "note": "读取可用模型，或填写平台提供的完整模型 ID。"
+  },
+  "qiniu-ai": {
+    "name": "七牛云",
+    "mark": "七",
+    "tag": "Qiniu",
+    "group": "国内平台",
+    "profiles": {
+      "官方接口": "https://api.qnaigc.com/v1"
+    },
+    "models": [],
+    "key_url": "",
+    "docs": "https://developer.qiniu.com/aitokenapi",
+    "note": "读取可用模型，或填写平台提供的完整模型 ID。"
+  },
+  "longcat": {
+    "name": "美团 LongCat",
+    "mark": "LC",
+    "tag": "LongCat",
+    "group": "国内平台",
+    "profiles": {
+      "官方接口": "https://api.longcat.chat/openai"
+    },
+    "models": [],
+    "key_url": "",
+    "docs": "https://longcat.chat/platform/docs/",
+    "note": "读取可用模型，或填写平台提供的完整模型 ID。"
+  },
+  "xiaomi": {
+    "name": "小米 MiMo",
+    "mark": "Mi",
+    "tag": "Xiaomi",
+    "group": "国内平台",
+    "profiles": {
+      "官方接口": "https://api.xiaomimimo.com/v1"
+    },
+    "models": [],
+    "key_url": "",
+    "docs": "https://platform.xiaomimimo.com/#/docs",
+    "note": "读取可用模型，或填写平台提供的完整模型 ID。"
+  },
+  "nvidia": {
+    "name": "NVIDIA NIM",
+    "mark": "N",
+    "tag": "Nvidia",
+    "group": "海外平台",
+    "profiles": {
+      "官方接口": "https://integrate.api.nvidia.com/v1"
+    },
+    "models": [],
+    "key_url": "",
+    "docs": "https://docs.api.nvidia.com/nim/",
+    "note": "读取可用模型，或填写平台提供的完整模型 ID。"
+  },
+  "novita-ai": {
+    "name": "Novita AI",
+    "mark": "N",
+    "tag": "Novita AI",
+    "group": "海外平台",
+    "profiles": {
+      "官方接口": "https://api.novita.ai/openai"
+    },
+    "models": [],
+    "key_url": "",
+    "docs": "https://novita.ai/docs/guides/introduction",
+    "note": "读取可用模型，或填写平台提供的完整模型 ID。"
+  },
+  "fireworks-ai": {
+    "name": "Fireworks AI",
+    "mark": "F",
+    "tag": "Fireworks AI",
+    "group": "海外平台",
+    "profiles": {
+      "官方接口": "https://api.fireworks.ai/inference/v1"
+    },
+    "models": [],
+    "key_url": "",
+    "docs": "https://fireworks.ai/docs/",
+    "note": "读取可用模型，或填写平台提供的完整模型 ID。"
+  },
+  "upstage": {
+    "name": "Upstage",
+    "mark": "U",
+    "tag": "Upstage",
+    "group": "海外平台",
+    "profiles": {
+      "官方接口": "https://api.upstage.ai/v1/solar"
+    },
+    "models": [],
+    "key_url": "",
+    "docs": "https://developers.upstage.ai/docs/apis/chat",
+    "note": "读取可用模型，或填写平台提供的完整模型 ID。"
+  },
+  "friendli": {
+    "name": "FriendliAI",
+    "mark": "F",
+    "tag": "Friendli",
+    "group": "海外平台",
+    "profiles": {
+      "官方接口": "https://api.friendli.ai/serverless/v1"
+    },
+    "models": [],
+    "key_url": "",
+    "docs": "https://friendli.ai/docs/guides/serverless_endpoints/introduction",
+    "note": "读取可用模型，或填写平台提供的完整模型 ID。"
+  },
+  "scaleway": {
+    "name": "Scaleway",
+    "mark": "S",
+    "tag": "Scaleway",
+    "group": "海外平台",
+    "profiles": {
+      "官方接口": "https://api.scaleway.ai/v1"
+    },
+    "models": [],
+    "key_url": "",
+    "docs": "https://www.scaleway.com/en/docs/generative-apis/",
+    "note": "读取可用模型，或填写平台提供的完整模型 ID。"
+  },
+  "zenmux": {
+    "name": "ZenMux",
+    "mark": "Z",
+    "tag": "ZenMux",
+    "group": "聚合中转",
+    "profiles": {
+      "官方接口": "https://zenmux.ai/api/v1"
+    },
+    "models": [],
+    "key_url": "",
+    "docs": "https://docs.zenmux.ai",
+    "note": "读取可用模型，或填写平台提供的完整模型 ID。"
+  },
+  "302ai": {
+    "name": "302.AI",
+    "mark": "302",
+    "tag": "302.AI",
+    "group": "聚合中转",
+    "profiles": {
+      "官方接口": "https://api.302.ai/v1"
+    },
+    "models": [],
+    "key_url": "",
+    "docs": "https://doc.302.ai",
+    "note": "读取可用模型，或填写平台提供的完整模型 ID。"
+  },
+  "ollama-cloud": {
+    "name": "Ollama Cloud",
+    "mark": "O",
+    "tag": "Ollama Cloud",
+    "group": "海外平台",
+    "profiles": {
+      "官方接口": "https://ollama.com/v1"
+    },
+    "models": [],
+    "key_url": "",
+    "docs": "https://docs.ollama.com/cloud",
+    "note": "读取可用模型，或填写平台提供的完整模型 ID。"
+  },
+  "zai": {
+    "name": "Z.AI",
+    "mark": "Z",
+    "tag": "Z.AI",
+    "group": "海外平台",
+    "profiles": {
+      "官方接口": "https://api.z.ai/api/paas/v4"
+    },
+    "models": [],
+    "key_url": "",
+    "docs": "https://docs.z.ai/guides/overview/pricing",
+    "note": "读取可用模型，或填写平台提供的完整模型 ID。"
+  }
+}
