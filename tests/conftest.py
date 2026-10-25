@@ -156,6 +156,10 @@ def mock_llm(monkeypatch):
             or "阅卷" in (sys_p + prompt)
         ):
             return {"is_correct": True, "feedback": "答对了"}
+        if "remaining_rounds" in prompt:
+            return {"calls": [], "summary": "测试环境已检查"}
+        if "checklist" in prompt:
+            return [{"cmd": "echo hello", "desc": "测试命令", "danger": "low"}]
         if "winget" in (sys_p or ""):
             return [{"cmd": "echo hello", "desc": "测试命令", "danger": "low"}]
         return {"ok": True}

@@ -362,6 +362,14 @@ class TestAutoSetup:
         cmds = generate_install_commands("# 测试清单\n- Python", "新手")
         assert isinstance(cmds, list)
 
+    def test_generate_install_commands_rejects_invalid_payload(self, monkeypatch):
+        """模型返回非命令数组时必须报错，不能静默当成空清单。"""
+        import learning_ext.practice.auto_setup as service
+
+        monkeypatch.setattr(service, "chat_json", lambda *a, **k: {"unexpected": True})
+        with pytest.raises(ValueError):
+            service.generate_install_commands("# 测试清单\n- Python", "新手")
+
     def test_run_all_commands_empty(self):
         """空命令列表的流式执行。"""
         from learning_ext.practice.auto_setup import run_all_commands

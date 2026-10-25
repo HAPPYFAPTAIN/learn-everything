@@ -79,6 +79,20 @@ class TestReviewCard:
         assert len(logs) == 1
         assert logs[0].rating == RATING_HARD
 
+    def test_review_updates_knowledge_mastery(self, session, sample_card):
+        node = session.get(KnowledgeNode, sample_card.node_id)
+        assert node.mastery == 0
+        review_card(session, sample_card.id, RATING_GOOD, "default")
+        session.refresh(node)
+        assert node.mastery > 0
+
+    def test_other_users_card_cannot_be_reviewed(self, session, sample_card):
+        with pytest.raises(ValueError, match="无权"):
+            review_card(session, sample_card.id, RATING_GOOD, "different-user")
+        session.refresh(sample_card)
+        assert sample_card.reps == 0
+        assert not session.exec(select(ReviewLog).where(ReviewLog.card_id == sample_card.id)).all()
+
     def test_multiple_reviews_increase_reps(self, session, sample_card):
         """连续多次评分, reps 应递增。"""
         for r in [RATING_GOOD, RATING_AGAIN, RATING_GOOD, RATING_EASY]:
@@ -232,6 +246,36 @@ class TestGenerateCardsFromNode:
     def test_nonexistent_node_raises(self, session):
         with pytest.raises(ValueError, match="不存在"):
             generate_cards_from_node(session, 99999, "default", "x")
+
+    def test_other_users_node_cannot_generate_cards(self, session, sample_project, monkeypatch):
+        import learning_ext.llm as llm_pkg
+
+        monkeypatch.setattr(llm_pkg, "chat_json", lambda *a, **k: pytest.fail("Unexpected model request"))
+        node = session.exec(select(KnowledgeNode)).first()
+        with pytest.raises(ValueError, match="当前学习项目"):
+            generate_cards_from_node(session, node.id, "different-user", "x")
+
+    @pytest.mark.parametrize("items", [{"front": "question"}, "invalid", 42])
+    def test_invalid_card_container_returns_empty(self, session, sample_project, monkeypatch, items):
+        import learning_ext.llm as llm_pkg
+
+        monkeypatch.setattr(llm_pkg, "chat_json", lambda *a, **k: {"cards": items})
+        node = session.exec(select(KnowledgeNode)).first()
+        assert generate_cards_from_node(session, node.id, "default", "x") == []
+
+    def test_non_text_card_fields_are_skipped_without_losing_valid_cards(self, session, sample_project, monkeypatch):
+        import learning_ext.llm as llm_pkg
+
+        monkeypatch.setattr(llm_pkg, "chat_json", lambda *a, **k: {"cards": [
+            {"front": "有效问题", "back": "有效答案", "card_type": "unknown"},
+            {"front": 42, "back": "答案"},
+            {"front": "问题", "back": {"invalid": True}},
+        ]})
+        node = session.exec(select(KnowledgeNode)).first()
+        cards = generate_cards_from_node(session, node.id, "default", "x")
+        assert len(cards) == 1
+        assert cards[0].front == "有效问题"
+        assert cards[0].card_type == "basic"
 
     def test_empty_ai_result_returns_empty(self, session, sample_project, monkeypatch):
         """AI 返回空数据时不崩溃, 返回空列表。"""

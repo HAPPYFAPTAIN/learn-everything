@@ -166,15 +166,19 @@ def test_truncated_model_output_is_not_treated_as_complete(monkeypatch):
             completions=SimpleNamespace(create=lambda **kwargs: response)
         )
     )
-    monkeypatch.setattr(client, "_get_client", lambda: (fake, {"chat_model": "test"}))
+    monkeypatch.setattr(client, "_get_client", lambda: (fake, {
+        "chat_model": "test", "base_url": "https://example.invalid/v1"
+    }))
     with pytest.raises(RuntimeError, match="长度上限"):
         client.chat("synthetic test", max_tokens=100, retries=0)
 
 
 def test_course_switch_selects_a_real_node(session, sample_project, monkeypatch):
     import learning_ext.pages.study_workbench as module
+    from learning_ext.progress import prep
 
     monkeypatch.setattr(module, "engine", session.bind)
+    monkeypatch.setattr(prep, "start", lambda *args, **kwargs: {})
     page = object.__new__(module.StudyWorkbenchPage)
     output = page._on_project_change(str(sample_project.id))
     assert output[1]["value"] is not None

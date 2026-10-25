@@ -19,9 +19,11 @@ def path_page(session, monkeypatch):
 
     import learning_ext.pages.path_generator as page_module
     import learning_ext.progress.study as study
+    from learning_ext.progress import prep
     monkeypatch.setattr(page_module, "engine", session.get_bind())
     monkeypatch.setattr(study, "generate_summaries_background", lambda *a, **k: None)
     monkeypatch.setattr(study, "generate_node_summary_to_db", lambda *a, **k: True)
+    monkeypatch.setattr(prep, "start", lambda *a, **k: None)
     app_mock = MagicMock()
     app_mock.f_user_management = False
     return PathGeneratorPage(app_mock)
@@ -54,7 +56,7 @@ class TestPathGeneratorPageLogic:
         assert "请输入调整意见" in status
 
     def test_roadmap_to_markdown_empty(self, path_page):
-        assert "空" in path_page._roadmap_to_markdown({})
+        assert "暂无学习路线" in path_page._roadmap_to_markdown({})
 
     def test_roadmap_to_markdown_sorts_decimal_codes_numerically(self, path_page):
         roadmap = {
@@ -116,7 +118,7 @@ class TestSaveWithSetup:
         results = list(path_page._handle_save_with_setup("t", "", "", 5, "not json{"))
         assert "解析失败" in results[0][2] or "❌" in results[0][2]
 
-    def test_save_pre_gen_first_3(self, path_page, session, mock_llm):
+    def test_save_reports_background_preparation(self, path_page, session, mock_llm):
         roadmap = {
             "summary": "x",
             "stages": [],
@@ -136,9 +138,11 @@ class TestSaveWithSetup:
             path_page._handle_save_with_setup("t", "", "", 5, json.dumps(roadmap))
         )
         assert results[-1][0] is not None
-        assert "准备就绪" in results[-1][1]
+        assert "课程准备进度" in results[-1][1]
+        assert " / 5 节" in results[-1][1]
+        assert results[-1][3]["pid"] == results[-1][0]
 
-    def test_save_pre_gen_uses_numeric_course_order(
+    def test_save_queues_all_courses_in_numeric_order(
         self, path_page, session, mock_llm, monkeypatch
     ):
         from sqlmodel import Session
@@ -146,6 +150,7 @@ class TestSaveWithSetup:
         from learning_ext.db.models import KnowledgeNode
         import learning_ext.pages.path_generator as path_page_module
         import learning_ext.progress.study as study
+        from learning_ext.progress import prep
 
         monkeypatch.setattr(path_page_module, "engine", session.get_bind())
         roadmap = {
@@ -165,17 +170,18 @@ class TestSaveWithSetup:
         }
         generated_codes = []
 
-        def fake_generate_node_summary_to_db(node_id, *_args, **_kwargs):
+        def fake_queue(project_id, node_ids, *_args, **_kwargs):
             with Session(session.get_bind()) as fresh_session:
-                node = fresh_session.get(KnowledgeNode, node_id)
-                generated_codes.append(node.code)
-            return True
+                for node_id in node_ids:
+                    node = fresh_session.get(KnowledgeNode, node_id)
+                    assert node.project_id == project_id
+                    generated_codes.append(node.code)
 
         monkeypatch.setattr(
             study, "generate_env_checklist", lambda *_args, **_kwargs: "env"
         )
         monkeypatch.setattr(
-            study, "generate_node_summary_to_db", fake_generate_node_summary_to_db
+            prep, "start", fake_queue
         )
         monkeypatch.setattr(
             study, "generate_summaries_background", lambda *_args, **_kwargs: None
@@ -183,7 +189,7 @@ class TestSaveWithSetup:
 
         list(path_page._handle_save_with_setup("t", "", "", 5, json.dumps(roadmap)))
 
-        assert generated_codes == ["2.1", "2.2", "2.3"]
+        assert generated_codes == ["2.1", "2.2", "2.3", "2.10"]
 
 
 class TestLearningAppEventRegistration:
@@ -317,7 +323,7 @@ class TestStudyWorkbenchPageLogic:
         assert "word_lookup_js = Path(_HERE, script_path).read_text" in source
         assert "<script>\\n{word_lookup_js}\\n</script>" in source
 
-    def test_selecting_short_description_generates_course_content(
+    def test_selecting_short_description_queues_course_content(
         self, session, sample_project, monkeypatch
     ):
         from sqlmodel import Session, select
@@ -332,32 +338,21 @@ class TestStudyWorkbenchPageLogic:
         session.add(node)
         session.commit()
 
-        generated_content = (
-            "## 本节导览\n"
-            + "这里是完整课程正文，可以用于学习、划词解释和追问。"
-            * 20
-            + "\n\n## 自测练习\n- 解释核心概念。"
-        )
+        from learning_ext.progress import prep
         called = {}
 
-        def fake_generate_node_summary_to_db(node_id, project_topic):
-            called["args"] = (node_id, project_topic)
-            with Session(session.get_bind()) as s:
-                fresh = s.get(KnowledgeNode, node_id)
-                fresh.description = generated_content
-                s.add(fresh)
-                s.commit()
-            return True
+        def fake_queue(project_id, node_ids, project_topic):
+            called["args"] = (project_id, node_ids, project_topic)
 
         monkeypatch.setattr(
-            wb, "generate_node_summary_to_db", fake_generate_node_summary_to_db
+            prep, "start", fake_queue
         )
 
         current_node_id, _, guide, *_ = page._on_node_select(str(node.id))
 
         assert current_node_id == node.id
-        assert called["args"] == (node.id, sample_project.topic)
-        assert "完整课程正文" in guide
+        assert called["args"] == (sample_project.id, [node.id], sample_project.topic)
+        assert "正在写这一节" in guide
         assert "路线里的短说明" not in guide
 
     def test_status_update_keeps_selected_course_visible(

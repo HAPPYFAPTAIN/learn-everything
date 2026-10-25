@@ -1,0 +1,143 @@
+const calls = [];
+const nativeReduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const media = new EventTarget();
+media.matches = window.initialReduced;
+window.matchMedia = () => media;
+const originalAnimate = Element.prototype.animate;
+Element.prototype.animate = function (frames, options) {
+  const animation = originalAnimate.call(this, frames, options);
+  calls.push({ element: this, frames, options, animation });
+  return animation;
+};
+window.requestAnimationFrame = callback => setTimeout(() => callback(performance.now()), 1);
+window.cancelAnimationFrame = clearTimeout;
+/* CONTROLLER */
+document.addEventListener('DOMContentLoaded', async () => {
+  let passed = 0;
+  const check = (value, message) => { if (!value) throw new Error(message); passed += 1; };
+  const wait = () => new Promise(resolve => setTimeout(resolve, 25));
+  const $ = id => document.getElementById(id);
+  const count = element => calls.filter(call => call.element === element).length;
+  const last = element => calls.filter(call => call.element === element).at(-1);
+  const mount = markup => {
+    const holder = document.createElement('div'); holder.innerHTML = markup;
+    const element = holder.firstElementChild; document.body.append(element); return element;
+  };
+  try {
+    await wait();
+    const entry = calls.filter(call => call.element.classList.contains('le-metric'));
+    check(initialReduced ? entry.length === 0 : entry.length === 6, 'page entry respects initial reduced motion and six-card limit');
+    check(initialReduced || JSON.stringify(entry.map(call => call.options.delay)) === '[0,24,48,72,96,96]', 'stagger is short and capped');
+    check(!count($('nested')) && !count($('outside')) && !count($('le-center-content')), 'nested cards, offscreen cards and article text stay still');
+    const transition = getComputedStyle($('motion-primary')).transitionDuration;
+    check(initialReduced ? nativeReduced && transition === '0s' : transition !== '0s', 'real CSS media preference disables primary-button transitions');
+    media.matches = false; media.dispatchEvent(new Event('change'));
+
+    const target = $('target');
+    const first = LEMotion.play(target, 'enter');
+    const second = LEMotion.play(target, 'step', { direction: -1 });
+    check(first.playState === 'idle' && last(target).frames[0].transform === 'translateX(-10px)', 'replay cancels the old animation and uses direction');
+    check(second.effect.getTiming().fill === 'none', 'motion does not persist fill styles');
+    const delayed = LEMotion.play(target, 'enter', { delay: 96 });
+    delayed.pause(); delayed.currentTime = 0;
+    const beforeDelay = Number(getComputedStyle(target).opacity);
+    LEMotion.cancel(target);
+    check(beforeDelay < .5 && getComputedStyle(target).opacity === '1', 'delayed entries start from their first frame and cancellation restores base styles');
+    const reducedAnimation = LEMotion.play(target);
+    media.matches = true; media.dispatchEvent(new Event('change'));
+    check(reducedAnimation.playState === 'idle' && LEMotion.play(target) === null, 'live reduced motion cancels and suppresses animation');
+    media.matches = false; media.dispatchEvent(new Event('change'));
+    const hiddenAnimation = LEMotion.play(target);
+    Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+    check(hiddenAnimation.playState === 'idle' && LEMotion.play(target) === null, 'hidden page cancels all motion');
+    Object.defineProperty(document, 'hidden', { configurable: true, value: false });
+    check(LEMotion.play($('outside')) === null, 'real offscreen rectangles are skipped');
+    $('home-panel').hidden = true; $('second-panel').hidden = false;
+    $('generated-label').setAttribute('aria-selected', 'false'); $('second-label').setAttribute('aria-selected', 'true');
+    await wait();
+    check(count($('second-card')) === 1, 'moved nav resolves selected panel through aria-controls');
+    const beforeRepeat = calls.length;
+    $('second-label').classList.add('selected');
+    $('second-panel').append(document.createTextNode('updated'));
+    await wait();
+    check(calls.length === beforeRepeat, 'selected-page repeats do not restart entry');
+    $('second-panel').hidden = true; $('home-panel').hidden = false;
+    $('second-label').setAttribute('aria-selected', 'false'); $('generated-label').setAttribute('aria-selected', 'true');
+    await wait();
+    check(count($('metric-0')) === (initialReduced ? 1 : 2), 'moved nav resolves generated aria-labelledby IDs');
+
+    const dialog = mount('<dialog class="le-settings-deck"><div>Settings</div></dialog>');
+    await wait(); dialog.show(); await wait();
+    check(count(dialog) === 1, 'dialog animates only when opened');
+    dialog.append(document.createTextNode('changed')); await wait();
+    const opened = last(dialog).animation; dialog.close(); await wait();
+    check(count(dialog) === 1 && opened.playState === 'idle', 'dialog content updates do not replay and closing cancels');
+    dialog.show(); await wait();
+    check(count(dialog) === 2, 'dialog reopening replays once');
+    dialog.setAttribute('aria-label', 'Nested options'); await wait();
+    check(count(dialog) === 3 && last(dialog).frames[0].transform === 'translateX(10px)', 'nested settings title change animates one container');
+    dialog.close();
+
+    const menu = mount('<div id="le-chat-tool-menu" hidden>Tools</div>');
+    const flyout = mount('<div id="le-chat-flyout" hidden>Flyout</div>');
+    await wait(); menu.hidden = false; flyout.hidden = false; flyout.dataset.panel = 'sources'; await wait();
+    flyout.dataset.panel = 'answer'; await wait();
+    check(count(menu) === 1 && count(flyout) === 2, 'tools menu and actual flyout panel changes are covered');
+    const flyoutAnimation = last(flyout).animation;
+    flyout.hidden = true; menu.hidden = true; await wait();
+    check(flyoutAnimation.playState === 'idle' && flyout.style.transform === '' && flyout.style.opacity === '', 'quick overlay closing leaves no inline animation state');
+    const polish = mount('<dialog class="le-polish-popover" data-state="busy"><button class="le-polish-accept">Accept</button></dialog>');
+    polish.show(); await wait();
+    last(polish).animation.finish(); await wait();
+    polish.dataset.state = 'ready'; await wait();
+    const accept = polish.querySelector('button');
+    check(count(accept) === 1 && last(accept).options.duration === 200, 'confirmed polish result gently identifies the accept action');
+    const acceptAnimation = last(accept).animation;
+    polish.close(); await wait();
+    check(acceptAnimation.playState === 'idle', 'closing the preview also cancels nested feedback');
+
+    const action = mount('<section id="le-action-learning"><button id="le-action-previous">Previous</button><button id="le-action-next">Next</button><article class="le-action-card" data-le-step-active="true" data-step="0"><h2>First step</h2><p>Do it</p></article><div id="le-action-help"></div></section>');
+    await wait();
+    const card = action.querySelector('article');
+    const actionBaseline = count(card);
+    $('le-action-next').click(); await wait();
+    card.querySelector('p').textContent = 'More help'; await wait();
+    check(count(card) === actionBaseline, 'clicks and unchanged step content do not imply completion');
+    card.dataset.step = '1'; card.querySelector('h2').textContent = 'Second step'; await wait();
+    check(count(card) === actionBaseline + 1 && last(card).frames[0].transform === 'translateX(10px)', 'confirmed step moves forward');
+    $('le-action-previous').click(); card.dataset.step = '0'; card.querySelector('h2').textContent = 'First step'; await wait();
+    check(last(card).frames[0].transform === 'translateX(-10px)', 'confirmed previous step moves backward');
+    action.remove(); await wait();
+
+    const coach = mount('<main id="le-coach"><section class="coach-instruction"><span id="coach-count">第 1 / 4 步 · 设置</span><p id="coach-feedback"></p><button id="coach-check">Check</button></section><section class="coach-stage">Practice</section></main>');
+    await wait();
+    const feedback = $('coach-feedback');
+    $('coach-check').click(); feedback.textContent = 'Pending'; await wait();
+    check(count(feedback) === 0, 'unconfirmed coach feedback does not animate');
+    feedback.className = 'is-success'; feedback.textContent = 'Passed'; await wait();
+    const successCount = count(feedback);
+    feedback.textContent = 'Passed'; await wait();
+    check(successCount === 1 && count(feedback) === 1 && last(feedback).options.duration === 200, 'confirmed feedback animates once per stable key');
+    const instruction = coach.querySelector('.coach-instruction');
+    $('coach-count').textContent = '第 2 / 4 步 · 设置'; feedback.textContent = ''; feedback.className = ''; await wait();
+    check(last(instruction).frames[0].transform === 'translateX(10px)' && count(feedback) === 1, 'coach step change does not double-animate nested feedback');
+    coach.remove(); await wait();
+
+    const replacement = $('second-panel').cloneNode(true);
+    replacement.hidden = false; $('second-panel').replaceWith(replacement);
+    $('home-panel').hidden = true; $('generated-label').setAttribute('aria-selected', 'false'); $('second-label').setAttribute('aria-selected', 'true');
+    await wait();
+    check(count($('second-card')) === 1, 'replacement panel binds once');
+    const beforeStream = calls.length;
+    for (let i = 0; i < 12; i++) $('chatbot').append(document.createTextNode('chunk'));
+    $('le-center-content').append(document.createElement('p'));
+    await wait();
+    check(calls.length === beforeStream, 'streaming text does not trigger motion');
+    const output = document.createElement('pre'); output.id = 'results';
+    output.textContent = JSON.stringify({ passed }); document.body.append(output);
+  } catch (error) {
+    const output = document.createElement('pre'); output.id = 'results';
+    output.textContent = JSON.stringify({ passed, error: error.message }); document.body.append(output);
+  }
+}, { once: true });

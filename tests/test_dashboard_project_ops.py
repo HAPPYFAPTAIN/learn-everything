@@ -2,6 +2,20 @@ from __future__ import annotations
 
 from sqlmodel import select
 from unittest.mock import MagicMock
+import pytest
+
+
+@pytest.mark.parametrize("enabled", [False, True])
+def test_demo_creation_is_only_exposed_when_explicitly_enabled(monkeypatch, enabled):
+    import gradio as gr
+    from learning_ext.pages.dashboard import DashboardPage
+
+    monkeypatch.setenv("LE_ENABLE_DEMO", "1" if enabled else "0")
+    page = object.__new__(DashboardPage)
+    with gr.Blocks():
+        page.on_building_ui()
+    assert (page.seed_btn is not None) is enabled
+    assert page.export_btn is not None
 
 
 def test_seed_demo_learning_data_is_repeatable(session):

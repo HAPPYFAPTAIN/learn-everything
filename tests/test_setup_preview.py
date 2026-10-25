@@ -21,9 +21,21 @@ def test_preview_never_executes(session, monkeypatch, setup_case):
     page, pid, _, service = setup_case
     monkeypatch.setattr(service, "run_all_commands", lambda *a, **k: pytest.fail("Preview must not execute"))
     outputs = list(page._prepare_setup(pid))
+    assert outputs[0][0]["visible"] is False
+    assert 'aria-busy="true"' in outputs[0][1]
     assert "Write-Output" in outputs[-1][0]["value"]
     assert outputs[-1][2]["project_id"] == pid
     assert outputs[-1][3]["visible"] is True
+    assert 'data-env-state="ready"' in outputs[-1][1]
+    assert "输出验收文字" in outputs[-1][1]
+
+
+def test_generated_step_descriptions_are_safe_html(setup_case, monkeypatch):
+    page, pid, _, service = setup_case
+    monkeypatch.setattr(service, "generate_install_commands", lambda *args: [{"cmd": "echo safe", "desc": '<img src=x onerror="alert(1)">'}])
+    result = list(page._prepare_setup(pid))[-1]
+    assert '<img' not in result[1]
+    assert '&lt;img' in result[1]
 
 
 def test_changed_project_cannot_execute_preview(session, monkeypatch, setup_case):

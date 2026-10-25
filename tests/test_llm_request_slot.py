@@ -9,7 +9,7 @@ import learning_ext.llm.client as client
 
 def install(monkeypatch, create):
     monkeypatch.setattr(client, '_REQUEST_SLOT', threading.BoundedSemaphore(1))
-    monkeypatch.setattr(client, '_get_client', lambda: (NS(chat=NS(completions=NS(create=create))), {'chat_model': 'test'}))
+    monkeypatch.setattr(client, '_get_client', lambda: (NS(chat=NS(completions=NS(create=create))), {'chat_model': 'test', 'base_url': 'https://example.invalid/v1'}))
 
 
 def test_foreground_and_background_requests_do_not_overlap(monkeypatch):
