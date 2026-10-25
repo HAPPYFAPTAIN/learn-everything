@@ -3,6 +3,26 @@ from pathlib import Path
 ASSETS = Path(__file__).parent / "assets"
 
 
+def chat_model_choices(models):
+    def title(name, item):
+        spec = item.get("spec", {})
+        return str(spec.get("model") or spec.get("model_name") or name)
+
+    default = next((title(name, item) for name, item in models.items() if item.get("default")), None)
+    choices = [(f"{default} · 默认" if default else "默认模型", "(default)")]
+    choices.extend((f"{title(name, item)} · {name}" if title(name, item) != name else name, name) for name, item in models.items())
+    return choices
+
+
+def refresh_chat_models(current):
+    import gradio as gr
+    from ktem.llms.manager import llms
+
+    choices = chat_model_choices(llms.info())
+    value = current if current in {value for _, value in choices} else "(default)"
+    return gr.update(choices=choices, value=value)
+
+
 def presentation_css():
     css = (ASSETS / "workspace.css").read_text(encoding="utf-8")
     css += "\n" + (ASSETS / "refinements.css").read_text(encoding="utf-8")
@@ -10,6 +30,25 @@ def presentation_css():
     css += "\n" + (ASSETS / "nav.css").read_text(encoding="utf-8")
     css += "\n" + (ASSETS / "outline.css").read_text(encoding="utf-8")
     css += "\n" + (ASSETS / "coach.css").read_text(encoding="utf-8")
+    css += "\n" + (ASSETS / "onboarding.css").read_text(encoding="utf-8")
+    css += "\n" + (ASSETS / "selects.css").read_text(encoding="utf-8")
+    css += "\n" + (ASSETS / "home.css").read_text(encoding="utf-8")
+    css += "\n" + (ASSETS / "pages.css").read_text(encoding="utf-8")
+    css += "\n" + (ASSETS / "route.css").read_text(encoding="utf-8")
+    css += "\n" + (ASSETS / "coach_lesson.css").read_text(encoding="utf-8")
+    css += "\n" + (ASSETS / "vendor/fonts/fonts.css").read_text(encoding="utf-8")
+    css += "\n" + (ASSETS / "knowledge.css").read_text(encoding="utf-8")
+    css += "\n" + (ASSETS / "notebook.css").read_text(encoding="utf-8")
+    css += "\n" + (ASSETS / "platforms.css").read_text(encoding="utf-8")
+    from learning_ext.model_platforms import platform_css
+    css += "\n" + platform_css()
+    css += "\n" + (ASSETS / "action_learning.css").read_text(encoding="utf-8")
+    css += "\n" + (ASSETS / "rich_text.css").read_text(encoding="utf-8")
+    css += "\n" + (ASSETS / "motion.css").read_text(encoding="utf-8")
+    css += "\n" + (ASSETS / "signature.css").read_text(encoding="utf-8")
+    css += "\n" + (ASSETS / "consumer.css").read_text(encoding="utf-8")
+    css += "\n" + (ASSETS / "settings_panels.css").read_text(encoding="utf-8")
+    css += "\n" + (ASSETS / "compact.css").read_text(encoding="utf-8")
     return css.replace("__ASSETS__", "/file=" + ASSETS.as_posix())
 
 
@@ -98,6 +137,8 @@ def polish_chat_ui(app):
     page.chat_suggestion.default_example.value = [[text] for text in samples]
 
     page.quick_urls.placeholder = "或粘贴资料网址"
+    page.quick_urls.label = "资料网址"
+    page.quick_file_upload.label = "参考文件"
     friendly = {"simple": "标准检索", "complex": "深入检索", "(default)": "使用默认模型", "English": "英语", "Chinese": "中文", "Japanese": "日语", "French": "法语", "German": "德语", "citation: highlight": "高亮来源原文", "citation: inline": "在回答中标注来源"}
     for name, label, info in [
         ("reasoning_type", "检索方式", "标准检索适合日常资料问答。"),
@@ -111,6 +152,12 @@ def polish_chat_ui(app):
         component.show_label = True
         component.container = True
         component.choices = [(friendly.get(str(text), str(text)), value) for text, value in component.choices]
+    from ktem.llms.manager import llms
+    page.model_type.choices = chat_model_choices(llms.info())
+    page.model_type.info = None
+    page.model_type.filterable = False
+    from learning_ext.chat_connections import configure_chat_connections
+    configure_chat_connections(app, page)
     from learning_ext.chat_language import configure_auto_language
     configure_auto_language(page)
     page.use_mindmap_check.label = "附带思维导图"
@@ -128,31 +175,43 @@ def polish_chat_ui(app):
             button.icon = None
     labels = {
         "Quick Upload": "添加资料",
-        "File Collection": "文件检索范围",
+        "File Collection": "参考范围",
         "GraphRAG Collection": "图谱检索",
         "LightRAG Collection": "关联检索",
         "Chat settings": "回答设置",
         "Information panel": "引用与来源",
         "Feedback": "反馈",
         "Suggest chat": "推荐问题",
+        "Correctness:": "回答是否准确",
+        "Other issue:": "其他问题",
+        "Share this conversation": "共享这段对话",
     }
     values = {
         "## Conversations": "### 会话与资料",
         "Reasoning method": "检索方式",
         "Model": "模型",
         "Language": "语言",
+        "Report": "提交反馈",
+        "This will send the current chat and the user settings to help with investigation": "反馈会保存当前对话与设置，便于排查问题。",
     }
     for block in app.app.blocks.values():
         placeholder = getattr(block, "placeholder", None)
         if placeholder == "Browse conversation":
             block.placeholder = "选择历史对话"
         choices = getattr(block, "choices", None)
+        feedback_names = {"The answer is correct": "回答准确", "The answer is incorrect": "回答有误", "The answer is offensive": "内容不适当", "The evidence is incorrect": "引用不准确"}
+        if choices and any(isinstance(item, (tuple, list)) and item[0] in feedback_names for item in choices):
+            block.choices = [(feedback_names.get(item[0], item[0]), item[1]) for item in choices]
+        if isinstance(placeholder, str) and placeholder.startswith("More detail (e.g."):
+            block.placeholder = "哪里需要改进？写下你的发现…"
         if choices and any(isinstance(item, (tuple, list)) and item[0] in {"Search All", "Search In File(s)"} for item in choices):
             names = {"Search All": "全部资料", "Search In File(s)": "指定文件"}
             block.choices = [(names.get(item[0], item[0]), item[1]) for item in choices]
         label = getattr(block, "label", None)
         if isinstance(label, str) and label in labels:
             block.label = labels[label]
+            if label == "Quick Upload":
+                block.elem_id = "le-chat-add-source"
             if label in {"Quick Upload", "GraphRAG Collection", "LightRAG Collection"}:
                 block.open = False
         value = getattr(block, "value", None)

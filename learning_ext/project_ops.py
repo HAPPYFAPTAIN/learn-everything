@@ -10,6 +10,7 @@ from learning_ext.db.models import (
     KnowledgeEdge,
     KnowledgeNode,
     LearningProject,
+    NodeAnnotation,
     NodeNote,
     NodeResource,
     ProgressRecord,
@@ -100,6 +101,7 @@ def clear_project_learning_data(
         "daily_reports": 0,
         "tasks": 0,
         "notes": 0,
+        "annotations": 0,
         "resources": 0,
         "edges": 0,
         "nodes": 0,
@@ -155,6 +157,14 @@ def clear_project_learning_data(
         session,
         list(
             session.exec(select(NodeNote).where(NodeNote.project_id == project_id)).all()
+        ),
+    )
+    deleted["annotations"] = _delete_rows(
+        session,
+        list(
+            session.exec(
+                select(NodeAnnotation).where(NodeAnnotation.project_id == project_id)
+            ).all()
         ),
     )
     deleted["resources"] = _delete_rows(

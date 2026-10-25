@@ -25,9 +25,24 @@ logger = logging.getLogger(__name__)
 
 HEADING_HTML = (
     '<div class="le-assistant-heading">'
-    '<div><span class="le-kicker">STUDY COMPANION</span><h3>AI 助教</h3></div>'
-    '<button data-le-assistant-close aria-label="关闭助教">×</button>'
+    '<div class="le-assistant-identity"><span class="le-assistant-avatar" aria-hidden="true"></span>'
+    '<div><span class="le-kicker">STUDY COMPANION</span><h3>以太小助</h3></div></div>'
+    '<button data-le-assistant-close aria-label="关闭以太小助">×</button>'
     "</div>"
+)
+
+EMPTY_HTML = (
+    '<div class="le-assistant-empty-inner">'
+    '<div class="le-assistant-context">'
+    '<span data-le-assistant-context-label>以太小助 · 学习助手</span>'
+    '<strong data-le-assistant-context-title>学习规划、理解与复习</strong>'
+    '<p data-le-assistant-context-detail hidden></p>'
+    "</div>"
+    '<div class="le-assistant-quick-list">'
+    '<button type="button" data-le-assistant-suggestion>帮我拆解一个学习目标</button>'
+    '<button type="button" data-le-assistant-suggestion>怎样安排今天的学习？</button>'
+    '<button type="button" data-le-assistant-suggestion>帮我检查自己的理解</button>'
+    "</div></div>"
 )
 
 SYSTEM_PROMPT = (
@@ -53,6 +68,7 @@ class GlobalAssistant(BasePage):
             gr.Markdown(
                 "围绕你正在看的内容提问。", elem_classes=["le-caption"]
             )
+            self.empty_state = gr.HTML(EMPTY_HTML, elem_id="le-assistant-empty")
             self.chatbot = gr.Chatbot(
                 label="",
                 height=340,

@@ -16,6 +16,7 @@ from learning_ext.db.models import (
     Task,
 )
 from learning_ext.llm import chat
+from learning_ext.agent.prompts import LEARNING_CONTRACT
 
 # 备课队列会并发跑多个生成任务，SQLite 写入必须串行，否则容易 database is locked
 _WRITE_LOCK = threading.Lock()
@@ -268,7 +269,7 @@ def generate_node_summary(
 
     return chat(
         prompt,
-        system=(
+        system=LEARNING_CONTRACT + (
             "你是一位顶级的技术讲师和教材作者。你的笔记以"
             "结构清晰、内容详实、例子丰富、循序渐进著称。"
             "你从不敷衍，每个知识点都讲到学习者真正能理解、能上手为止。"
@@ -369,7 +370,7 @@ def generate_practice_lesson(
 4. 直接输出 Markdown。"""
     return chat(
         prompt,
-        system="你是资深工程实践导师，会把抽象课程转成可执行项目、流程代码和验收标准。",
+        system=LEARNING_CONTRACT + "你是工程实践导师，把当前课程转成可执行项目与验收标准。只描述必要的工具条件，不假设本机是否安装。准备步骤与练习步骤分开，开始前告知会依据只读检测跳过已满足的重复安装。",
         model_name=model_name,
         temperature=0.35,
         max_tokens=8000,
@@ -490,7 +491,7 @@ def generate_env_checklist(
 要求：具体可执行，命令用代码块。总长度 400 字以内。"""
     return chat(
         prompt,
-        system="你是一位务实的导师，只推荐真正必要的环境配置，避免让初学者陷入装环境的泥潭。",
+        system=LEARNING_CONTRACT + "只列课程必需条件，不宣称已检测本机。安装、版本检查、项目配置和练习分别列出；软件存在不意味着账号、插件或服务可用。",
         model_name=model_name,
         temperature=0.3,
     )

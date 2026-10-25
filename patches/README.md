@@ -1,42 +1,40 @@
-# 子模块补丁
+# 空 assistant 消息兼容修复
 
-`kotaemon/` 是 git submodule，指向上游 `Cinnamon/kotaemon`，我们没有推送权限。
-我们对它做的改动没法通过 `git push` 带出去，所以导出成补丁存在这里。
+Learn Everything 在 `LearningApp.__init__()` 中自动调用
+`learning_ext.chat_compat.configure_chat_compat()`，启动时为 Kotaemon 的
+OpenAI、Azure、Structured Output 和 EndpointChatLLM 路径启用消息校验。
+修复代码保存在主仓库，不修改只读的 `kotaemon/` 子模块；新机器拉取后无需手动打补丁。
+更新后必须重启已经运行的应用，旧 Python 进程不会自动加载新代码。
 
-## 0001-deepseek-empty-assistant-message.patch
+校验会移除没有正文、没有工具调用的 assistant 消息，保留其他消息的顺序和内容。
+空白字符串、None 和空内容容器视为空正文。工具调用以及旧版 function_call 保留，
+消息对象携带的调用信息会在转换时保留。原始会话历史不被修改。
+若输入为空，或过滤后没有消息，则在发送前抛出 ValueError；不恢复无效消息，
+也不编造用户输入。已有非 assistant 消息不会被过滤，所以不需要另设“保留最后一条”的兜底。
 
-**改了什么**
+## 独立使用 Kotaemon 的补丁
 
-`libs/kotaemon/kotaemon/llms/chats/openai.py`、`endpoint_based.py`：
-在真正发请求前，剔除 `content` 和 `tool_calls` 同时为空的 assistant 消息。
+`0001-deepseek-empty-assistant-message.patch` 是面向上游 `9ad3e4e4` 的独立补丁。
+`kotaemon-deepseek-compat.patch` 保留为同内容的兼容文件名，只选其中一个使用。
+它们新增 `message_validation.py`，并修改 `openai.py` 与 `endpoint_based.py`，
+使用与主应用相同的消息处理逻辑，不依赖 `learning_ext`。
 
-**为什么必须打**
-
-DeepSeek 这类 OpenAI 兼容端点遇到空 assistant 消息会整单拒绝：
-
-```
-400 Invalid assistant message: content or tool_calls must be set
-```
-
-引用问答、会话命名、追问建议这些功能在回放历史时很容易带进这种占位消息。一旦进去，
-这一轮对话的**后续每次请求都会失败**——表现为"问了没反应"或直接报错。
-
-**不打会怎样**
-
-本机现在正常（补丁已经在工作区里）；但如果把仓库 clone 到新机器或服务器，
-这两个文件是上游原版，上述 400 会在用到引用问答/会话命名时冒出来。
-
-**怎么打**
+这些补丁用于单独维护 Kotaemon 的工作副本，Learn Everything 无需应用它们。
+在允许修改的独立副本中可以先检查，再应用：
 
 ```bash
-cd kotaemon
-git apply ../patches/0001-deepseek-empty-assistant-message.patch
+git apply --check /path/to/0001-deepseek-empty-assistant-message.patch
+git apply /path/to/0001-deepseek-empty-assistant-message.patch
 ```
 
-打完不需要重启任何东西，下次启动就生效。用 `git apply --check` 可以先验证能否干净应用。
+应用后重启服务。升级上游时需重新检查补丁兼容性，不能根据补丁文件存在就认为已生效。
 
-## 注意
+## 验证
 
-- 这两个文件是**上游代码**，将来升级 submodule 版本时补丁可能冲突，需要重新打
-- 补丁只在这一处（`llms/chats/`），没有别的子模块改动
-- 如果哪天上游自己修了这个问题，删掉补丁文件即可
+```powershell
+kotaemon\.venv\Scripts\python.exe -m pytest tests\test_chat_compat.py tests\test_rag_requests.py -q
+```
+
+测试使用本地严格校验服务与真实 OpenAI SDK，不调用外部模型、不读取 API 密钥。
+覆盖空回复历史连续追问、同步/异步/流式请求、Endpoint 路径、空列表拒绝、
+工具调用保留、原始历史不变，以及重复初始化。

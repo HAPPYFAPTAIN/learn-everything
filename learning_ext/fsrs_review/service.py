@@ -127,6 +127,8 @@ def review_card(
     card = session.get(Card, card_id)
     if card is None:
         raise ValueError(f"Card {card_id} 不存在")
+    if card.user_id != user_id:
+        raise ValueError("无权复习这张卡片")
 
     prev_state = card.state
     prev_stability = card.stability
@@ -156,7 +158,13 @@ def review_card(
             difficulty=card.difficulty,
         )
     )
-    session.commit()
+    if card.node_id is not None:
+        from learning_ext.progress.service import update_mastery
+
+        session.flush()
+        update_mastery(session, card.node_id)
+    else:
+        session.commit()
     session.refresh(card)
     return card
 
@@ -233,12 +241,15 @@ def generate_cards_from_node(
     model_name: Optional[str] = None,
 ) -> List[Card]:
     """AI 从知识点内容提炼复习卡片。"""
-    from learning_ext.db.models import KnowledgeNode
+    from learning_ext.db.models import KnowledgeNode, LearningProject
     from learning_ext.llm import chat_json
 
     node = session.get(KnowledgeNode, node_id)
     if node is None:
         raise ValueError(f"Node {node_id} 不存在")
+    project = session.get(LearningProject, node.project_id)
+    if project is None or project.user_id != user_id:
+        raise ValueError("知识点不属于当前学习项目")
 
     prompt = f"""请基于以下知识点内容，提炼 {count} 张用于间隔重复复习的卡片。
 
@@ -259,7 +270,7 @@ def generate_cards_from_node(
     else:
         items = []
 
-    if not items:
+    if not isinstance(items, list) or not items:
         logger.warning("AI 未返回有效卡片数据")
         return []
 
@@ -267,8 +278,10 @@ def generate_cards_from_node(
     for item in items[:count]:
         if not isinstance(item, dict):
             continue
-        front = (item.get("front") or "").strip()
-        back = (item.get("back") or "").strip()
+        if not isinstance(item.get("front"), str) or not isinstance(item.get("back"), str):
+            continue
+        front = item["front"].strip()
+        back = item["back"].strip()
         if not front or not back:
             continue  # 跳过空内容
         card = Card(
@@ -277,7 +290,7 @@ def generate_cards_from_node(
             project_id=node.project_id,
             front=front,
             back=back,
-            card_type=item.get("card_type") or "basic",
+            card_type=item.get("card_type") if item.get("card_type") in ("basic", "cloze", "concept") else "basic",
         )
         session.add(card)
         cards.append(card)

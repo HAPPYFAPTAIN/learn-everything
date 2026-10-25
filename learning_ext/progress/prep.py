@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 _WORKERS = 2
 _Q: "queue.Queue[tuple]" = queue.Queue()
-_LOCK = threading.Lock()
+_LOCK = threading.RLock()
 _STATE: dict[int, dict] = {}
 _INFLIGHT: set[tuple[int, int]] = set()
 _STARTED = False
@@ -49,17 +49,19 @@ def _loop() -> None:
 def _run(job: tuple) -> None:
     pid, nid, topic, opts = job
     from learning_ext.progress.study import generate_node_summary_to_db
+    from learning_ext.llm.request_gate import background_requests
 
     ok = False
     for attempt in range(2):
         try:
-            ok = generate_node_summary_to_db(
-                nid,
-                topic,
-                force=bool(opts.get("force")),
-                learning_goal=opts.get("goal", ""),
-                environment_context=opts.get("env", ""),
-            )
+            with background_requests():
+                ok = generate_node_summary_to_db(
+                    nid,
+                    topic,
+                    force=bool(opts.get("force")),
+                    learning_goal=opts.get("goal", ""),
+                    environment_context=opts.get("env", ""),
+                )
         except Exception as exc:  # noqa: BLE001
             logger.warning("备课 node#%s 第 %d 次失败: %s", nid, attempt + 1, exc)
             ok = False
@@ -69,12 +71,8 @@ def _run(job: tuple) -> None:
 
     with _LOCK:
         state = _STATE.get(int(pid))
-        if state:
-            state["done"] += 1
-            if not ok:
-                state["failed"].append(int(nid))
-            if state["done"] >= state["total"]:
-                state["running"] = False
+        if state is not None:
+            state[int(nid)] = "done" if ok else "failed"
         _INFLIGHT.discard((int(pid), int(nid)))
     logger.info("[备课] %s node#%s %s", pid, nid, "OK" if ok else "FAIL")
 
@@ -95,23 +93,22 @@ def start(
     _ensure_workers()
     fresh: list[int] = []
     with _LOCK:
-        state = _STATE.setdefault(
-            pid, {"total": 0, "done": 0, "failed": [], "running": False}
-        )
+        state = _STATE.setdefault(pid, {})
         for raw in node_ids:
             try:
                 nid = int(raw)
             except (TypeError, ValueError):
                 continue
+            if nid <= 0:
+                continue
             key = (pid, nid)
             if key in _INFLIGHT:
                 continue
             _INFLIGHT.add(key)
+            state[nid] = "pending"
             fresh.append(nid)
         if not fresh:
             return snapshot(pid)
-        state["total"] += len(fresh)
-        state["running"] = True
     for nid in fresh:
         _Q.put((pid, nid, topic, {"goal": goal, "env": env, "force": force}))
     logger.info("[备课] 项目#%s 新排 %d 节（共 %d）", pid, len(fresh), snapshot(pid).get("total"))
@@ -126,11 +123,16 @@ def snapshot(project_id: int | None) -> dict:
         if not state:
             return {}
         return {
-            "total": state["total"],
-            "done": state["done"],
-            "failed": list(state["failed"]),
-            "running": state["running"],
+            "total": len(state),
+            "done": sum(value != "pending" for value in state.values()),
+            "failed": [nid for nid, value in state.items() if value == "failed"],
+            "running": any(value == "pending" for value in state.values()),
         }
+
+
+def node_status(project_id: int, node_id: int) -> str:
+    with _LOCK:
+        return _STATE.get(int(project_id), {}).get(int(node_id), "")
 
 
 def is_busy(project_id: int | None) -> bool:

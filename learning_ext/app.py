@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 
+from learning_ext.page_design import page_intro, HELP_CARDS
 import gradio as gr
 from decouple import config
 from ktem.main import App as KotaemonApp
@@ -19,9 +20,9 @@ KH_DEMO_MODE = getattr(flowsettings, "KH_DEMO_MODE", False)
 KH_SSO_ENABLED = getattr(flowsettings, "KH_SSO_ENABLED", False)
 
 from learning_ext.presentation import (
+    ASSETS,
     BRAND,
     presentation_css,
-    welcome_html,
     polish_chat_ui,
 )
 
@@ -32,12 +33,18 @@ class LearningApp(KotaemonApp):
     public_events = []
 
     def __init__(self):
+        from learning_ext.chat_compat import configure_chat_compat
         from learning_ext.optional_reranking import configure_optional_reranking
 
         from learning_ext.rag_requests import configure_rag_requests
+        from learning_ext.local_embeddings import configure_local_embedding_runtime
 
+        configure_chat_compat()
         configure_rag_requests()
+        configure_local_embedding_runtime()
         configure_optional_reranking()
+        from learning_ext.preview_readers import configure_preview_readers
+        configure_preview_readers()
         super().__init__()
         try:
             from learning_ext.bootstrap import init_learning_ext
@@ -46,33 +53,39 @@ class LearningApp(KotaemonApp):
         except Exception as e:
             logger.warning(f"learning_ext 初始化延迟: {e} (将在首次使用时重试)")
 
-    def _inject_css(self):
-        try:
-            gr.HTML("<style>" + presentation_css() + "</style>")
-        except Exception:
-            pass
-
     def make(self):
-        markmap_js = """
+        asset_root = "/file=" + ASSETS.as_posix()
+        self._theme = type(self._theme)(
+            font=["Quicksand", "ui-sans-serif", "sans-serif"],
+            font_mono=["IBM Plex Mono", "ui-monospace", "monospace"],
+        )
+        self._pdf_view_js = self._pdf_view_js.replace('locale="en"', "")
+        markmap_js = f"""
         <script>
-            window.markmap = {
-                /** @type AutoLoaderOptions */
-                autoLoader: {
-                    toolbar: true, // Enable toolbar
-                },
-            };
+            window.markmap = {{
+                autoLoader: {{
+                    toolbar: true,
+                    provider: (path) => {{
+                        const assets = {{
+                            'd3@7.8.5': '{asset_root}/vendor/d3/d3.min.js',
+                            'markmap-lib@0.16.1': '{asset_root}/vendor/markmap/lib.js',
+                            'markmap-view@0.16.0': '{asset_root}/vendor/markmap/view.js',
+                            'markmap-toolbar@0.16.0': '{asset_root}/vendor/markmap/toolbar.js',
+                            'markmap-toolbar@0.16.0/dist/style.css': '{asset_root}/vendor/markmap/toolbar.css',
+                        }};
+                        return assets[path] || path;
+                    }},
+                }},
+            }};
         </script>
         """
         external_js = (
-            "<script type='module' "
-            "src='https://cdn.skypack.dev/pdfjs-viewer-element'>"
-            "</script>"
-            "<script type='module' "
-            "src='https://cdnjs.cloudflare.com/ajax/libs/tributejs/5.1.3/tribute.min.js'></script>"
+            f"<script type='module' src='{asset_root}/vendor/pdfjs/pdfjs-viewer-element.js'></script>"
+            f"<script src='{asset_root}/vendor/tribute/tribute.min.js'></script>"
             f"{markmap_js}"
-            "<script src='https://cdn.jsdelivr.net/npm/markmap-autoloader@0.16'></script>"
-            "<script src='https://cdn.jsdelivr.net/npm/minisearch@7.1.1/dist/umd/index.min.js'></script>"
-            "<link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/tributejs/5.1.3/tribute.css'/>"
+            f"<script src='{asset_root}/vendor/markmap/autoloader.js'></script>"
+            f"<script src='{asset_root}/vendor/minisearch/index.js'></script>"
+            f"<link rel='stylesheet' href='{asset_root}/vendor/tribute/tribute.css'/>"
         )
 
         with gr.Blocks(
@@ -92,6 +105,9 @@ class LearningApp(KotaemonApp):
             self.declare_public_events()
             self.subscribe_public_events()
             self.register_events()
+            # 普通首页类不属于 Kotaemon BasePage；等工作台完成绑定后再连接向导。
+            self.onboarding_page.on_register_events()
+            self.text_polish_ui.register()
             self.on_app_created()
 
             demo.load(None, None, None, js=self._pdf_view_js)
@@ -173,54 +189,18 @@ class LearningApp(KotaemonApp):
 
         with gr.Tab("动手学", elem_id="learning-coach-tab", id="learning-coach-tab", visible=visible,
                     elem_classes=["fill-main-area-height", "scrollable"]) as self._tabs["learning-coach-tab"]:
-            from learning_ext.pages import CoachPage
+            from learning_ext.pages import CoachLessonPage
 
-            self.coach_page = CoachPage(self)
+            self.coach_page = CoachLessonPage(self)
             self.coach_page.on_building_ui()
 
     def _build_guide_tab(self, visible: bool):
-        from learning_ext.guide import GUIDE_MARKDOWN
+        from learning_ext.onboarding import GuidedHomePage
 
-        with gr.Tab(
-            "学习首页",
-            elem_id="learning-guide-tab",
-            id="learning-guide-tab",
-            visible=visible,
-            elem_classes=["fill-main-area-height", "scrollable"],
-        ) as self._tabs["learning-guide-tab"]:
-            self.home_html = gr.HTML(welcome_html(self._has_any_course()))
-            gr.HTML('<section class="le-start-guide"><div><h2>第一次用？跟着做就好。</h2><p>4 步认识学习流程，每次只看一步。</p></div><button data-le-tour-start>带我开始 →</button></section>')
-            # 藏在屏幕外的刷新桥：切回「学习首页」时由 nav.js 点一下，
-            # 重新判断有没有课程——没课程就不长「学习工作台」入口。
-            # 用桥而不是 Tabs 事件：Gradio 4.44 的 Tab.select / Tabs.change 前端都不派发。
-            with gr.Row(elem_id="le-home-bridge"):
-                self.home_refresh = gr.Button("刷新首页", elem_id="le-home-refresh")
-            self.home_refresh.click(
-                self._refresh_home_cards,
-                None,
-                [self.home_html],
-                show_progress="hidden",
-            )
-
-    def _has_any_course(self) -> bool:
-        """库里有没有任何课程节点。查不到时按「有」处理，宁可不藏也不误藏。"""
-        try:
-            from sqlmodel import Session, select
-
-            from ktem.db.engine import engine
-            from learning_ext.db.models import KnowledgeNode
-
-            with Session(engine) as s:
-                return s.exec(select(KnowledgeNode).limit(1)).first() is not None
-        except Exception:
-            logger.warning("判断是否已有课程失败，按有课程处理", exc_info=True)
-            return True
-
-    def _refresh_home_cards(self):
-        # 直接返回 HTML 字符串：gr.HTML 的新值就是这个字符串，
-        # 用 gr.update(value=...) 在前端不生效（实测点了没反应）。
-        has = self._has_any_course()
-        return welcome_html(has)
+        with gr.Tab("学习首页", elem_id="learning-guide-tab", id="learning-guide-tab", visible=visible,
+                    elem_classes=["fill-main-area-height", "scrollable"]) as self._tabs["learning-guide-tab"]:
+            self.onboarding_page = GuidedHomePage(self)
+            self.onboarding_page.on_building_ui()
 
     def _register_extra_events(self):
         for page_attr in (
@@ -256,8 +236,6 @@ class LearningApp(KotaemonApp):
 
         gr.HTML(BRAND, elem_id="le-brand-bar")
         with gr.Tabs(elem_id="le-app-tabs") as self.tabs:
-            self._inject_css()
-
             vis = True
 
             # 1. 使用指南 (最先)
@@ -291,6 +269,7 @@ class LearningApp(KotaemonApp):
                         id="indices-tab",
                         visible=vis and not KH_DEMO_MODE,
                     ) as self._tabs[f"{index.id}-tab"]:
+                        gr.HTML(page_intro("library"))
                         setattr(self, f"_index_{index.id}", index.get_index_page_ui())
             elif len(self.index_manager.indices) > 1:
                 with gr.Tab(
@@ -300,6 +279,7 @@ class LearningApp(KotaemonApp):
                     id="indices-tab",
                     visible=vis and not KH_DEMO_MODE,
                 ) as self._tabs["indices-tab"]:
+                    gr.HTML(page_intro("library"))
                     for index in self.index_manager.indices:
                         with gr.Tab(
                             index.name, elem_id=f"{index.id}-tab"
@@ -322,7 +302,7 @@ class LearningApp(KotaemonApp):
                 visible=vis,
                 elem_classes=["fill-main-area-height", "scrollable"],
             ) as self._tabs["help-tab"]:
-                gr.HTML('<section class="le-start-guide"><div><h2>你想完成哪件事？</h2><p>选一个目标，跟着高亮区域操作。随时可以退出。</p></div><div class="le-guide-choices"><button data-le-tour-start="learning">创建路线与上课</button><button data-le-tour-start="review">复习、测验与进展</button><button data-le-tour-start="documents">上传资料并提问</button></div></section>')
+                gr.HTML(page_intro("help") + HELP_CARDS)
                 from learning_ext.guide import GUIDE_MARKDOWN
                 with gr.Accordion("常见问题 · 需要时再看", open=False):
                     gr.Markdown(GUIDE_MARKDOWN)
@@ -338,6 +318,9 @@ class LearningApp(KotaemonApp):
 
         self.assistant_page = GlobalAssistant(self)
         self.assistant_page.on_building_ui()
+        from learning_ext.text_polish_ui import TextPolishUI
+
+        self.text_polish_ui = TextPolishUI(self).build()
 
     def on_subscribe_public_events(self):
         super().on_subscribe_public_events()

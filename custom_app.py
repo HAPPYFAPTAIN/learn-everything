@@ -140,31 +140,51 @@ def _patch_gradio_template_for_learning_assets():
         word_lookup_js = Path(_HERE, script_path).read_text(encoding="utf-8")
         workspace_js = Path(_HERE, "learning_ext/assets/workspace.js").read_text(encoding="utf-8")
         workspace_js += "\n" + Path(_HERE, "learning_ext/assets/coach.js").read_text(encoding="utf-8")
+        workspace_js += "\n" + Path(_HERE, "learning_ext/assets/coach_lesson.js").read_text(encoding="utf-8")
         workspace_js += "\n" + Path(_HERE, "learning_ext/assets/workbench.js").read_text(encoding="utf-8")
+        workspace_js += "\n" + Path(_HERE, "learning_ext/assets/modal.js").read_text(encoding="utf-8")
         workspace_js += "\n" + Path(_HERE, "learning_ext/assets/outline.js").read_text(encoding="utf-8")
         workspace_js += "\n" + Path(_HERE, "learning_ext/assets/nav.js").read_text(encoding="utf-8")
         workspace_js += "\n" + Path(_HERE, "learning_ext/assets/assistant.js").read_text(encoding="utf-8")
+        workspace_js += "\n" + Path(_HERE, "learning_ext/assets/onboarding.js").read_text(encoding="utf-8")
+        workspace_js += "\n" + Path(_HERE, "learning_ext/assets/selects.js").read_text(encoding="utf-8")
+        workspace_js += "\n" + Path(_HERE, "learning_ext/assets/pages.js").read_text(encoding="utf-8")
+        workspace_js += "\n" + Path(_HERE, "learning_ext/assets/platforms.js").read_text(encoding="utf-8")
+        workspace_js += "\n" + Path(_HERE, "learning_ext/assets/document_preview.js").read_text(encoding="utf-8")
+        workspace_js += "\n" + Path(_HERE, "learning_ext/assets/consumer.js").read_text(encoding="utf-8")
+        workspace_js += "\n" + Path(_HERE, "learning_ext/assets/settings_panels.js").read_text(encoding="utf-8")
+        workspace_js += "\n" + Path(_HERE, "learning_ext/assets/chat_streaming.js").read_text(encoding="utf-8")
+        workspace_js += "\n" + Path(_HERE, "learning_ext/assets/action_learning.js").read_text(encoding="utf-8")
+        workspace_js += "\n" + Path(_HERE, "learning_ext/assets/rich_text.js").read_text(encoding="utf-8")
+        workspace_js += "\n" + Path(_HERE, "learning_ext/assets/text_polish.js").read_text(encoding="utf-8")
+        workspace_js += "\n" + Path(_HERE, "learning_ext/assets/motion.js").read_text(encoding="utf-8")
         script_tag = f"<script>\n{word_lookup_js}\n</script>"
         script_tag = f"<script>\n{workspace_js}\n</script>" + script_tag
-        # 助教面板、悬浮球与外壳修正都作用于容器之外（body 级 / .gradio-container），
-        # 走 gr.Blocks(css=...) 会被 Gradio 加上 .contain 前缀而失效，故用原始 style 注入
+        # body 级外壳与助教面板、入口需要原始 style；其余样式统一走 Gradio 样式链
         raw_css = Path(_HERE, "learning_ext/assets/shell.css").read_text(encoding="utf-8")
         raw_css += "\n" + Path(_HERE, "learning_ext/assets/assistant.css").read_text(encoding="utf-8")
+        raw_css += "\n" + Path(_HERE, "learning_ext/assets/text_polish.css").read_text(encoding="utf-8")
         # 与 presentation_css() 共用 __ASSETS__ 占位符：助教头像等图片走 Gradio 的 /file= 静态路径
         raw_css = raw_css.replace(
             "__ASSETS__", "/file=" + Path(_HERE, "learning_ext", "assets").as_posix()
         )
         style_tag = f"<style>\n{raw_css}\n</style>"
+        # CSS 的 {# 和脚本中的模板字符应按原文输出，不能交给 Jinja 解析。
+        browser_assets = "{% raw %}" + style_tag + "\n" + script_tag + "{% endraw %}"
         template_root = Path(gradio_routes.STATIC_TEMPLATE_LIB)
         overrides = {}
         for template_name in ("frontend/index.html", "frontend/share.html"):
             source = (template_root / template_name).read_text(encoding="utf-8")
+            source = source.replace(
+                "https://cdnjs.cloudflare.com/ajax/libs/iframe-resizer/4.3.1/iframeResizer.contentWindow.min.js",
+                "/file=" + Path(_HERE, "learning_ext/assets/vendor/iframe-resizer/iframeResizer.contentWindow.min.js").as_posix(),
+            )
             if script_path not in source:
                 marker = '<script type="module" crossorigin src='
                 if marker in source:
-                    source = source.replace(marker, f"{style_tag}\n\t\t{script_tag}\n\t\t{marker}", 1)
+                    source = source.replace(marker, f"{browser_assets}\n\t\t{marker}", 1)
                 else:
-                    source = source.replace("</head>", f"\t\t{style_tag}\n\t\t{script_tag}\n\t</head>", 1)
+                    source = source.replace("</head>", f"\t\t{browser_assets}\n\t</head>", 1)
             overrides[template_name] = source
 
         original_loader = gradio_routes.templates.env.loader
