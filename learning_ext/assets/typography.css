@@ -1,0 +1,68 @@
+.gradio-container {
+  --le-font-ui: 16px;
+  --le-font-body: 17px;
+  --le-font-caption: 14px;
+  --le-weight-ui: 600;
+  font-family: "Segoe UI Variable", "Segoe UI", "Microsoft YaHei UI", "PingFang SC", sans-serif !important;
+}
+
+#le-app-tabs :is(button, summary, [role=option], [role=menuitem], [role=menuitemradio]) {
+  font-size: var(--le-font-ui) !important;
+  font-weight: var(--le-weight-ui) !important;
+}
+
+#le-app-tabs :is(#le-settings-form, #le-center-content, #le-coach, #chat-tab, .le-settings-deck) :is(button, summary, .label-wrap, [role=option]) {
+  font-size: var(--le-font-ui) !important;
+  font-weight: var(--le-weight-ui) !important;
+}
+
+#le-app-tabs :is(#le-settings-form, #le-center-content, #le-coach, #chat-tab, .le-settings-deck, .block) :is(input:not([type=checkbox]):not([type=radio]):not([type=range]), textarea, select, [role=listbox]) {
+  font-size: var(--le-font-ui) !important;
+  font-weight: 500 !important;
+  line-height: 1.55 !important;
+}
+
+#le-app-tabs :is(#le-settings-form, #le-center-content, #le-coach, #chat-tab, .le-settings-deck, .block) :is([data-testid=block-label], [data-testid=block-info], label > span) {
+  font-size: var(--le-font-ui) !important;
+  font-weight: var(--le-weight-ui) !important;
+  line-height: 1.5 !important;
+}
+
+#le-app-tabs :is(.prose, .md, .le-rich-text) {
+  font-size: var(--le-font-body) !important;
+  font-weight: 500 !important;
+  line-height: 1.8 !important;
+}
+
+#le-app-tabs :is(#le-center-content, #chat-tab, #le-coach) :is(.prose, .md, .le-rich-text) :is(p, li, td) {
+  font-size: var(--le-font-body) !important;
+  line-height: 1.8 !important;
+}
+
+#le-app-tabs :is(h1, h2, h3, h4, strong, b) { font-weight: 700 !important; }
+#le-app-tabs :is(small, .le-caption, .le-muted, .le-eyebrow, .le-kicker) {
+  font-size: var(--le-font-caption) !important;
+  font-weight: 500 !important;
+}
+#le-app-tabs pre, #le-app-tabs code { font-weight: 500 !important; }
+#le-app-tabs pre code { font-size: 15px !important; line-height: 1.65 !important; }
+
+#quick-setup-tab #le-reasoning-settings .le-reasoning-purpose > span,
+#quick-setup-tab #le-reasoning-settings .le-reasoning-purpose label span {
+  font-size: var(--le-font-ui) !important;
+  font-weight: 600 !important;
+}
+#quick-setup-tab #le-reasoning-settings .le-reasoning-purpose {
+  grid-template-columns: minmax(140px, 1fr) minmax(260px, 1fr);
+}
+#quick-setup-tab #le-reasoning-settings .le-reasoning-purpose label {
+  min-height: 36px !important;
+}
+
+.gradio-container .le-topbar .le-app-title { font-size: 16px !important; font-weight: 650 !important; }
+.gradio-container .le-topbar .le-app-title span { font-size: 14px !important; font-weight: 500 !important; }
+
+@media (max-width: 680px) {
+  .gradio-container { --le-font-ui: 15px; --le-font-body: 16px; }
+  #quick-setup-tab #le-reasoning-settings .le-reasoning-purpose { grid-template-columns: 1fr; }
+}

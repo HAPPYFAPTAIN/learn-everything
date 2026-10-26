@@ -86,12 +86,13 @@ def mock_llm(monkeypatch):
         temperature=0.3,
         stream=False,
         max_tokens=None,
+        purpose="default",
     ):
         if stream:
             return iter(["模拟", "回复"])
         return "这是模拟的 LLM 回复。"
 
-    def _fake_chat_json(prompt, *, system=None, model_name=None):
+    def _fake_chat_json(prompt, *, system=None, model_name=None, purpose="default"):
         import json as _json
 
         sys_p = system or ""

@@ -64,6 +64,7 @@ def configure_chat_recovery(page):
                         stream=True,
                         effort=preferences['effort'],
                         show_thinking=preferences['show_thinking'],
+                        purpose="qa",
                     ):
                         answer += chunk
                         history[-1] = (question, answer)

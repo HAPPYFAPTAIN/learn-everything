@@ -10,8 +10,8 @@
   let choice = 0, matches = [];
   const visible = el => !!el && !el.closest('[hidden],[aria-hidden="true"]') && el.getClientRects().length > 0;
   function readSize() {
-    try { return [16,18,20].includes(Number(localStorage.getItem('le.reading.size'))) ? Number(localStorage.getItem('le.reading.size')) : 16; }
-    catch (_) { return 16; }
+    try { return [16,18,20].includes(Number(localStorage.getItem('le.reading.size'))) ? Number(localStorage.getItem('le.reading.size')) : 18; }
+    catch (_) { return 18; }
   }
   function setSize(value) {
     root.style.setProperty('--le-reading-size', `${value}px`);

@@ -34,7 +34,7 @@
 #le-app-tabs :is(#quick-setup-tab, #help-tab) .le-section-label {
   gap: 8px !important;
   font-size: 11.5px !important;
-  font-weight: 520 !important;
+  font-weight: 600 !important;
   letter-spacing: .08em !important;
   color: var(--le-ink-3) !important;
 }
@@ -112,7 +112,7 @@
   border-radius: var(--le-radius-s) !important;
   background: var(--le-surface) !important;
   color: var(--le-ink) !important;
-  font-size: 13.5px !important;
+  font-size: var(--le-font-ui, 16px) !important;
   line-height: 1.5 !important;
   box-shadow: none !important;
 }
@@ -242,7 +242,7 @@
 #le-app-tabs #quick-setup-tab #le-platform-picker label > span {
   margin: 0 !important;
   min-width: 0 !important;
-  font-size: 13.5px !important;
+  font-size: var(--le-font-ui, 16px) !important;
   font-weight: 500 !important;
   line-height: 1.4 !important;
   color: var(--le-ink) !important;
@@ -300,9 +300,9 @@
   border: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
-  font-size: 11.5px !important;
-  font-weight: 520 !important;
-  letter-spacing: .03em !important;
+  font-size: var(--le-font-ui, 16px) !important;
+  font-weight: 600 !important;
+  letter-spacing: 0 !important;
   line-height: 1.4 !important;
   text-transform: none !important;
   color: var(--le-ink-3) !important;
@@ -315,7 +315,7 @@
   border-radius: var(--le-radius-s) !important;
   background: var(--le-surface) !important;
   color: var(--le-ink) !important;
-  font-size: 14.5px !important;
+  font-size: var(--le-font-ui, 16px) !important;
   line-height: 1.5 !important;
   box-shadow: none !important;
 }
@@ -360,7 +360,7 @@
   border: 0 !important;
   background: transparent !important;
   color: var(--le-ink) !important;
-  font-size: 14.5px !important;
+  font-size: var(--le-font-ui, 16px) !important;
   line-height: 1.5 !important;
   box-shadow: none !important;
 }
@@ -543,8 +543,8 @@
   border-radius: 0 !important;
   background: transparent !important;
   color: var(--le-ink-2) !important;
-  font-size: 13.5px !important;
-  font-weight: 520 !important;
+  font-size: var(--le-font-ui, 16px) !important;
+  font-weight: 600 !important;
   box-shadow: none !important;
 }
 
@@ -554,8 +554,8 @@
 }
 
 #le-app-tabs #quick-setup-tab #le-connection-advanced > button.label-wrap > span {
-  font-size: 13.5px !important;
-  font-weight: 520 !important;
+  font-size: var(--le-font-ui, 16px) !important;
+  font-weight: 600 !important;
   color: var(--le-ink-2) !important;
 }
 
@@ -669,8 +669,8 @@
   min-height: 38px !important;
   padding: 0 16px !important;
   border-radius: var(--le-radius-s) !important;
-  font-size: 13.5px !important;
-  font-weight: 520 !important;
+  font-size: var(--le-font-ui, 16px) !important;
+  font-weight: 600 !important;
   box-shadow: none !important;
   transform: none !important;
 }
@@ -753,7 +753,7 @@
 
 #le-app-tabs #quick-setup-tab .le-saved-summary strong {
   font-size: 11.5px !important;
-  font-weight: 520 !important;
+  font-weight: 600 !important;
   letter-spacing: .03em !important;
   color: var(--le-ink-3) !important;
 }
@@ -913,8 +913,8 @@
 }
 
 #le-app-tabs #help-tab .block:has(> button.label-wrap) > button.label-wrap > span {
-  font-size: 13.5px !important;
-  font-weight: 520 !important;
+  font-size: var(--le-font-ui, 16px) !important;
+  font-weight: 600 !important;
   color: inherit !important;
 }
 

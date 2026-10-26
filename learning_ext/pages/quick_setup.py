@@ -281,6 +281,18 @@ class QuickSetupPage(BasePage):
                     self.save_btn = gr.Button("启用连接", variant="primary")
                 self.result = gr.Markdown("", elem_id="le-connection-result")
                 self.status_display = gr.HTML(self._build_status(current), elem_id="le-saved-connection")
+                from learning_ext import reasoning_settings
+                with gr.Accordion("思考设置 · 按用途", open=False, elem_id="le-reasoning-settings"):
+                    self.reasoning_note = gr.Markdown(reasoning_settings.capability_note(draft["base_url"], draft["chat_model"]))
+                    gr.Markdown("模型默认 / 开启 / 关闭。章节内的小结随课程生成；独立总结、复习卡使用总结设置。")
+                    preferences = reasoning_settings.load()
+                    self.reasoning_controls = [
+                        gr.Radio(choices=[("模型默认", "auto"), ("开启", "on"), ("关闭", "off")],
+                                 value=preferences[key], label=label, elem_classes=["le-reasoning-purpose"])
+                        for key, label in reasoning_settings.PURPOSES.items()
+                    ]
+                    self.save_reasoning = gr.Button("保存思考设置", size="sm", variant="primary")
+                    self.reasoning_status = gr.Markdown("")
                 gr.HTML('<div class="le-connection-return"><button type="button" data-le-nav="learning-guide-tab">返回学习首页 →</button></div>')
 
     @staticmethod
@@ -394,6 +406,19 @@ class QuickSetupPage(BasePage):
             return "保存未完成，请重试。", self._build_status(actual), actual
 
     def on_register_events(self):
+        from learning_ext import reasoning_settings
+        def save_reasoning(*values):
+            try:
+                return reasoning_settings.save(dict(zip(reasoning_settings.PURPOSES, values)))
+            except (ValueError, OSError):
+                return "保存失败，请检查设置与本机文件权限。"
+        self.save_reasoning.click(save_reasoning, self.reasoning_controls, self.reasoning_status, show_progress="hidden")
+        self._app.app.load(
+            lambda: list(reasoning_settings.load().values()),
+            outputs=self.reasoning_controls, show_progress="hidden",
+        )
+        for control in (self.chat_model, self.base_url):
+            control.change(reasoning_settings.capability_note, [self.base_url, self.chat_model], self.reasoning_note, show_progress="hidden")
         from learning_ext.local_embeddings import configure_local_embeddings
         self.local_embed_enable.click(configure_local_embeddings, inputs=[self.local_embed_model], outputs=[self.local_embed_status])
         self.provider.input(

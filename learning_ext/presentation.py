@@ -57,6 +57,8 @@ def presentation_css():
         css += "\n" + (ASSETS / f"{page_layer}.css").read_text(encoding="utf-8")
     for workspace_layer in ("fullscreen_shell", "fullscreen_content", "chat_follow_latest", "route_browser", "chat_surface", "chat_references", "chat_thinking"):
         css += "\n" + (ASSETS / f"{workspace_layer}.css").read_text(encoding="utf-8")
+    css += "\n" + (ASSETS / "reasoning_settings.css").read_text(encoding="utf-8")
+    css += "\n" + (ASSETS / "typography.css").read_text(encoding="utf-8")
     return css.replace("__ASSETS__", "/file=" + ASSETS.as_posix())
 
 

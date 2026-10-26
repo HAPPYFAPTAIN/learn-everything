@@ -117,6 +117,7 @@ def chat(
     retries: int = 2,
     effort: Optional[str] = None,
     show_thinking: bool = False,
+    purpose: str = "default",
 ) -> str | Iterator[str]:
     """单轮对话 (带超时 + 自动重试)。
 
@@ -162,6 +163,8 @@ def chat(
 
     kwargs = chat_thinking.apply_effort(kwargs, model, preferences["effort"])
     kwargs = adapt_chat_params(cfg["base_url"], kwargs)
+    from learning_ext import reasoning_settings
+    kwargs = reasoning_settings.apply(kwargs, cfg["base_url"], purpose)
 
     if stream:
         def generate():
@@ -328,6 +331,8 @@ def stream_tool_response(messages, tools, *, selection=None):
         "messages": sanitize_messages(messages), "tools": tools, "tool_choice": "auto", "temperature": 0.3})
     if selection:
         params = chat_thinking.apply_effort(params, cfg["chat_model"], preferences["effort"])
+    from learning_ext import reasoning_settings
+    params = reasoning_settings.apply(params, cfg["base_url"], "coach")
     try:
         with _REQUEST_SLOT:
             with client.chat.completions.create(stream=True, **params) as response:
@@ -341,6 +346,7 @@ def chat_json(
     *,
     system: Optional[str] = None,
     model_name: Optional[str] = None,
+    purpose: str = "default",
 ) -> dict | list:
     """要求 LLM 返回 JSON 并解析 (容错提取)。
 
@@ -348,7 +354,7 @@ def chat_json(
     Returns:
         解析后的 dict 或 list
     """
-    raw = chat(prompt, system=system, model_name=model_name, temperature=0.1)
+    raw = chat(prompt, system=system, model_name=model_name, temperature=0.1, purpose=purpose)
     # 剥 markdown 代码块
     cleaned = re.sub(r"```(?:json)?\s*", "", raw)
     cleaned = re.sub(r"\s*```$", "", cleaned.strip())

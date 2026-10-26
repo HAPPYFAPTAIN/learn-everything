@@ -29,7 +29,7 @@ def generate_install_commands(
     """让 AI 把环境清单转成可执行命令列表。"""
     report = audited_exploration({"lesson": env_checklist_md, "background": background}, planner=chat_json)
     prompt = json.dumps({"checklist": env_checklist_md, "background": background, "environment": report}, ensure_ascii=False)
-    result = chat_json(prompt, system=SYSTEM_PROMPT)
+    result = chat_json(prompt, system=SYSTEM_PROMPT, purpose="coach")
     if isinstance(result, dict) and "commands" in result:
         result = result["commands"]
     if not isinstance(result, list):

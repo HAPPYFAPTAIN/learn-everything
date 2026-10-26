@@ -14,7 +14,10 @@ def _guard_params(original):
     def guarded(self, **kwargs):
         if "messages" in kwargs:
             kwargs["messages"] = sanitize_messages(kwargs["messages"])
-        return adapt_chat_params(getattr(self, "base_url", None), original(self, **kwargs))
+        from learning_ext import reasoning_settings
+        base_url = getattr(self, "base_url", None)
+        params = adapt_chat_params(base_url, original(self, **kwargs))
+        return reasoning_settings.apply(params, base_url, "qa")
 
     return guarded
 

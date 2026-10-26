@@ -261,7 +261,7 @@ def generate_cards_from_node(
 返回 JSON：{{"cards":[{{"front":"问题","back":"答案","card_type":"basic|cloze|concept"}}]}}
 只返回 JSON。"""
 
-    result = chat_json(prompt, model_name=model_name)
+    result = chat_json(prompt, model_name=model_name, purpose="summary")
     # 兼容 list 或 {"cards": [...]}
     if isinstance(result, list):
         items = result

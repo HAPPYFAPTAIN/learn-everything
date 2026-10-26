@@ -130,7 +130,7 @@ class ActionLearning:
         try:
             report = self.inspect_environment(state)
             sources = source_excerpts(context)
-            result = chat_json(json.dumps(dict(context=context, environment=report, sources=[dict(index=i,text=excerpt) for i,excerpt in enumerate(sources)]), ensure_ascii=False), system=DECOMPOSE)
+            result = chat_json(json.dumps(dict(context=context, environment=report, sources=[dict(index=i,text=excerpt) for i,excerpt in enumerate(sources)]), ensure_ascii=False), system=DECOMPOSE, purpose="coach")
             state["steps"] = validate_steps(result, context["lesson"] + "\n" + context.get("practice", ""), sources)
         except Exception as exc:
             self.journal.record(state, "decompose_failed", error=type(exc).__name__)
@@ -209,7 +209,7 @@ class ActionLearning:
             question = "我该怎么开始这一步？"
         self.journal.record(state, "ai_help_requested", question=question)
         current = state["steps"][state["index"]] if state["index"] >= 0 else dict(title="学习前的环境检查", action="确认已找到与尚未验证的工具", check="了解哪些重复准备会跳过")
-        answer = chat(json.dumps(dict(context=state["context"], environment=state.get("environment"), current=current, question=question), ensure_ascii=False), system=HELP)
+        answer = chat(json.dumps(dict(context=state["context"], environment=state.get("environment"), current=current, question=question), ensure_ascii=False), system=HELP, purpose="coach")
         self.journal.record(state, "ai_help_result", answer=answer)
         return answer
 
@@ -220,7 +220,7 @@ class ActionLearning:
         if not observation or time.time() - observation["observed"] > 180:
             raise ValueError("先选择窗口并读取控件。")
         self.journal.record(state, "ai_locate_requested", window=observation["window"]["title"])
-        result = chat_json(json.dumps(dict(context=state["context"], current=state["steps"][state["index"]], controls=observation["items"]), ensure_ascii=False), system=LOCATE)
+        result = chat_json(json.dumps(dict(context=state["context"], current=state["steps"][state["index"]], controls=observation["items"]), ensure_ascii=False), system=LOCATE, purpose="coach")
         key = result.get("key") if isinstance(result, dict) else None
         item = next((item for item in observation["items"] if item["key"] == key), None)
         self.journal.record(state, "ai_locate_result", key=key, found=bool(item))

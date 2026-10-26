@@ -227,7 +227,7 @@ def rewrite(node_id: int, snippet: str, action: str = "rewrite", instruction: st
         f"{_context(text, start, end)}"
     )
     try:
-        raw = chat(prompt, system=_SYSTEM, temperature=0.4, max_tokens=2500)
+        raw = chat(prompt, system=_SYSTEM, temperature=0.4, max_tokens=2500, purpose="polish")
     except Exception as exc:  # noqa: BLE001
         logger.exception("改写调用失败 node#%s", nid)
         return {"ok": False, "message": f"改写失败：{type(exc).__name__}: {exc}", "guide": text}

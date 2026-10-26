@@ -213,12 +213,11 @@ class StudyWorkbenchPage(BasePage):
                 self.action_learning = ActionLearningPanel(self).build()
                 with gr.Tabs(elem_id="le-content-tabs"):
                     with gr.TabItem("阅读", elem_id="le-lookup-zone"):
-                        from learning_ext.rich_text import render_lesson
+                        from learning_ext.lesson_component import LessonHTML
 
-                        self.node_guide = gr.HTML(
+                        self.node_guide = LessonHTML(
                             "", elem_id="le-guide-md", elem_classes=["le-lookup-zone"]
                         )
-                        self.node_guide.postprocess = render_lesson
                         with gr.Accordion("课程内容工具", open=False):
                             with gr.Row():
                                 self.regen_node_btn = gr.Button(
@@ -1212,13 +1211,20 @@ class StudyWorkbenchPage(BasePage):
         self._pending_node = None
         if is_content_valid(current):
             getattr(self, "_pending_nodes", {}).pop(node_id, None)
-            return current
+            return self._adapt_course_environment(node_id, topic, current)
         try:
             nid = int(node_id)
         except (TypeError, ValueError):
             return self._writing_placeholder()
         self._queue_single(nid)
         return self._writing_placeholder()
+
+    @staticmethod
+    def _adapt_course_environment(node_id, topic, content):
+        from learning_ext.progress.environment import adapt_reading
+        with Session(engine) as session:
+            node = session.get(KnowledgeNode, int(node_id))
+            return adapt_reading(node, topic, content) if node else content
 
     def _writing_placeholder(self) -> str:
         return (
@@ -1315,6 +1321,7 @@ class StudyWorkbenchPage(BasePage):
         self._pending_nodes.pop(int(nid), None)
         logger.info("[工作台] node#%s 备课完成，自动替换正文", nid)
         # 写完了就把轮询关掉：留着它每 3 秒重绘一次正文，界面会闪
+        body = self._adapt_course_environment(nid, "", body)
         return self._truncate_guide(body), practice_md, gr.update(active=False)
 
     # ---- 选段改写 ----
@@ -1371,6 +1378,8 @@ class StudyWorkbenchPage(BasePage):
             yield gr.update(), self._toast(res.get("message") or "没改成。", ok=False)
             return
         guide = res.get("guide") or ""
+        if guide:
+            guide = self._adapt_course_environment(node_id, "", guide)
         # 撤销之后就没有「再撤销」了
         yield (
             self._truncate_guide(guide) if guide else gr.update(),
@@ -1440,7 +1449,7 @@ class StudyWorkbenchPage(BasePage):
             lines.extend(["", "#### 路线说明", brief])
         return "\n".join(lines)
 
-    _FENCE = re.compile(r"(```.*?```)", re.S)
+    _FENCE = re.compile(r"(```.*?```|`+[^`\n]*`+)", re.S)
     _BLANK = re.compile(r"_{3,}")
 
     def _normalize_blanks(self, guide: str) -> str:
@@ -1455,7 +1464,7 @@ class StudyWorkbenchPage(BasePage):
             )
 
         parts = self._FENCE.split(guide or "")
-        return "".join(p if p.startswith("```") else fix(p) for p in parts)
+        return "".join(p if p.startswith("`") else fix(p) for p in parts)
 
     def _truncate_guide(self, guide: str, max_chars: int = 15000) -> str:
         """截断超长教学内容, 在章节边界截断并提示剩余可看。"""
@@ -1735,7 +1744,8 @@ class StudyWorkbenchPage(BasePage):
                 proj = s.get(LearningProject, node.project_id)
                 header = self._build_node_header(node, proj)
                 guide = node.description or ""
-            return "✅ 已重新生成", header, guide
+            guide = self._adapt_course_environment(nid, topic, guide)
+            return "✅ 已重新生成", header, self._truncate_guide(guide)
         except Exception as e:
             return f"❌ {e}", gr.update(), gr.update()
 

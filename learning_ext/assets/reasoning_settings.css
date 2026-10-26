@@ -1,0 +1,60 @@
+#quick-setup-tab #le-reasoning-settings .le-reasoning-purpose {
+  display: grid !important;
+  grid-template-columns: minmax(130px, 1fr) minmax(230px, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 9px 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--le-line) !important;
+  background: transparent !important;
+}
+#quick-setup-tab #le-reasoning-settings .le-reasoning-purpose > .wrap:not(.hide) {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  gap: 3px !important;
+  padding: 3px !important;
+  background: var(--le-sunken) !important;
+  border-radius: 10px;
+}
+#quick-setup-tab #le-reasoning-settings .le-reasoning-purpose label {
+  flex: 1;
+  justify-content: center;
+  min-width: 0 !important;
+  min-height: 30px !important;
+  padding: 5px 8px !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--le-ink-2) !important;
+  border-radius: 7px !important;
+}
+#quick-setup-tab #le-reasoning-settings .le-reasoning-purpose label:has(input:checked) {
+  background: var(--le-accent-soft) !important;
+  color: var(--le-ink) !important;
+  box-shadow: var(--le-shadow-1) !important;
+}
+#quick-setup-tab #le-reasoning-settings .le-reasoning-purpose > span {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: var(--le-ink-2) !important;
+}
+#quick-setup-tab #le-reasoning-settings .le-reasoning-purpose label span {
+  color: var(--le-ink-2) !important;
+  margin: 0 !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+}
+#quick-setup-tab #le-reasoning-settings .le-reasoning-purpose label:has(input:checked) span {
+  color: var(--le-accent) !important;
+}
+#quick-setup-tab #le-reasoning-settings .le-reasoning-purpose input[type=radio] {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+}
+#quick-setup-tab #le-reasoning-settings .le-reasoning-purpose label:has(input:focus-visible) {
+  outline: 2px solid var(--le-accent);
+}
+@media(max-width: 680px) {
+  #quick-setup-tab #le-reasoning-settings .le-reasoning-purpose { grid-template-columns: 1fr; gap: 6px; }
+}

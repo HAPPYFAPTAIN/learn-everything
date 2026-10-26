@@ -279,7 +279,7 @@ def diagnose_and_plan(
         signal_text=_signal_text(sig),
         user_note=(user_note or "").strip() or "（无额外要求）",
     )
-    raw = chat_json(prompt, system=SYSTEM, model_name=None)
+    raw = chat_json(prompt, system=SYSTEM, model_name=None, purpose="planning")
     if not isinstance(raw, dict) or not raw.get("nodes"):
         raise ValueError("模型没有返回可用的课程方案，请重试")
 

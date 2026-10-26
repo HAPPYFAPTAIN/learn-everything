@@ -158,7 +158,7 @@ class GlobalAssistant(BasePage):
                 f"\n【学习者最新消息】{user_msg}\n\n"
                 "请基于上面的内容回答。如材料有误或需补充，明确指出。Markdown，500 字内。"
             )
-            reply = chat(ctx, system=SYSTEM_PROMPT, temperature=0.4)
+            reply = chat(ctx, system=SYSTEM_PROMPT, temperature=0.4, purpose="qa")
             final = new_history + [{"role": "assistant", "content": reply}]
             yield final, final, ""
         except Exception as e:

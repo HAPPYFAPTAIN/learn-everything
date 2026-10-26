@@ -145,6 +145,7 @@ def polish_request(payload: str) -> str:
                 system=system,
                 temperature=0.1,
                 max_tokens=min(16_384, max(512, len(protected_source) * 2 + 512)),
+                purpose="polish",
             )
     except Exception:
         return fail("暂时无法润色，请检查模型配置或稍后重试。原文已保留。", "model_error")

@@ -64,7 +64,7 @@ def feynman_chat(
 
     context += f"【用户最新解释】{user_message}\n\n请以小白的身份回应。"
 
-    return chat(context, system=FEYNMAN_SYSTEM, model_name=model_name, temperature=0.6)
+    return chat(context, system=FEYNMAN_SYSTEM, model_name=model_name, temperature=0.6, purpose="qa")
 
 
 def socrates_chat(
@@ -85,4 +85,4 @@ def socrates_chat(
         context += "\n"
     context += f"【用户】{user_message}\n\n请用一个问题引导。"
 
-    return chat(context, system=SOCRATES_SYSTEM, model_name=model_name, temperature=0.4)
+    return chat(context, system=SOCRATES_SYSTEM, model_name=model_name, temperature=0.4, purpose="qa")

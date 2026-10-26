@@ -136,4 +136,5 @@ def audit_node_content(session: Session, node_id: int) -> str:
         ),
         temperature=0.2,
         max_tokens=2200,
+        purpose="assessment",
     )

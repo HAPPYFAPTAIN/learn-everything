@@ -52,7 +52,7 @@ def generate_roadmap(
         goal=goal or "掌握该主题的核心知识并能应用",
         weekly_hours=weekly_hours,
     )
-    return chat_json(prompt, system=SYSTEM, model_name=model_name)
+    return chat_json(prompt, system=SYSTEM, model_name=model_name, purpose="planning")
 
 
 def refine_roadmap(
@@ -66,7 +66,7 @@ def refine_roadmap(
         current_roadmap=json.dumps(current_roadmap, ensure_ascii=False, indent=2),
         instruction=instruction,
     )
-    return chat_json(prompt, system=REFINE_SYSTEM, model_name=model_name)
+    return chat_json(prompt, system=REFINE_SYSTEM, model_name=model_name, purpose="planning")
 
 
 def audit_and_rewrite_roadmap(
@@ -135,6 +135,7 @@ def audit_and_rewrite_roadmap(
         prompt,
         system="你是严苛的课程路线审计员，会自动补齐遗漏、拆分过粗节点、修正依赖关系。",
         model_name=model_name,
+        purpose="planning",
     )
     if not isinstance(result, dict):
         raise ValueError("路线审计未返回 JSON 对象")

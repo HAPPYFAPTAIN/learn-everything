@@ -102,7 +102,7 @@ def generate_quiz(
 
 返回 {count} 题的 JSON 数组。"""
 
-    result = chat_json(prompt, system=SYSTEM, model_name=model_name)
+    result = chat_json(prompt, system=SYSTEM, model_name=model_name, purpose="assessment")
     questions = (
         result
         if isinstance(result, list)
@@ -210,7 +210,7 @@ def grade_answer(
             "feedback": "答案正确。" if correct else "请结合解析回顾这个知识点。",
         }
     else:
-        result = chat_json(prompt, system=GRADE_SYSTEM, model_name=model_name)
+        result = chat_json(prompt, system=GRADE_SYSTEM, model_name=model_name, purpose="assessment")
     if not isinstance(result, dict) or not isinstance(result.get("is_correct"), bool):
         raise ValueError("批改结果格式无效，请重试")
     is_correct = result["is_correct"]

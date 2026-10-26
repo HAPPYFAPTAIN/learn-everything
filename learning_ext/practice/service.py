@@ -59,7 +59,7 @@ def generate_practice_plan(
 【学习者水平】{learner_level}{node_ctx}
 
 返回 JSON。"""
-    result = chat_json(prompt, system=SYSTEM, model_name=model_name)
+    result = chat_json(prompt, system=SYSTEM, model_name=model_name, purpose="coach")
 
     created = []
     # 环境搭建作为 env 任务

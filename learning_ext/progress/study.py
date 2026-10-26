@@ -174,6 +174,8 @@ def generate_node_summary(
     要求 AI 产出一份可以直接当教材用的、结构化的、内容详尽的 Markdown 笔记，
     而不是简短的摘要。包含概念、原理、示例、代码、对比、易错点、练习。
     """
+    from .environment import generation_context
+    environment_context = generation_context(node, project_topic, environment_context)
     prompt = f"""你正在为一门「{project_topic}」的课程编写**第 {node.code} 节课的完整教学内容**。
 这节课题目是「{node.title}」。
 
@@ -289,6 +291,7 @@ def generate_node_summary(
         # 提示词要求 2000-4000 字，中文 1 字约 1 token，再算上 markdown 开销，
         # 4000 会稳定截断（旧值就是 4000，导致长课节一直"生成不成功"）。
         max_tokens=8000,
+        purpose="lesson",
     )
 
 
@@ -327,6 +330,8 @@ def generate_practice_lesson(
     model_name: Optional[str] = None,
 ) -> str:
     """Generate a separate hands-on lesson for a practice-heavy node."""
+    from .environment import generation_context
+    environment_context = generation_context(node, project_topic, environment_context)
     prompt = f"""你正在为「{project_topic}」课程的「{node.title} ({node.code})」编写一份**单独的实操课程**。
 
 这不是概念课件，而是学习者可以跟着一步一步做完的实操流程。
@@ -383,6 +388,7 @@ def generate_practice_lesson(
         model_name=model_name,
         temperature=0.35,
         max_tokens=8000,
+        purpose="lesson",
     )
 
 
@@ -503,6 +509,7 @@ def generate_env_checklist(
         system=LEARNING_CONTRACT + "只列课程必需条件，不宣称已检测本机。安装、版本检查、项目配置和练习分别列出；软件存在不意味着账号、插件或服务可用。",
         model_name=model_name,
         temperature=0.3,
+        purpose="lesson",
     )
 
 

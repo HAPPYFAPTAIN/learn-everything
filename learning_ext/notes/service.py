@@ -96,7 +96,7 @@ def generate_resources(node: KnowledgeNode, project_topic: str) -> List[dict]:
 - 只返回 JSON 数组"""
     from learning_ext.llm import chat_json
 
-    result = chat_json(prompt)
+    result = chat_json(prompt, purpose="qa")
     if isinstance(result, list):
         candidates = result
     else:
@@ -424,4 +424,5 @@ def explain_term(term: str, node: KnowledgeNode, project_topic: str) -> str:
         system=TERM_SYSTEM,
         temperature=0.3,
         max_tokens=1000,
+        purpose="qa",
     )

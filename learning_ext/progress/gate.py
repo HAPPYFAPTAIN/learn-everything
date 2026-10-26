@@ -121,7 +121,7 @@ def judge_recite(node: KnowledgeNode, text: str) -> dict:
         f"【用户的复述】{text}"
     )
     try:
-        result = chat_json(prompt, system=RECITE_SYSTEM)
+        result = chat_json(prompt, system=RECITE_SYSTEM, purpose="assessment")
     except Exception as e:  # 模型不可用时不能把整页拖死
         logger.warning("复述判定失败: %s", e)
         return {
@@ -344,6 +344,7 @@ def _judge_batch(items, answers, idx: list[int]) -> list[tuple[int, bool, str]]:
         result = chat_json(
             prompt,
             system="你是阅卷老师，只返回 JSON，不要多余文字。填空语义等价即算对，简答关键要点覆盖 70% 算对。",
+            purpose="assessment",
         )
     except Exception as e:
         logger.warning("速测判分失败: %s", e)
