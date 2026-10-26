@@ -7,6 +7,14 @@ from learning_ext.chat_recovery import configure_chat_recovery
 from learning_ext.local_embeddings import LocalEmbeddingUnavailable
 
 
+@pytest.fixture(autouse=True)
+def offline_direct_chat(monkeypatch):
+    """检索失败时的直连兜底默认也失败，避免测试访问真实模型服务。"""
+    def offline(*args, **kwargs):
+        raise RuntimeError('offline')
+    monkeypatch.setattr('learning_ext.llm.chat', offline)
+
+
 def page_for(stream):
     page = SimpleNamespace(chat_fn=stream, check_and_suggest_name_conv=Mock(return_value=('name', True)),
                            suggest_chat_conv=Mock(return_value=('suggestions', [])))
@@ -92,3 +100,79 @@ def test_cleanup_error_does_not_replace_friendly_failure():
     result = list(page.chat_fn([('question', None)], {}))[-1]
     assert '请启动 Ollama' in result[0][-1][1]
     assert 'private' not in result[0][-1][1]
+
+
+def test_retrieval_failure_falls_back_to_direct_streaming_answer(monkeypatch):
+    def direct(prompt, *, system=None, stream=False, **kwargs):
+        assert prompt == 'question'
+        assert stream is True
+        for chunk in ['机器学习', '是一种方法']:
+            yield chunk
+
+    monkeypatch.setattr('learning_ext.llm.chat', direct)
+
+    def stream(chat_history, chat_state):
+        yield [('question', 'Thinking ...')], '', {}, None, chat_state
+        raise LocalEmbeddingUnavailable('请启动 Ollama。')
+
+    page = page_for(stream)
+    outputs = list(page.chat_fn([('question', None)], {}))
+    history, refs, plot, _, _ = outputs[-1]
+    assert history[-1][1].startswith('机器学习是一种方法')
+    assert '本地资料检索暂时不可用' in history[-1][1]
+    assert '回答暂时中断' not in history[-1][1]
+    assert refs == '' and plot['visible'] is False
+    assert outputs[0][0][-1][1] == 'Thinking ...'
+    assert [item[0][-1][1] for item in outputs][-3:-1] == ['机器学习', '机器学习是一种方法']
+
+
+def test_retrieval_failure_reuses_saved_thinking_preferences(monkeypatch):
+    seen = {}
+
+    def direct(prompt, *, system=None, stream=False, effort=None, show_thinking=False, **kwargs):
+        seen.update(effort=effort, show_thinking=show_thinking)
+        yield '回答'
+
+    monkeypatch.setattr('learning_ext.llm.chat', direct)
+
+    def stream(chat_history, chat_state):
+        yield [('question', 'Thinking ...')], '', {}, None, chat_state
+        raise LocalEmbeddingUnavailable('请启动 Ollama。')
+
+    page = page_for(stream)
+    state = {'learning_chat_thinking': {'effort': 'max', 'show_thinking': True}}
+    history, _, _, _, _ = list(page.chat_fn([('question', None)], state))[-1]
+    assert seen == {'effort': 'max', 'show_thinking': True}
+    assert history[-1][1].startswith('回答')
+
+
+def test_direct_fallback_ignores_damaged_thinking_preferences(monkeypatch):
+    seen = {}
+
+    def direct(prompt, *, system=None, stream=False, effort=None, show_thinking=False, **kwargs):
+        seen.update(effort=effort, show_thinking=show_thinking)
+        yield '回答'
+
+    monkeypatch.setattr('learning_ext.llm.chat', direct)
+
+    def stream(chat_history, chat_state):
+        yield [('question', 'Thinking ...')], '', {}, None, chat_state
+        raise LocalEmbeddingUnavailable('请启动 Ollama。')
+
+    page = page_for(stream)
+    state = {'learning_chat_thinking': {'effort': 'ultra', 'show_thinking': 'yes'}}
+    list(page.chat_fn([('question', None)], state))
+    assert seen == {'effort': 'low', 'show_thinking': False}
+
+
+def test_direct_fallback_failure_keeps_friendly_notice(monkeypatch):
+    def stream(chat_history, chat_state):
+        yield [('question', 'Thinking ...')], '', {}, None, chat_state
+        raise LocalEmbeddingUnavailable('请启动 Ollama。')
+
+    page = page_for(stream)
+    history, refs, plot, _, _ = list(page.chat_fn([('question', None)], {}))[-1]
+    assert '回答暂时中断' in history[-1][1]
+    assert '请启动 Ollama' in history[-1][1]
+    assert '重新发送' in history[-1][1]
+    assert 'offline' not in history[-1][1]

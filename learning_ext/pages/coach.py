@@ -1,21 +1,13 @@
-"""动手学：一个真的能操作这台电脑的对话式 Agent。
-
-界面只有三块：
-    #le-coach-scroll     转写区（有内容才出现）
-    #le-coach-approve    待确认操作（有危险调用才出现）
-    #le-coach-composer   胶囊输入框 + 发送键（一直存在）
-
-没有内容时转写区收起，只剩居中的胶囊输入框。
-
-当前阶段：功能还在做，页面先换成「开发中」说明（见 coach_soon.py）。
-把 COMING_SOON 改成 False 就恢复原来的对话式 Agent。
-"""
+"""动手学：观察实际环境，逐步指导，并确认每一次操作。"""
 
 from __future__ import annotations
 
 import html
+import json
 import logging
 import re
+from functools import partial
+from threading import Lock
 import time
 
 import gradio as gr
@@ -23,35 +15,18 @@ from ktem.app import BasePage
 
 from learning_ext.agent import runtime
 from learning_ext.agent.tools import tool_titles
-from learning_ext.pages.coach_soon import coming_soon_html
+from learning_ext.rich_text import render_rich_text
 
 logger = logging.getLogger(__name__)
 
-COMING_SOON = True   # 开发中：只渲染说明页，原实现保留
-
-_PLACEHOLDER = "说说你卡在哪：我来接管电脑，一边做一边告诉你下一步点哪"
-
-_KIND_TITLES = {
-    "run_command": "执行命令",
-    "list_dir": "列出目录",
-    "read_file": "读取文件",
-    "write_file": "写入文件",
-    "search_files": "搜索文件",
-    "open_path": "打开文件",
-    "open_url": "打开网址",
-    "screenshot": "截屏",
-    "system_info": "系统信息",
-    "list_windows": "窗口列表",
-    "clipboard_get": "读剪贴板",
-    "clipboard_set": "写剪贴板",
-    "observe_screen": "看当前屏幕",
-    "read_ui": "读取界面控件",
-    "click_ui": "点击控件",
-    "click_at": "鼠标点击",
-    "press_keys": "按键",
-    "type_text": "输入文字",
-    "launch_app": "启动程序",
+_PLACEHOLDER = "你想学会什么，或卡在哪一步？"
+_SUGGESTIONS = {
+    "env": "请结合我的学习目标，检查这台电脑已有的环境和工具；如果目标还不明确，先问清我要学什么。告诉我哪些可以直接使用、哪些还缺少，不安装或修改。",
+    "files": "帮我寻找这台电脑上可用的软件或文件。先问清我想找什么，再搜索并说明结果，不自动打开或修改。",
+    "window": "我在当前窗口遇到了问题。请先确认要看的窗口和我的目标，再观察界面、指出下一步的位置；先指导，操作前逐步让我确认。",
 }
+
+_KIND_TITLES = tool_titles()
 
 _FENCE = re.compile(r"```([\w+#.-]*)[ \t]*\n(.*?)```", re.S)
 _HEAD = re.compile(r"^(#{1,6})\s*(.+)$")
@@ -62,7 +37,7 @@ _QUOTE = re.compile(r"^>\s?(.*)$")
 
 def _inline(text: str) -> str:
     """行内格式：先转义，再处理 `code` / **粗** / *斜* / 链接。"""
-    text = html.escape(text, quote=False)
+    text = html.escape(text)
     text = re.sub(r"`([^`]+)`", r"<code>\1</code>", text)
     text = re.sub(r"\*\*([^*]+)\*\*", r"<b>\1</b>", text)
     text = re.sub(r"(?<![\w*])\*([^*\n]+)\*(?![\w*])", r"<i>\1</i>", text)
@@ -142,13 +117,10 @@ def _markdown(src: str) -> str:
             continue
 
         fence = re.fullmatch(r"\u00a7(\d+)\u00a7", line.strip())
-        if fence:
+        if fence and int(fence.group(1)) < len(fences):
             close()
             lang, body = fences[int(fence.group(1))]
-            label = f'<span class="le-code-lang">{html.escape(lang)}</span>' if lang else ""
-            out.append(
-                f'<div class="le-code">{label}<pre><code>{html.escape(body.strip(chr(10)))}</code></pre></div>'
-            )
+            out.append(render_rich_text(f"```{lang}\n{body}\n```"))
             continue
 
         head = _HEAD.match(line)
@@ -211,80 +183,126 @@ class CoachPage(BasePage):
     def __init__(self, app):
         super().__init__(app)
         self.session = runtime.Session()
+        from learning_ext.chat_connections import default_model_token
+        self.session.model_selection = default_model_token()
         self.items: list[dict] = []
         self.typing = False
         self._tool_index: dict[str, int] = {}
         self._last_push = 0.0
         self._outputs: list = []
+        self._busy = False
+        self._turn_lock = Lock()
+        self._render_cache: dict[str, tuple[tuple, str]] = {}
+        self._sent_controls: dict[int, object] = {}
+        self._frame_seq = 0
+        self._question_selection = None
+        self._selection_question = None
 
     # ------------------------------------------------------------ 渲染
-    def _render(self) -> str:
-        parts: list[str] = []
-        for item in self.items:
+    def _render_items(self) -> dict[str, str]:
+        """Cache settled messages; only parse Markdown for content that changed."""
+        parts: dict[str, str] = {}
+        for index, item in enumerate(self.items):
+            key = f"{self.session.id}-{index}"
+            signature = (item.get("type"), item.get("text"), item.get("name"),
+                         item.get("status"), item.get("output"), item.get("ms"),
+                         item.get("call_id"), json.dumps(item.get("args"), ensure_ascii=False))
+            cached = self._render_cache.get(key)
+            if cached and cached[0] == signature:
+                if cached[1]:
+                    parts[key] = cached[1]
+                continue
+            chunk = []
             kind = item["type"]
             if kind == "user":
-                parts.append(
-                    f'<div class="le-msg le-me"><div class="le-bubble">{_markdown(item["text"])}</div></div>'
+                chunk.append(
+                    f'<div data-message-id="{key}" class="le-msg le-me"><div class="le-bubble">{_markdown(item["text"])}</div></div>'
                 )
             elif kind == "ai":
                 if not (item.get("text") or "").strip():
                     continue
-                parts.append(
-                    f'<div class="le-msg le-ai"><div class="le-avatar">助</div>'
+                chunk.append(
+                    f'<div data-message-id="{key}" class="le-msg le-ai"><div class="le-avatar">助</div>'
                     f'<div class="le-body">{_markdown(item["text"])}</div></div>'
                 )
+            elif kind == "reasoning":
+                chunk.append(f'<details class="le-tool le-coach-reasoning" data-message-id="{key}"><summary>思考过程</summary><div class="le-tool-detail">{_markdown(item["text"])}</div></details>')
             elif kind == "tool":
                 status = item.get("status", "run")
                 title = _KIND_TITLES.get(item["name"], item["name"])
                 if item["name"].startswith("mcp__"):
                     title = item["name"].split("__")[-1]
-                args = _args_preview(item.get("args") or {})
-                arg_chip = f"<code>{html.escape(args)}</code>" if args else ""
+                args = json.dumps(item.get("args") or {}, ensure_ascii=False, indent=2)
                 ms = item.get("ms")
                 meta = ""
-                if status == "run":
+                if status == "pending":
+                    meta = '<span class="le-tool-dot le-wait"></span>等待确认'
+                elif status == "run":
                     meta = '<span class="le-tool-dot le-run"></span>执行中'
                 elif status == "denied":
-                    meta = '<span class="le-tool-dot le-deny"></span>已拒绝'
+                    meta = '<span class="le-tool-dot le-deny"></span>未执行'
                 elif status == "err":
                     meta = '<span class="le-tool-dot le-err"></span>失败'
                 else:
-                    meta = f'<span class="le-tool-dot le-ok"></span>{ms if ms is not None else 0}ms'
+                    duration = f' · {ms / 1000:.1f}s' if ms is not None and ms >= 1000 else ""
+                    meta = f'<span class="le-tool-dot le-ok"></span>已完成{duration}'
                 output = item.get("output") or ""
-                detail = ""
-                if output:
-                    detail = (
-                        "<details><summary>查看输出</summary>"
-                        f'<pre class="le-tool-out">{html.escape(output)}</pre></details>'
-                    )
-                parts.append(
-                    f'<div class="le-tool" data-status="{status}">'
-                    f'<div class="le-tool-head"><b>{html.escape(title)}</b>'
-                    f'{arg_chip}<span class="le-tool-meta">{meta}</span></div>'
-                    f"{detail}</div>"
+                call_id = html.escape(str(item.get("call_id", "")))
+                result = output or {"pending": "等待你确认后执行。", "run": "正在检查，结果会显示在这里。"}.get(status, "操作已结束。")
+                chunk.append(
+                    f'<details class="le-tool" data-message-id="{key}" data-status="{status}" data-call-id="{call_id}">'
+                    '<summary class="le-tool-head"><span class="le-tool-icon" aria-hidden="true">'
+                    '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2.5" y="3" width="15" height="14" rx="3"/><path d="m6 7 3 3-3 3m5 0h3"/></svg></span>'
+                    f'<b>{html.escape(title)}</b><span class="le-tool-chevron" aria-hidden="true">'
+                    '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m6 4 4 4-4 4"/></svg></span>'
+                    f'<span class="le-tool-meta">{meta}</span></summary>'
+                    '<div class="le-tool-detail"><section><h4>输入</h4>'
+                    f'<pre class="le-tool-args">{html.escape(args)}</pre></section>'
+                    f'<section><h4>结果</h4><pre class="le-tool-out">{html.escape(result)}</pre></section></div></details>'
                 )
             elif kind == "note":
-                parts.append(f'<div class="le-note">{_markdown(item["text"])}</div>')
+                chunk.append(f'<div data-message-id="{key}" class="le-note">{_markdown(item["text"])}</div>')
             elif kind == "error":
-                parts.append(
-                    f'<div class="le-note le-note-err">出错了：{html.escape(item["text"])}</div>'
+                chunk.append(
+                    f'<div data-message-id="{key}" class="le-note le-note-err">出错了：{html.escape(item["text"])}</div>'
                 )
+            rendered = "".join(chunk)
+            self._render_cache[key] = (signature, rendered)
+            if rendered:
+                parts[key] = rendered
 
         if self.typing:
-            parts.append(
-                '<div class="le-msg le-ai le-pending"><div class="le-avatar">助</div>'
-                '<div class="le-typing"><span></span><span></span><span></span></div></div>'
+            parts["pending"] = (
+                '<div data-message-id="pending" class="le-msg le-ai le-pending"><div class="le-avatar">助</div>'
+                '<div class="le-thinking" role="status"><span class="le-typing" aria-hidden="true"><i></i><i></i><i></i></span>'
+                '<span>正在思考如何指点…</span></div></div>'
             )
-        return '<div class="le-coach-feed">' + "".join(parts) + "</div>"
+        return parts
+
+    def _render(self) -> str:
+        return (
+            f'<div class="le-coach-feed" aria-live="polite" aria-relevant="additions text" '
+            f'aria-busy="{str(self._busy).lower()}">' + "".join(self._render_items().values()) + "</div>"
+        )
+
+    def _frame(self, snapshot=False) -> str:
+        """Self-contained frames survive Gradio coalescing; JS patches changed nodes only."""
+        parts = self._render_items()
+        self._frame_seq += 1
+        payload = html.escape(json.dumps(parts, ensure_ascii=False))
+        return (f'<div data-coach-frame data-session="{self.session.id}" data-seq="{self._frame_seq}" '
+                f'data-busy="{str(self._busy).lower()}">{payload}</div>')
 
     def _approve_text(self, calls: list[dict]) -> str:
-        lines = ["**这一步需要你点头**", ""]
+        lines = ['<strong>这一步需要你点头</strong>']
         for call in calls:
             title = _KIND_TITLES.get(call["name"], call["name"])
             preview = _args_preview(call.get("args") or {})
-            lines.append(f"- `{title}` {('· ' + preview) if preview else ''}")
-        lines.append("")
-        lines.append("允许后我会真的在这台电脑上动手，你看着屏幕就行。")
+            arguments = json.dumps(call.get("args") or {}, ensure_ascii=False, indent=2)
+            lines.append(f'<p>{html.escape(title)} · {html.escape(preview)}</p>')
+            lines.append('<details class="le-approval-parameters"><summary>查看完整操作内容</summary>'
+                         f'<pre>{html.escape(arguments)}</pre></details>')
+        lines.append('<p>仅允许本次操作，后续步骤会再次确认。</p>')
         return "\n".join(lines)
 
     def _plan_html(self) -> str:
@@ -316,19 +334,71 @@ class CoachPage(BasePage):
         )
 
     # ------------------------------------------------------------ 事件
-    def _push(self, force: bool = False):
+    def _push(self, force: bool = False, clear_input: bool = False, snapshot: bool = False):
         """把当前状态推给界面（流式时做一点节流）。"""
-        now = time.time()
-        if not force and now - self._last_push < 0.07:
+        now = time.monotonic()
+        if not force and now - self._last_push < 0.10:
             return None
         self._last_push = now
-        return [
+        pending = bool(self.session.pending)
+        input_update = gr.update(interactive=not self._busy, placeholder=(
+            "写下你的回答，或补充具体情况…" if self.session.question else
+            "告诉我你的进展，或接着问…" if self.items else _PLACEHOLDER))
+        if clear_input:
+            input_update["value"] = ""
+        question = self.session.question
+        options = question["options"][:3] if question else []
+        question_id = question["id"] if question else None
+        fresh_question = self._selection_question != question_id
+        if fresh_question:
+            self._selection_question = question_id
+            self._question_selection = None
+        selected = self._question_selection
+        question_copy = ('<div class="le-question-heading"><span>先确认一件事</span>'
+                         f'<h3>{html.escape(question["question"])}</h3></div>') if question else ""
+        updates = [
             self._plan_html(),
-            self._render(),
-            gr.update(visible=bool(self.session.pending)),
+            self._frame(snapshot=snapshot),
+            gr.update(visible=pending),
             self._approve_text(self.session.pending) if self.session.pending else "",
-            "",
+            input_update,
+            gr.update(interactive=not self._busy and not pending),
+            gr.update(interactive=not self._busy),
+            gr.update(interactive=not self._busy and pending),
+            gr.update(interactive=not self._busy and pending),
+            gr.update(interactive=not self._busy and pending),
+            gr.update(visible=not self.items),
+            gr.update(visible=not self.items),
+            gr.update(visible=bool(question)),
+            question_copy,
+            *[gr.update(visible=bool(question) and (i < len(options) or i == 3), interactive=not self._busy,
+                        variant="primary" if selected == i else "secondary",
+                        value=(options[i]["label"] + ("\n" + options[i]["description"] if options[i].get("description") else ""))
+                        if i < len(options) else "自己填写") for i in range(4)],
+            question["id"] if question else "",
+            gr.update(visible=bool(question) and selected == 3, interactive=not self._busy,
+                      **({"value": ""} if fresh_question else {})),
+            gr.update(interactive=bool(question) and selected is not None and not self._busy),
         ]
+        for index, value in enumerate(updates):
+            if index == 1:
+                continue
+            if not snapshot and not (index == 4 and clear_input) and self._sent_controls.get(index) == value:
+                updates[index] = gr.skip()
+            else:
+                self._sent_controls[index] = value.copy() if isinstance(value, dict) else value
+        return updates
+
+    def _tool_item(self, call: dict, status: str) -> dict:
+        call_id = call["call_id"] if "call_id" in call else call["id"]
+        index = self._tool_index.get(call_id)
+        if index is None or index >= len(self.items):
+            index = len(self.items)
+            self._tool_index[call_id] = index
+            self.items.append({"type": "tool", "call_id": call_id, "name": call.get("name", "操作"), "args": call.get("args") or {}})
+        item = self.items[index]
+        item["status"] = status
+        return item
 
     def _consume(self, events):
         """把运行时事件流翻译成界面更新。"""
@@ -336,6 +406,15 @@ class CoachPage(BasePage):
             kind = event.get("kind")
             if kind == "step":
                 self.typing = True
+            elif kind == "reasoning":
+                if self.items and self.items[-1]["type"] == "reasoning":
+                    self.items[-1]["text"] = event["text"]
+                else:
+                    self.items.append({"type": "reasoning", "text": event["text"]})
+                payload = self._push()
+                if payload:
+                    yield payload
+                continue
             elif kind == "delta":
                 self.typing = False
                 if self.items and self.items[-1]["type"] == "ai" and self.items[-1].get("live"):
@@ -354,27 +433,19 @@ class CoachPage(BasePage):
                 self.typing = False
                 if self.items and self.items[-1]["type"] == "ai":
                     self.items[-1]["live"] = False
-                self._tool_index[event["call_id"]] = len(self.items)
-                self.items.append(
-                    {
-                        "type": "tool",
-                        "name": event["name"],
-                        "args": event.get("args") or {},
-                        "status": "run",
-                    }
-                )
+                self._tool_item(event, "run")
             elif kind == "tool_end":
-                index = self._tool_index.get(event["call_id"])
-                if index is not None and index < len(self.items):
-                    item = self.items[index]
-                    item["output"] = event.get("output") or ""
-                    item["ms"] = event.get("ms")
-                    item["status"] = (
-                        "denied"
-                        if event.get("denied")
-                        else ("ok" if event.get("ok") else "err")
-                    )
+                status = "denied" if event.get("denied") else ("ok" if event.get("ok") else "err")
+                item = self._tool_item(event, status)
+                item["output"] = str(event.get("output") or "")
+                item["ms"] = event.get("ms")
             elif kind == "need_approval":
+                self.typing = False
+                if self.items and self.items[-1]["type"] == "ai":
+                    self.items[-1]["live"] = False
+                for call in event.get("calls") or self.session.pending or []:
+                    self._tool_item(call, "pending")
+            elif kind == "question":
                 self.typing = False
                 if self.items and self.items[-1]["type"] == "ai":
                     self.items[-1]["live"] = False
@@ -383,6 +454,9 @@ class CoachPage(BasePage):
                 self.items.append({"type": "note", "text": event.get("text", "")})
             elif kind == "error":
                 self.typing = False
+                for item in self.items:
+                    if item["type"] == "tool" and item.get("status") in {"run", "pending"}:
+                        item.update(status="err", output="操作已中断，请先核实当前状态。")
                 self.items.append({"type": "error", "text": event.get("message", "")})
             yield self._push(force=True)
 
@@ -392,29 +466,93 @@ class CoachPage(BasePage):
         yield self._push(force=True)
 
     def _on_send(self, text: str):
-        text = (text or "").strip()
-        if not text:
-            yield self._push(force=True)
-            return
-        if self.session.pending:
-            self.items.append(
-                {"type": "note", "text": "还有一步在等你确认，先点上面的「允许」或「拒绝」。"}
-            )
-            yield self._push(force=True)
-            return
-        self.items.append({"type": "user", "text": text})
-        self.typing = True
-        yield self._push(force=True)
+        yield from self._send(text)
+
+    def _select_option(self, index: int, question_id: str):
+        if not self._turn_lock.acquire(blocking=False):
+            return self._push(force=True)
         try:
-            yield from self._consume(runtime.run(self.session, text))
+            question = self.session.question
+            if question and question["id"] == question_id and (index == 3 or 0 <= index < min(3, len(question["options"]))):
+                self._selection_question = question_id
+                self._question_selection = index
+        finally:
+            self._turn_lock.release()
+        return self._push(force=True)
+
+    def _confirm_question(self, text: str, question_id: str):
+        index = self._question_selection
+        if self._selection_question != question_id or index is None:
+            yield self._push(force=True)
+            return
+        if index == 3:
+            if not (text or "").strip():
+                gr.Warning("写下你的想法后再继续。")
+                yield self._push(force=True)
+                return
+            yield from self._send(text, question_id=question_id)
+        else:
+            yield from self._send("", question_id=question_id, option_index=index)
+
+    def _on_option(self, index: int, question_id: str):
+        yield from self._send("", question_id=question_id, option_index=index)
+
+    def _send(self, text: str, *, question_id=None, option_index=None):
+        text = (text or "").strip()
+        if (not text and option_index is None) or not self._turn_lock.acquire(blocking=False):
+            yield self._push(force=True, snapshot=True)
+            return
+        if question_id is not None and (not self.session.question or self.session.question["id"] != question_id):
+            self._turn_lock.release()
+            yield self._push(force=True, snapshot=True)
+            return
+        if option_index is not None:
+            question = self.session.question
+            if (not question or question["id"] != question_id or
+                    not 0 <= option_index < len(question["options"])):
+                self._turn_lock.release()
+                yield self._push(force=True, snapshot=True)
+                return
+            text = question["options"][option_index]["label"]
+        self._busy = True
+        try:
+            if self.session.pending:
+                self.items.append({"type": "note", "text": "还有一步在等你确认，先选择「允许这一步」或「暂不执行」。"})
+                yield self._push(force=True)
+            else:
+                if self.session.question:
+                    self.items.append({"type": "ai", "text": self.session.question["question"]})
+                self.items.append({"type": "user", "text": text})
+                self.typing = True
+                yield self._push(force=True, clear_input=True, snapshot=True)
+                yield from self._consume(runtime.run(self.session, text))
         except Exception as exc:  # noqa: BLE001
             logger.exception("动手学对话失败")
-            self.typing = False
+            self.session.question = None
             self.items.append({"type": "error", "text": f"{type(exc).__name__}: {exc}"})
-            yield self._push(force=True)
+        finally:
+            self.typing = False
+            self._busy = False
+            self._turn_lock.release()
+        yield self._push(force=True, snapshot=True)
 
     def _approve(self, allow: bool):
-        yield from self._consume(runtime.approve(self.session, allow))
+        if not self._turn_lock.acquire(blocking=False):
+            yield self._push(force=True, snapshot=True)
+            return
+        self._busy = True
+        self.session.auto = False
+        try:
+            yield self._push(force=True)
+            yield from self._consume(runtime.approve(self.session, allow))
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("动手学确认失败")
+            self.items.append({"type": "error", "text": f"{type(exc).__name__}: {exc}"})
+        finally:
+            self.typing = False
+            self._busy = False
+            self._turn_lock.release()
+        yield self._push(force=True, snapshot=True)
 
     # Gradio 只把「生成器函数」当流式处理，lambda 会包成普通函数，所以各写一个
     def _on_allow(self):
@@ -424,37 +562,128 @@ class CoachPage(BasePage):
         yield from self._approve(False)
 
     def _on_allow_always(self):
-        self.session.auto = False
-        self.items.append({"type": "note", "text": "仅允许当前操作。后续操作需要重新确认。"})
-        yield from self._consume(runtime.approve(self.session, True))
+        yield from self._approve(True)
 
     def _on_clear(self):
-        self.session.reset()
-        self.session.auto = False
-        self.items = []
-        self._tool_index = {}
-        self.typing = False
-        yield self._push(force=True)
+        if not self._turn_lock.acquire(blocking=False):
+            yield self._push(force=True)
+            return
+        try:
+            selection = self.session.model_selection
+            self.session.reset()
+            self.session = runtime.Session()
+            self.session.model_selection = selection
+            self.items = []
+            self._tool_index = {}
+            self._render_cache.clear()
+            self.typing = False
+        finally:
+            self._turn_lock.release()
+        yield self._push(force=True, clear_input=True, snapshot=True)
+
+    def _fill_suggestion(self, name: str):
+        if self._busy or self.session.pending:
+            return gr.update()
+        return gr.update(value=_SUGGESTIONS[name])
+
+    def _model_choices(self, connection):
+        from learning_ext import connection_store
+        from learning_ext.llm.client import _load_config
+        from learning_ext.model_platforms import PLATFORMS
+        if connection == "(default)":
+            return [_load_config()["chat_model"]]
+        record = connection_store.find_connection(record_id=connection)
+        if not record:
+            raise gr.Error("连接已被删除，请刷新列表。")
+        return list(dict.fromkeys([record["chat_model"], *PLATFORMS[record["provider"]]["models"]]))
+
+    def _configure_model(self, connection, model, effort, show):
+        from learning_ext import chat_connections, chat_thinking
+        if not self._turn_lock.acquire(blocking=False):
+            raise gr.Error("回答完成后再切换模型。")
+        try:
+            if self.session.pending:
+                raise gr.Error("请先处理待确认的操作。")
+            choices = self._model_choices(connection)
+            if model not in choices:
+                raise gr.Error("请选择此连接的模型。")
+            token = chat_connections.model_token("" if connection == "(default)" else connection,
+                "" if connection == "(default)" else model,
+                {"effort": effort, "show_thinking": show})
+            self.session.model_selection = token
+            self.session.record("agent_model_settings", connection=connection, model=model,
+                                effort=effort, show_thinking=show)
+            return gr.update(label=model), gr.update(visible=chat_thinking.supports_effort(model))
+        finally:
+            self._turn_lock.release()
+
+    def _load_model_settings(self):
+        from learning_ext import chat_connections, chat_thinking
+        connection, model, prefs = chat_connections.parse_selection(self.session.model_selection or chat_connections.default_model_token())
+        connection = connection or "(default)"
+        try:
+            choices = self._model_choices(connection)
+        except gr.Error:
+            connection = "(default)"
+            choices = self._model_choices(connection)
+            self.session.model_selection = chat_connections.default_model_token(prefs)
+        model = model if model in choices else choices[0]
+        return (gr.update(choices=chat_connections.saved_choices(), value=connection),
+                gr.update(choices=choices, value=model),
+                gr.update(value=prefs["effort"], visible=chat_thinking.supports_effort(model)),
+                gr.update(value=prefs["show_thinking"]), gr.update(label=model))
+
+    def _connection_models(self, connection):
+        choices = self._model_choices(connection)
+        return gr.update(choices=choices, value=choices[0])
 
     # ------------------------------------------------------------ UI
     def on_building_ui(self):
-        if COMING_SOON:
-            with gr.Column(elem_id="le-coach-soon-wrap"):
-                gr.HTML(coming_soon_html(), elem_id="le-soon")
-            self._outputs = []
-            return
         with gr.Column(elem_id="le-coach-root"):
+            self.welcome = gr.HTML(
+                '<div class="le-coach-welcome-copy"><h1>想做什么，一起动手。</h1>'
+                '<p>先看看你的电脑，再把目标拆成一步步行动。</p></div>',
+                elem_id="le-coach-welcome",
+            )
+            with gr.Row(elem_id="le-coach-suggestions") as self.suggestions:
+                self.suggest_env = gr.Button("检查学习环境", elem_id="le-coach-suggest-env", size="sm")
+                self.suggest_files = gr.Button("寻找软件或文件", elem_id="le-coach-suggest-files", size="sm")
+                self.suggest_window = gr.Button("指导当前窗口", elem_id="le-coach-suggest-window", size="sm")
+            with gr.Row(elem_id="le-coach-toolbar"):
+                from learning_ext import chat_connections, chat_thinking
+                from learning_ext.llm.client import _load_config
+                from learning_ext.model_platforms import detect_platform, platform_icon_url
+                initial_model = self._model_choices("(default)")[0]
+                default_icon = platform_icon_url(detect_platform(_load_config()["base_url"]))
+                with gr.Accordion(initial_model, open=False, elem_id="le-coach-model-menu") as self.model_menu:
+                    gr.HTML(f'<span data-default-icon="{html.escape(default_icon, quote=True)}"></span>', elem_id="le-coach-model-brand")
+                    self.connection = gr.Dropdown(choices=chat_connections.saved_choices(), value="(default)", show_label=False, container=False, elem_id="le-coach-connection")
+                    self.model = gr.Radio(choices=[initial_model], value=initial_model, show_label=False, container=False, elem_id="le-coach-model-list")
+                    self.effort = gr.Radio(choices=[("轻快", "low"), ("深入", "high"), ("尽全力", "max")], value="low", label="思考强度", visible=chat_thinking.supports_effort(initial_model), elem_id="le-coach-effort")
+                    self.show_thinking = gr.Checkbox(False, label="显示思考过程", elem_id="le-coach-show-thinking")
+                    self.model_refresh = gr.Button("刷新连接", size="sm", elem_id="le-coach-model-refresh")
+                self.clear_btn = gr.Button("开启新任务", elem_id="le-coach-clear", size="sm")
             self.plan_html = gr.HTML("", elem_id="le-coach-plan")
             with gr.Column(elem_id="le-coach-scroll"):
                 self.transcript = gr.HTML(self._render(), elem_id="le-coach-transcript")
+            self.stream = gr.HTML("", elem_id="le-coach-stream")
             with gr.Column(elem_id="le-coach-approve", visible=False) as self.approve_col:
-                self.approve_md = gr.Markdown("", elem_id="le-coach-approve-text")
+                self.approve_md = gr.HTML("", elem_id="le-coach-approve-text")
                 with gr.Row(elem_id="le-coach-approve-actions"):
-                    self.allow_btn = gr.Button("允许执行", elem_id="le-coach-allow", size="sm")
-                    self.deny_btn = gr.Button("拒绝", elem_id="le-coach-deny", size="sm")
+                    self.allow_btn = gr.Button("允许这一步", elem_id="le-coach-allow", size="sm", variant="primary")
+                    self.deny_btn = gr.Button("暂不执行", elem_id="le-coach-deny", size="sm")
                     self.always_btn = gr.Button(
                         "仅允许本次", elem_id="le-coach-always", size="sm", visible=False
                     )
+            # A queued click must carry the ID that was displayed when clicked.
+            self.question_id = gr.Textbox("", visible=False, elem_id="le-coach-question-id")
+            with gr.Column(elem_id="le-coach-question", visible=False) as self.question_col:
+                self.question_copy = gr.HTML("", elem_id="le-coach-question-copy")
+                with gr.Row(elem_id="le-coach-question-options"):
+                    self.option_buttons = [gr.Button("", elem_id=f"le-coach-option-{i}", visible=False) for i in range(4)]
+                self.custom_answer = gr.Textbox(show_label=False, placeholder="写下你的想法…", lines=2, max_lines=4,
+                                               visible=False, elem_id="le-coach-custom-answer")
+                self.confirm_question = gr.Button("继续 →", interactive=False, variant="primary", elem_id="le-coach-question-confirm")
             with gr.Row(elem_id="le-coach-composer"):
                 self.input = gr.Textbox(
                     show_label=False,
@@ -463,28 +692,54 @@ class CoachPage(BasePage):
                     lines=1,
                     max_lines=6,
                     elem_id="le-coach-input",
-                    autofocus=True,
+                    autofocus=False,
                 )
                 self.send_btn = gr.Button("发送", elem_id="le-coach-send", variant="primary")
-                self.clear_btn = gr.Button("新对话", elem_id="le-coach-clear", size="sm")
 
         self._outputs = [
             self.plan_html,
-            self.transcript,
+            self.stream,
             self.approve_col,
             self.approve_md,
             self.input,
+            self.send_btn,
+            self.clear_btn,
+            self.allow_btn,
+            self.deny_btn,
+            self.always_btn,
+            self.welcome,
+            self.suggestions,
+            self.question_col,
+            self.question_copy,
+            *self.option_buttons,
+            self.question_id,
+            self.custom_answer,
+            self.confirm_question,
         ]
 
     def on_register_events(self):
-        if COMING_SOON:
-            return
+        from learning_ext import chat_connections
+        self.connection.input(self._connection_models, inputs=[self.connection], outputs=[self.model], show_progress="hidden").then(self._configure_model, inputs=[self.connection, self.model, self.effort, self.show_thinking], outputs=[self.model_menu, self.effort], show_progress="hidden")
+        for control in (self.model, self.effort, self.show_thinking):
+            control.input(self._configure_model, inputs=[self.connection, self.model, self.effort, self.show_thinking],
+                           outputs=[self.model_menu, self.effort], show_progress="hidden")
+        self.model_refresh.click(lambda: gr.update(choices=chat_connections.saved_choices()), outputs=[self.connection], show_progress="hidden")
         outputs = self._outputs
-
-        self.send_btn.click(self._on_send, inputs=[self.input], outputs=outputs)
-        self.input.submit(self._on_send, inputs=[self.input], outputs=outputs)
-        self.allow_btn.click(self._on_allow, outputs=outputs)
-        self.deny_btn.click(self._on_deny, outputs=outputs)
-        self.always_btn.click(self._on_allow_always, outputs=outputs)
-        self.clear_btn.click(self._on_clear, outputs=outputs)
-
+        events = {"outputs": outputs, "concurrency_id": "desktop-coach", "concurrency_limit": 1,
+                  "show_progress": "hidden", "trigger_mode": "once"}
+        self.send_btn.click(self._on_send, inputs=[self.input], **events)
+        self.input.submit(self._on_send, inputs=[self.input], **events)
+        self.allow_btn.click(self._on_allow, **events)
+        self.deny_btn.click(self._on_deny, **events)
+        self.always_btn.click(self._on_allow_always, **events)
+        self.clear_btn.click(self._on_clear, outputs=outputs, queue=False, show_progress="hidden")
+        for index, button in enumerate(self.option_buttons):
+            button.click(partial(self._select_option, index), inputs=[self.question_id], **events)
+        self.confirm_question.click(self._confirm_question, inputs=[self.custom_answer, self.question_id], **events)
+        self.custom_answer.submit(self._confirm_question, inputs=[self.custom_answer, self.question_id], **events)
+        app = getattr(self._app, "app", None)
+        if app is not None:
+            app.load(self._load_model_settings, outputs=[self.connection, self.model, self.effort, self.show_thinking, self.model_menu], show_progress="hidden")
+            app.load(lambda: self._push(force=True, snapshot=True), outputs=outputs, queue=False, show_progress="hidden")
+        for name, button in (("env", self.suggest_env), ("files", self.suggest_files), ("window", self.suggest_window)):
+            button.click(partial(self._fill_suggestion, name), outputs=[self.input], queue=False, show_progress="hidden")

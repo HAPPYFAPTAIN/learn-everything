@@ -6,6 +6,7 @@
     graph: '<circle cx="6" cy="6" r="3"/><circle cx="18" cy="8" r="3"/><circle cx="10" cy="19" r="3"/><path d="m9 6 6 1M7 9l2 7m3 1 4-6"/>',
     feedback: '<path d="M5 4h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 3V6a2 2 0 0 1 1-2Z"/><path d="M8 9h9m-9 4h6"/>',
     link: '<path d="m10 14 4-4m-6 6-1 1a4 4 0 0 1-6-6l4-4a4 4 0 0 1 6 0m2 1 1-1a4 4 0 1 1 6 6l-4 4a4 4 0 0 1-6 0"/>',
+    refresh: '<path d="M20 7v5h-5M4 17v-5h5"/><path d="M6 6a8 8 0 0 1 13 3M5 15a8 8 0 0 0 13 3"/>',
     book: '<path d="M3 4h7l2 2 2-2h7v15h-7l-2 2-2-2H3Zm9 2v15"/>',
     clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l4 2"/>',
     info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v1"/>',
@@ -29,7 +30,7 @@
     panel.style.setProperty('left',Math.max(edge,Math.min(left,viewportWidth-width-edge))+'px','important');
     panel.style.setProperty('top',Math.max(edge,Math.min(top,viewportHeight-height-edge))+'px','important');
   }
-  function scopeFor(root) { return root.closest('#chat-tab,#quick-setup-tab,#le-guided-home,#indices-tab') || document.getElementById('le-app-tabs'); }
+  function scopeFor(root) { return root.closest('#chat-tab,#quick-setup-tab,#le-guided-home,#indices-tab,#learning-path-tab') || document.getElementById('le-app-tabs'); }
   function deckFor(scope) {
     if (decks.has(scope)) return decks.get(scope);
     const dialog = document.createElement('dialog');
@@ -49,6 +50,7 @@
       stack.forEach(record => record.root.classList.toggle('le-panel-current',record === item));
       dialog.querySelector('h2').textContent = item.title;
       dialog.setAttribute('aria-label',item.title);
+      dialog.dataset.panel = item.root.id || '';
       back.hidden = stack.length < 2;
       body.scrollTop = 0;
       position();
@@ -94,14 +96,21 @@
     entry.querySelector('.le-entry-title').textContent=title;
     root.before(entry); root.classList.add('le-panel-source');
     if(root.id==='le-course-admin')entry.id='le-course-admin-trigger';
-    const widths = {'le-env-setup':420,'le-course-add':420};
+    if(root.id==='le-route-history')entry.id='le-route-picker-trigger';
+    const widths = {'le-env-setup':420,'le-course-add':420,'le-route-history':420,'le-route-files':420,'le-route-management':420,'le-route-save-progress':420};
     const item = {root,entry,header,title,width:widths[root.id],side:root.closest('#le-chat-flyout,.le-settings-deck')?'side':'bottom'}; bound.set(root,item);
     entry.addEventListener('click',()=>deckFor(scope).open(item));
+    if(root.id==='le-route-history')root.addEventListener('change',event=>{
+      if(event.target.closest('#le-route-picker'))deckFor(scope).close();
+    });
     if(root.classList.contains('le-library-nav')) root.addEventListener('click',event=>{
       if(event.target.closest('[role=tab]')) deckFor(scope).close();
     });
     return item;
   }
+  document.addEventListener('click',event=>{
+    if(event.target.closest('#le-adapt-open'))decks.forEach(deck=>deck.close());
+  });
   window.LEPanels = {register,icon,place};
   function modelPicker() {
     const root=document.getElementById('le-chat-connection-controls');
@@ -138,7 +147,9 @@
     ['#le-course-add-options','编号与难度','tune'],
     ['#le-course-maintenance','内容维护','tune'],
     ['#le-project-settings','项目设置','tune'],
-    ['#le-route-history','切换与管理路线','book'],
+    ['#le-route-history','我的学习路线','book'],
+    ['#le-route-files','导入路线','upload'],
+    ['#le-route-management','批量管理路线','tune'],
     ['#le-route-save-progress','课程准备状态','info'],
     ['#le-chat-add-source','添加资料','upload'],
     ['#index-1','图谱检索','graph'],['#index-2','关联检索','link'],['#report-accordion','回答反馈','feedback'],
@@ -152,6 +163,21 @@
   let frame;
   function install() {
     modelPicker();
+    document.querySelectorAll('#le-course-refresh-actions button,#le-adapt-open,#le-course-reload').forEach(button=>{
+      if(button.querySelector('.le-entry-icon'))return;
+      button.classList.add('le-course-command');
+      const mark=document.createElement('span');mark.className='le-entry-icon';
+      mark.innerHTML=icon(button.id==='le-adapt-open'?'tune':'refresh');button.prepend(mark);
+    });
+    document.querySelectorAll('#le-route-picker label > span').forEach(label=>{
+      if(label.querySelector('.le-route-option-title'))return;
+      const lines=label.textContent.trim().split('\n');
+      if(lines.length<2)return;
+      const title=document.createElement('strong'), progress=document.createElement('small');
+      title.className='le-route-option-title';title.textContent=lines.slice(0,-1).join(' ');
+      progress.className='le-route-option-progress';progress.textContent=lines.at(-1);
+      label.replaceChildren(title,progress);
+    });
     definitions.forEach(([selector,title,symbol])=>document.querySelectorAll(selector).forEach(root=>{
       if(root.id==='le-route-save-progress') {
         const ready=!!root.querySelector('.le-prep-panel');
@@ -167,6 +193,11 @@
     });
   }
   function schedule(){cancelAnimationFrame(frame);frame=requestAnimationFrame(install);}
-  new MutationObserver(schedule).observe(document.documentElement,{childList:true,subtree:true});schedule();
+  new MutationObserver(mutations=>{
+    if(mutations.some(mutation=>{
+      const target=mutation.target.nodeType===1?mutation.target:mutation.target.parentElement;
+      return !target?.closest('#le-coach-transcript,#le-coach-stream');
+    }))schedule();
+  }).observe(document.documentElement,{childList:true,subtree:true});schedule();
   document.addEventListener('click',event=>{if(event.target.closest('#le-app-tabs > .tab-nav > button'))decks.forEach(deck=>deck.close());});
 })();

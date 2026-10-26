@@ -78,12 +78,17 @@ def compatible_model(base_url, model):
 
 
 def adapt_chat_params(base_url, params):
+    from learning_ext import chat_thinking
+
     result = dict(params)
     model = str(result.get('model', '')).lower().split('/')[-1]
     if model.startswith('kimi-'):
         result.pop('temperature', None)
         result.pop('top_p', None)
-    if model.startswith(('kimi-k3.1', 'minimax-m3.1')):
+    effort = chat_thinking.effort_for(model, result.get('reasoning_effort'))
+    if effort:
+        result['reasoning_effort'] = effort
+    elif model.startswith('minimax-m3.1'):
         result.setdefault('reasoning_effort', 'low')
     if origin(base_url or '')[1] == 'opencode.ai':
         if not compatible_model(base_url, model):

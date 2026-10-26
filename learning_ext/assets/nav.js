@@ -6,20 +6,20 @@
   // 折叠态走 CSS 变量：样式表由 gr.Blocks(css=...) 注入，会被 Gradio 加前缀，
   // 任何以 html.xxx 打头的选择器都会失配，所以状态只改变量，不改选择器层级。
   const OPEN = {
-    '--le-nav-w': '216px',
+    '--le-nav-w': '226px',
     '--le-nav-x': '0px',
-    '--le-brand-w': '216px',
-    '--le-brand-pl': '16px',
-    '--le-brand-img': '148px',
+    '--le-brand-w': '226px',
+    '--le-brand-pl': '4px',
+    '--le-brand-img': '172px',
     '--le-divider-o': '1',
     '--le-toggle-rot': '0deg',
   };
   const CLOSED = {
-    '--le-nav-w': '0px',
-    '--le-nav-x': '216px',
-    '--le-brand-w': '176px',
-    '--le-brand-pl': '12px',
-    '--le-brand-img': '116px',
+    '--le-nav-w': '72px',
+    '--le-nav-x': '0px',
+    '--le-brand-w': '72px',
+    '--le-brand-pl': '4px',
+    '--le-brand-img': '172px',
     '--le-divider-o': '0',
     '--le-toggle-rot': '180deg',
   };
@@ -38,7 +38,7 @@
   function syncButton(collapsed) {
     if (!button) return;
     button.setAttribute('aria-expanded', String(!collapsed));
-    const label = collapsed ? '展开菜单' : '收起菜单';
+    const label = collapsed ? '展开导航' : '折叠为图标';
     button.setAttribute('aria-label', label);
     button.setAttribute('title', label);
   }
@@ -83,6 +83,11 @@
     const nav = navEl();
     const span = document.querySelector('.le-app-title span');
     if (!nav || !span) return false;
+    nav.querySelectorAll(':scope > button').forEach(item => {
+      const name = item.textContent.trim();
+      if (item.title !== name) item.title = name;
+      if (item.getAttribute('aria-label') !== name) item.setAttribute('aria-label', name);
+    });
     const btn = nav.querySelector(':scope > button.selected') || nav.querySelector(':scope > button');
     if (!btn) return false;
     const label = (btn.textContent || '').replace(/\s+/g, ' ').trim();
@@ -164,4 +169,65 @@
   } else {
     boot();
   }
+})();
+
+(() => {
+  let entry, panel;
+  function close() {
+    if (!panel) return;
+    panel.hidden = true;
+    entry.setAttribute('aria-expanded', 'false');
+  }
+  async function refreshIdentity() {
+    try {
+      const response = await fetch('/api/v1/account/context', {cache: 'no-store'});
+      if (!response.ok) throw new Error('identity unavailable');
+      const data = await response.json();
+      const identity = data.identity;
+      if (!identity?.user || !identity?.workspace) throw new Error('identity unavailable');
+      const name = identity.user.display_name || '用户';
+      entry.querySelector('strong').textContent = name;
+      entry.querySelector('small').textContent = identity.workspace.name;
+      entry.setAttribute('aria-label', name + ' · 账户信息');
+      panel.querySelector('[data-account-name]').textContent = name;
+      panel.querySelector('[data-account-workspace]').textContent = identity.workspace.name;
+      panel.querySelector('[data-account-mode]').textContent = data.mode === 'local' ? '本机保存' : '服务器账户';
+      panel.querySelector('[data-account-sync]').textContent = identity.capabilities?.cloud_sync ? '已启用' : '未启用';
+    } catch (_) {
+      entry.querySelector('strong').textContent = '账户信息';
+      entry.querySelector('small').textContent = '暂时无法读取';
+      panel.querySelector('[data-account-name]').textContent = '暂时无法读取账户';
+      panel.querySelector('[data-account-workspace]').textContent = '—';
+      panel.querySelector('[data-account-mode]').textContent = '未连接';
+      panel.querySelector('[data-account-sync]').textContent = '—';
+    }
+  }
+  function mount() {
+    if (!document.getElementById('le-app-tabs') || document.getElementById('le-account-entry')) return;
+    entry = document.createElement('button');
+    entry.id = 'le-account-entry'; entry.type = 'button';
+    entry.setAttribute('aria-label', '账户信息'); entry.title = '账户信息';
+    entry.setAttribute('aria-expanded', 'false'); entry.setAttribute('aria-controls', 'le-account-panel');
+    entry.innerHTML = '<span class="le-account-avatar" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg></span><span class="le-account-copy"><strong>账户信息</strong><small>正在读取</small></span>';
+    panel = document.createElement('section'); panel.id = 'le-account-panel'; panel.hidden = true;
+    panel.setAttribute('aria-label', '账户信息');
+    panel.innerHTML = '<header><strong data-account-name>账户信息</strong><button type="button" aria-label="关闭账户信息">×</button></header><dl><div><dt>工作空间</dt><dd data-account-workspace>—</dd></div><div><dt>数据保存</dt><dd data-account-mode>—</dd></div><div><dt>云同步</dt><dd data-account-sync>—</dd></div></dl><button type="button" data-account-refresh>刷新账户信息</button>';
+    document.body.append(entry, panel);
+    entry.addEventListener('click', () => {
+      if (!panel.hidden) { close(); return; }
+      panel.hidden = false; entry.setAttribute('aria-expanded', 'true');
+      const rect = entry.getBoundingClientRect();
+      panel.style.left = Math.min(rect.left, innerWidth - 292) + 'px';
+      panel.style.bottom = (innerHeight - rect.top + 8) + 'px';
+    });
+    panel.querySelector('header button').addEventListener('click', () => { close(); entry.focus(); });
+    panel.querySelector('[data-account-refresh]').addEventListener('click', refreshIdentity);
+    refreshIdentity();
+  }
+  document.addEventListener('pointerdown', e => { if (!entry?.contains(e.target) && !panel?.contains(e.target)) close(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && panel && !panel.hidden) { close(); entry.focus(); } });
+  window.addEventListener('resize', close);
+  window.addEventListener('le:account-changed', () => { if (entry) refreshIdentity(); });
+  const start = () => { mount(); new MutationObserver(() => { if (!entry?.isConnected) mount(); }).observe(document.body, {childList:true, subtree:true}); };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, {once:true}); else start();
 })();

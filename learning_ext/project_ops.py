@@ -200,3 +200,21 @@ def delete_project(session: Session, project_id: int) -> dict:
     session.commit()
 
     return result
+
+
+def delete_projects(session: Session, project_ids: list[int], user_id: str = "default") -> dict:
+    ids = sorted(set(int(value) for value in project_ids))
+    if not ids or len(ids) > 100:
+        raise ValueError("请选择 1 至 100 条学习路线。")
+    projects = [session.get(LearningProject, pid) for pid in ids]
+    if any(project is None or project.user_id != user_id for project in projects):
+        raise ValueError("部分路线已不存在或不属于当前用户，请刷新后重试。")
+    try:
+        for project in projects:
+            clear_project_learning_data(session, project.id, commit=False)
+            session.delete(project)
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    return {"project_ids": ids, "count": len(ids)}

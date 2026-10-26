@@ -1,0 +1,799 @@
+/* 学习首页：一条居中的阅读轴，卡片只代表独立对象，标题与说明不套底板。 */
+
+#le-guided-home {
+  width: 100% !important;
+  max-width: 1320px !important;
+  margin: 0 auto !important;
+  padding: 0 32px !important;
+  gap: 0 !important;
+}
+
+#le-guided-home:has(.le-resume-strip) {
+  max-width: 1320px !important;
+}
+
+/* ---------- 当前课程 ---------- */
+
+#le-guided-home #le-resume-row {
+  margin: 8px 0 4px !important;
+  padding: 22px 24px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 20px !important;
+  background: var(--le-surface) !important;
+  box-shadow: none !important;
+  gap: 22px !important;
+}
+
+#le-guided-home #le-resume-row::before {
+  display: none !important;
+}
+
+#le-guided-home .le-resume-heading small,
+#le-guided-home .le-resume-progress > div:first-child,
+#le-guided-home :is(.le-resume-next small, .le-resume-review small) {
+  font-size: 11.5px !important;
+  letter-spacing: .04em !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-guided-home .le-resume-heading strong {
+  font-size: 19px !important;
+  font-weight: 600 !important;
+  letter-spacing: -.02em !important;
+  color: var(--le-ink) !important;
+}
+
+#le-guided-home .le-resume-progress-track {
+  height: 4px !important;
+  border-radius: 999px !important;
+  background: var(--le-surface-3) !important;
+}
+
+#le-guided-home .le-resume-progress-track i {
+  border-radius: 999px !important;
+  background: var(--le-ink) !important;
+}
+
+#le-guided-home .le-resume-icon {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 13px !important;
+  border: 1px solid var(--le-line) !important;
+  background: var(--le-surface-2) !important;
+  color: var(--le-ink-2) !important;
+}
+
+#le-guided-home :is(.le-resume-next, .le-resume-review) {
+  padding: 0 0 0 20px !important;
+  border: 0 !important;
+  border-left: 1px solid var(--le-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+#le-guided-home .le-resume-next strong,
+#le-guided-home .le-resume-review strong {
+  font-size: 14px !important;
+  font-weight: 550 !important;
+  color: var(--le-ink) !important;
+}
+
+#le-guided-home .le-resume-next strong > span {
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink-2) !important;
+  border-radius: 6px !important;
+}
+
+#le-guided-home #le-resume-row > button {
+  min-height: 38px !important;
+  padding: 0 18px !important;
+  border-radius: 999px !important;
+  border: 1px solid var(--le-accent) !important;
+  background: var(--le-accent) !important;
+  color: var(--le-accent-ink) !important;
+  font-size: 13px !important;
+  font-weight: 550 !important;
+  box-shadow: none !important;
+}
+
+#le-guided-home #le-resume-row > button:hover {
+  filter: brightness(1.06);
+}
+
+/* ---------- 方向选择 ---------- */
+
+#le-guided-home .le-discovery-heading {
+  margin: 26px 0 14px !important;
+  padding: 0 !important;
+  align-items: baseline !important;
+}
+
+#le-guided-home .le-discovery-heading h2 {
+  margin: 0 !important;
+  font-size: 20px !important;
+  font-weight: 600 !important;
+  letter-spacing: -.02em !important;
+  color: var(--le-ink) !important;
+}
+
+#le-guided-home .le-discovery-heading p,
+#le-guided-home .le-discovery-heading .le-eyebrow {
+  display: none !important;
+}
+
+#le-guided-home #le-discovery-cards {
+  gap: 16px !important;
+  margin-bottom: 4px !important;
+}
+
+#le-guided-home #le-discovery-cards > .le-direction-card {
+  border: 1px solid var(--le-line) !important;
+  border-radius: 18px !important;
+  background: var(--le-surface) !important;
+  box-shadow: none !important;
+  transition: transform .2s var(--le-ease), border-color .2s var(--le-ease), box-shadow .2s var(--le-ease) !important;
+}
+
+#le-guided-home #le-discovery-cards > .le-direction-card:hover,
+#le-guided-home #le-discovery-cards > .le-direction-card:focus-within {
+  transform: translateY(-2px) !important;
+  border-color: var(--le-line-strong) !important;
+  box-shadow: var(--le-shadow-2) !important;
+}
+
+#le-guided-home .le-direction-art {
+  height: 118px !important;
+  background: var(--le-surface-2) !important;
+}
+
+#le-guided-home .le-direction-art img {
+  opacity: .94;
+}
+
+#le-guided-home .block:has(> .le-sample),
+#le-guided-home .block:has(.le-sample) {
+  background: transparent !important;
+  border-color: transparent !important;
+  padding: 0 !important;
+}
+
+#le-guided-home .le-card-art-label,
+#le-guided-home .le-card-art-stamp {
+  display: none !important;
+}
+
+#le-guided-home .le-direction-button {
+  min-height: 0 !important;
+  padding: 16px 20px 18px !important;
+  background: transparent !important;
+  border: 0 !important;
+  color: var(--le-ink) !important;
+  font-size: 15px !important;
+  font-weight: 560 !important;
+  line-height: 1.6 !important;
+  letter-spacing: -.01em !important;
+  white-space: pre-line !important;
+}
+
+#le-guided-home .le-direction-button:first-line {
+  font-size: 15px !important;
+}
+
+#le-guided-home .le-direction-button::after {
+  color: var(--le-ink-3) !important;
+}
+
+/* ---------- 写下目标 ---------- */
+
+#le-guided-home #le-onboarding-topic :is(label > span, .block-label) {
+  display: none !important;
+}
+
+#le-guided-home #le-onboarding-card {
+  margin-top: 26px !important;
+  padding: 24px 26px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 20px !important;
+  background: var(--le-surface) !important;
+  gap: 14px !important;
+}
+
+#le-guided-home .le-custom-heading h3 {
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  letter-spacing: -.02em !important;
+  color: var(--le-ink) !important;
+}
+
+#le-guided-home .le-custom-heading > span {
+  display: none !important;
+}
+
+#le-guided-home #le-onboarding-topic textarea {
+  min-height: 74px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 14px !important;
+  background: var(--le-surface-2) !important;
+  font-size: 14.5px !important;
+  padding: 13px 15px !important;
+}
+
+#le-guided-home #le-onboarding-topic textarea:focus {
+  border-color: var(--le-line-strong) !important;
+  background: var(--le-surface) !important;
+}
+
+#le-guided-home #le-learning-preferences.le-panel-source,
+#le-guided-home #le-learning-preferences .le-panel-source {
+  background: transparent !important;
+  border-color: transparent !important;
+}
+
+#le-guided-home #le-onboarding-topic {
+  position: relative !important;
+}
+
+#le-guided-home #le-onboarding-topic .le-polish-tools {
+  position: absolute !important;
+  right: 10px !important;
+  bottom: 8px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  z-index: 3;
+  opacity: 0;
+  transition: opacity .16s var(--le-ease);
+}
+
+#le-guided-home #le-onboarding-topic:hover .le-polish-tools,
+#le-guided-home #le-onboarding-topic:focus-within .le-polish-tools {
+  opacity: 1;
+}
+
+#le-guided-home #le-onboarding-topic .le-polish-tools button,
+#le-guided-home #le-onboarding-topic .le-polish-tools .le-polish-button {
+  height: 26px !important;
+  min-height: 26px !important;
+  padding: 0 9px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 999px !important;
+  background: var(--le-surface) !important;
+  color: var(--le-ink-3) !important;
+  font-size: 11.5px !important;
+  box-shadow: var(--le-shadow-1) !important;
+}
+
+#le-guided-home #le-learning-preferences {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-top: 1px solid var(--le-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#le-guided-home #le-learning-preferences > button.label-wrap {
+  min-height: 0 !important;
+  padding: 12px 2px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--le-ink-2) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+}
+
+#le-guided-home #le-learning-preferences > button.label-wrap:hover {
+  background: transparent !important;
+  color: var(--le-ink) !important;
+}
+
+#le-guided-home #le-time-preference {
+  margin: 0 !important;
+  padding: 12px 2px !important;
+  border: 0 !important;
+  border-top: 1px solid var(--le-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+#le-guided-home #le-time-preference :is(span, label) {
+  font-size: 13px !important;
+  color: var(--le-ink-2) !important;
+}
+
+#le-guided-home #le-home-goal-action {
+  margin-top: 4px !important;
+  padding: 0 !important;
+  justify-content: flex-end !important;
+  align-items: center !important;
+  gap: 14px !important;
+}
+
+#le-guided-home #le-home-goal-action > button {
+  flex: 0 0 auto !important;
+  min-height: 40px !important;
+  padding: 0 20px !important;
+  border-radius: 999px !important;
+  font-size: 13.5px !important;
+  font-weight: 550 !important;
+}
+
+#le-guided-home .le-reassurance {
+  display: none !important;
+}
+
+/* ---------- 体验课与页脚 ---------- */
+
+#le-guided-home .le-sample {
+  margin: 20px 0 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-top: 1px solid var(--le-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+#le-guided-home .le-sample > summary {
+  padding: 16px 2px !important;
+  gap: 14px !important;
+}
+
+#le-guided-home .le-sample-play {
+  width: 32px !important;
+  height: 32px !important;
+  border: 1px solid var(--le-line) !important;
+  background: transparent !important;
+  color: var(--le-ink-2) !important;
+  box-shadow: none !important;
+  font-size: 11px !important;
+}
+
+#le-guided-home .le-sample > summary strong {
+  font-size: 13.5px !important;
+  font-weight: 550 !important;
+  color: var(--le-ink) !important;
+}
+
+#le-guided-home .le-sample > summary small {
+  font-size: 11.5px !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-guided-home .le-sample > summary > span:last-child {
+  font-size: 12.5px !important;
+  color: var(--le-accent) !important;
+}
+
+#le-guided-home .le-sample-body {
+  padding: 0 2px 16px !important;
+}
+
+#le-guided-home .le-guided-footer {
+  display: none !important;
+}
+
+/* ---------- 首页通用文字 ---------- */
+
+#le-guided-home #le-home-goal-action button.primary,
+#le-guided-home #le-home-confirm button.primary,
+#le-guided-home .le-hero-actions button:first-child,
+#le-guided-home #le-resume-row > button {
+  background: var(--le-accent) !important;
+  border: 1px solid var(--le-accent) !important;
+  color: var(--le-accent-ink) !important;
+  box-shadow: none !important;
+}
+
+#le-guided-home #le-home-goal-action button.primary span,
+#le-guided-home .le-hero-actions button:first-child span {
+  color: var(--le-accent-ink) !important;
+}
+
+#le-guided-home h1,
+#le-guided-home h2,
+#le-guided-home h3 {
+  color: var(--le-ink) !important;
+}
+
+#le-guided-home p,
+#le-guided-home li {
+  color: var(--le-ink-2) !important;
+}
+
+#le-guided-home .le-onboarding-steps {
+  gap: 26px !important;
+  margin-bottom: 18px !important;
+  color: var(--le-ink-3) !important;
+  font-size: 12px !important;
+}
+
+#le-guided-home .le-onboarding-steps [aria-current="step"],
+#le-guided-home .le-onboarding-steps .is-current {
+  color: var(--le-ink) !important;
+}
+
+@media (max-width: 1000px) {
+  #le-guided-home {
+    padding: 0 20px !important;
+  }
+
+  #le-guided-home #le-resume-row {
+    gap: 16px !important;
+  }
+}
+
+/* 让首页外层列也跟随同一条宽度，否则内层会被父级 1140 夹住 */
+#learning-guide-tab :is(div):has(> #le-guided-home),
+#learning-guide-tab :is(div):has(> div > #le-guided-home) {
+  width: 100% !important;
+  max-width: 1320px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* 进度条：标签与百分比各归其位，条形不再被数字压住 */
+#le-guided-home .le-resume-progress {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  margin-top: 10px !important;
+}
+
+#le-guided-home .le-resume-progress > div:first-child {
+  display: flex !important;
+  align-items: baseline !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  min-height: 16px !important;
+  font-size: 11.5px !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-guided-home .le-resume-progress > div:first-child strong {
+  font-size: 12px !important;
+  font-weight: 550 !important;
+  color: var(--le-ink-2) !important;
+  font-variant-numeric: tabular-nums;
+}
+
+#le-guided-home .le-resume-progress-track {
+  height: 5px !important;
+  border-radius: 999px !important;
+  background: var(--le-surface-3) !important;
+  overflow: hidden !important;
+}
+
+#le-guided-home .le-resume-progress-track i {
+  height: 100% !important;
+  border-radius: 999px !important;
+  background: var(--le-accent) !important;
+}
+
+#le-guided-home .le-resume-details,
+#le-guided-home .le-resume-next,
+#le-guided-home .le-resume-review {
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+#le-guided-home .le-resume-progress {
+  padding-bottom: 2px !important;
+}
+
+/* 进度条在浅色下也要看得见；标签文字跟正文同一档灰 */
+#le-guided-home .le-resume-progress-track {
+  background: var(--le-sunken) !important;
+  box-shadow: inset 0 0 0 1px var(--le-line) !important;
+}
+
+#le-guided-home .le-resume-progress > div:first-child span {
+  color: var(--le-ink-3) !important;
+}
+
+#le-guided-home .le-resume-progress > div:first-child strong {
+  color: var(--le-ink-2) !important;
+}
+
+/* 无当前课程时的大横幅：浅蓝渐变替代原来的深青大色块 */
+#le-guided-home:not(:has(.le-resume-strip)) .le-discovery-hero {
+  min-height: 0 !important;
+  padding: clamp(30px, 3.4vw, 48px) !important;
+  border: 1px solid var(--le-accent-line) !important;
+  border-radius: var(--le-radius-2xl) !important;
+  background: linear-gradient(135deg, var(--le-accent-soft), var(--le-surface) 68%) !important;
+  box-shadow: none !important;
+}
+
+#le-guided-home:not(:has(.le-resume-strip)) .le-discovery-hero::before {
+  content: none !important;
+}
+
+#le-guided-home:not(:has(.le-resume-strip)) .le-hero-copy {
+  align-self: center !important;
+}
+
+#le-guided-home:not(:has(.le-resume-strip)) .le-hero-copy h1 {
+  margin: 0 0 24px !important;
+  color: var(--le-ink) !important;
+  font-size: clamp(32px, 3vw, 44px) !important;
+  font-weight: 620 !important;
+  line-height: 1.28 !important;
+  letter-spacing: -.045em !important;
+}
+
+#le-guided-home:not(:has(.le-resume-strip)) .le-hero-copy h1 > span {
+  color: var(--le-ink) !important;
+}
+
+#le-guided-home:not(:has(.le-resume-strip)) .le-hero-copy h1 > span::after {
+  background: var(--le-accent) !important;
+  opacity: .16 !important;
+  height: 12px !important;
+}
+
+#le-guided-home:not(:has(.le-resume-strip)) .le-hero-actions button:first-child {
+  min-height: 42px !important;
+  padding: 0 20px !important;
+  border: 1px solid var(--le-accent) !important;
+  border-radius: 999px !important;
+  background: var(--le-accent) !important;
+  color: var(--le-accent-ink) !important;
+  font-size: 13.5px !important;
+  font-weight: 550 !important;
+  box-shadow: none !important;
+}
+
+#le-guided-home:not(:has(.le-resume-strip)) .le-hero-actions button:first-child span {
+  color: var(--le-accent-ink) !important;
+}
+
+#le-guided-home:not(:has(.le-resume-strip)) .le-hero-actions button + button {
+  min-height: 42px !important;
+  color: var(--le-accent) !important;
+  font-size: 13.5px !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+}
+
+#le-guided-home:not(:has(.le-resume-strip)) .le-hero-actions button + button:hover {
+  background: var(--le-surface-3) !important;
+}
+
+#le-guided-home:not(:has(.le-resume-strip)) .le-hero-art {
+  background: none !important;
+}
+
+#le-guided-home .le-direction-button::after {
+  color: var(--le-accent) !important;
+  opacity: .55 !important;
+}
+
+#le-guided-home #le-discovery-cards > .le-direction-card:hover,
+#le-guided-home #le-discovery-cards > .le-direction-card:focus-within {
+  border-color: var(--le-accent-line) !important;
+  box-shadow: var(--le-shadow-2) !important;
+}
+
+/* 首页右侧栏：宽屏变成「主内容 + 学习概览」双栏，窄屏自然落到底部 */
+#le-home-wide {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 26px !important;
+}
+
+#le-home-main {
+  min-width: 0 !important;
+  gap: 0 !important;
+}
+
+#le-home-rail {
+  min-width: 0 !important;
+}
+
+.le-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.le-rail-card {
+  padding: 20px 22px;
+  border: 1px solid var(--le-line);
+  border-radius: var(--le-radius-l);
+  background: var(--le-surface);
+  box-shadow: var(--le-shadow-1), inset 0 1px 0 var(--le-inner-line);
+}
+
+.le-rail-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.le-rail-head > span {
+  font-size: 13px;
+  font-weight: 560;
+  letter-spacing: -.01em;
+  color: var(--le-ink);
+}
+
+.le-rail-head > small {
+  font-size: 11px;
+  color: var(--le-ink-3);
+}
+
+.le-rail-hours {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.le-rail-hours strong {
+  font-size: 36px;
+  font-weight: 620;
+  letter-spacing: -.04em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--le-ink);
+}
+
+.le-rail-hours span {
+  font-size: 11.5px;
+  color: var(--le-ink-3);
+}
+
+.le-rail-track {
+  height: 6px;
+  margin: 16px 0 18px;
+  border-radius: 999px;
+  background: var(--le-sunken);
+  overflow: hidden;
+}
+
+.le-rail-track i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--le-accent);
+}
+
+.le-rail-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  align-items: end;
+  height: 62px;
+}
+
+.le-rail-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+  height: 100%;
+}
+
+.le-rail-day i {
+  display: block;
+  width: 100%;
+  max-width: 24px;
+  border-radius: 6px 6px 3px 3px;
+  background: var(--le-accent);
+  opacity: .22;
+  transition: opacity .2s var(--le-ease);
+}
+
+.le-rail-day.is-active i {
+  opacity: 1;
+}
+
+.le-rail-day:hover i {
+  opacity: .75;
+}
+
+.le-rail-day span {
+  font-size: 10px;
+  color: var(--le-ink-3);
+}
+
+.le-rail-foot {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 14px;
+  font-size: 11px;
+  color: var(--le-ink-3);
+}
+
+.le-rail-links a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 2px;
+  border-top: 1px solid var(--le-line);
+  font-size: 13px;
+  color: var(--le-ink-2);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color .16s var(--le-ease), padding-left .16s var(--le-ease);
+}
+
+.le-rail-links a:first-of-type {
+  border-top: 0;
+  padding-top: 10px;
+}
+
+.le-rail-links a b {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.le-rail-links a i {
+  font-style: normal;
+  color: var(--le-ink-3);
+  transition: transform .18s var(--le-ease), color .18s var(--le-ease);
+}
+
+.le-rail-links a:hover {
+  color: var(--le-accent);
+}
+
+.le-rail-links a:hover i {
+  color: var(--le-accent);
+  transform: translateX(2px);
+}
+
+.le-rail-steps {
+  margin: 12px 0 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.le-rail-steps li {
+  font-size: 13px;
+  color: var(--le-ink-2);
+}
+
+.le-rail-steps li b {
+  display: block;
+  font-weight: 550;
+  color: var(--le-ink);
+}
+
+.le-rail-steps li span {
+  display: block;
+  margin-top: 2px;
+  font-size: 11.5px;
+  color: var(--le-ink-3);
+}
+
+@media (min-width: 1800px) {
+  #le-guided-home,
+  #le-guided-home:has(.le-resume-strip) {
+    max-width: 1640px !important;
+  }
+
+  #learning-guide-tab :is(div):has(> #le-guided-home),
+  #learning-guide-tab :is(div):has(> div > #le-guided-home) {
+    max-width: 1640px !important;
+  }
+
+  #le-home-wide {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 336px !important;
+    gap: 28px !important;
+    align-items: start !important;
+  }
+
+  #le-home-rail {
+    position: sticky !important;
+    top: 24px !important;
+  }
+}

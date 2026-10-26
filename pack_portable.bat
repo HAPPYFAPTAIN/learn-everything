@@ -22,6 +22,11 @@ if not exist "vendor\preview\libreoffice\program\soffice.com" (
 )
 if not exist "vendor\preview\sumatra\sumatrapdf-tool.exe" exit /b 1
 if not exist "vendor\preview\sumatra\COPYING" exit /b 1
+"kotaemon\.venv\Scripts\python.exe" scripts\bundle_everything.py --verify
+if errorlevel 1 (
+    "kotaemon\.venv\Scripts\python.exe" scripts\bundle_everything.py
+    if errorlevel 1 exit /b 1
+)
 set PORTABLE=dist\LearnEverything-Portable
 echo [1/4] 清理旧的便携版目录...
 if exist "%PORTABLE%" rmdir /s /q "%PORTABLE%"
@@ -37,6 +42,8 @@ xcopy /E /I /Y "third_party\zcode" "%PORTABLE%\third_party\zcode" >nul
 if errorlevel 1 exit /b 1
 copy /Y README.md "%PORTABLE%\" >nul
 xcopy /E /I /Y "vendor\preview" "%PORTABLE%\vendor\preview" >nul
+if errorlevel 1 exit /b 1
+xcopy /E /I /Y "vendor\everything" "%PORTABLE%\vendor\everything" >nul
 if errorlevel 1 exit /b 1
 
 echo [4/4] 复制 Kotaemon 运行时 (venv，体积较大，请耐心等待)...

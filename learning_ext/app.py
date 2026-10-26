@@ -90,7 +90,7 @@ class LearningApp(KotaemonApp):
 
         with gr.Blocks(
             theme=self._theme,
-            css=self._css + "\n" + presentation_css(),
+            css=self._css,
             title="Learn Everything · 以太智元",
             analytics_enabled=False,
             js=self._js,
@@ -189,9 +189,9 @@ class LearningApp(KotaemonApp):
 
         with gr.Tab("动手学", elem_id="learning-coach-tab", id="learning-coach-tab", visible=visible,
                     elem_classes=["fill-main-area-height", "scrollable"]) as self._tabs["learning-coach-tab"]:
-            from learning_ext.pages import CoachLessonPage
+            from learning_ext.pages import CoachPage
 
-            self.coach_page = CoachLessonPage(self)
+            self.coach_page = CoachPage(self)
             self.coach_page.on_building_ui()
 
     def _build_guide_tab(self, visible: bool):

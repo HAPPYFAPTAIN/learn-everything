@@ -70,6 +70,7 @@ def desktop_runtime(monkeypatch):
     monkeypatch.setattr(module.subprocess, "Popen", fake_popen)
     monkeypatch.setattr(module, "_find_window", fake_find_window)
     monkeypatch.setattr(module, "_ui_items", fake_ui_items)
+    monkeypatch.setattr(module, "_read_ui", lambda window: f"window={window}\nobservation={'a'*20}")
     monkeypatch.setattr(module, "execute_tool", fake_execute)
     monkeypatch.setattr(module.DesktopCoach, "_request_close", staticmethod(fake_request_close))
     monkeypatch.setattr(module.DesktopCoach, "_goal_value", staticmethod(fake_goal_value))
@@ -157,8 +158,19 @@ def test_full_desktop_flow_checks_real_window_state(desktop_runtime):
     assert process.terminated is True
     assert state["typed"] == "整理本周销售表"
     assert not any(call[0] in {"type_text", "click_at", "press_keys"} for call in calls)
-    assert ("click_ui", {"text": "检查", "window": coach.window_title}) in calls
-    assert ("click_ui", {"text": "撤销", "window": coach.window_title}) in calls
+    assert ("click_ui", {"text": "检查", "window": coach.window_title, "observation": "a"*20}) in calls
+    assert ("click_ui", {"text": "撤销", "window": coach.window_title, "observation": "a"*20}) in calls
+
+
+def test_practice_click_requires_fresh_observation(desktop_runtime, monkeypatch):
+    module, process, calls, state = desktop_runtime
+    coach = DesktopCoach()
+    assert coach.launch(True)["ok"]
+    assert coach.observe()["ok"]
+    assert coach.type_goal("任务", True)["ok"]
+    monkeypatch.setattr(module, "_read_ui", lambda window: "窗口已关闭")
+    assert not coach.check(True)["ok"]
+    assert not any(call[0] == "click_ui" for call in calls)
 
 
 def test_desktop_page_contains_real_mode_and_safe_back_action():

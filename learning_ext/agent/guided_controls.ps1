@@ -1,6 +1,45 @@
 ﻿param([string]$Payload)
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [Text.Encoding]::UTF8
+function Get-ControlState($element, $action) {
+    switch ($action) {
+        'toggle' { return $element.GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern).Current.ToggleState.ToString() }
+        'select' { return $element.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Current.IsSelected.ToString() }
+        'expand' { return $element.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern).Current.ExpandCollapseState.ToString() }
+        default { return '' }
+    }
+}
+function Invoke-ControlAction($element, $action, $expected) {
+    $before = Get-ControlState $element $action
+    if ($before -cne $expected) { throw '控件状态已变化，请重新读取并圈出目标。' }
+    if (($action -eq 'select' -and $before -eq 'True') -or ($action -eq 'expand' -and $before -eq 'Expanded')) {
+        return @{ok=$true;executed=$false;verified=$true;status='already_satisfied';action=$action;before=$before;after=$before;message='目标已经处于所需状态，没有重复操作。'}
+    }
+    switch ($action) {
+        'toggle' { $element.GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern).Toggle() }
+        'select' { $element.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select() }
+        'expand' { $element.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern).Expand() }
+        'invoke' { $element.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke() }
+        default { throw '当前控件只支持定位。' }
+    }
+    if ($action -eq 'invoke') {
+        return @{ok=$true;executed=$true;verified=$false;status='sent';action=$action;message='已发送这一次操作，尚未验证完成。请检查窗口中的实际结果。'}
+    }
+    $verified = $false
+    $after = $null
+    for ($attempt = 0; $attempt -lt 12; $attempt++) {
+        try {
+            $after = Get-ControlState $element $action
+            $verified = ($action -eq 'toggle' -and $after -ne $before) -or ($action -eq 'select' -and $after -eq 'True') -or ($action -eq 'expand' -and $after -eq 'Expanded')
+            if ($verified) { break }
+        } catch { break }
+        Start-Sleep -Milliseconds 100
+    }
+    $message = '操作已发送，但尚未确认状态变化。请检查当前窗口，不要重复点击。'
+    $status = 'unverified'
+    if ($verified) { $message = "已确认控件状态：$before → $after。请对照本步完成标准。"; $status = 'verified' }
+    return @{ok=$verified;executed=$true;verified=$verified;status=$status;action=$action;before=$before;after=$after;message=$message}
+}
 try {
     Add-Type -AssemblyName UIAutomationClient
     Add-Type -AssemblyName UIAutomationTypes
@@ -35,7 +74,8 @@ try {
                         elseif ($child.TryGetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern, [ref]$pattern)) { $action = 'expand' }
                         elseif ($child.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$pattern)) { $action = 'invoke' }
                         if ($name) {
-                            [void]$script:items.Add([pscustomobject]@{key=$key;name=$name;type=$type;action=$action})
+                            $state = Get-ControlState $child $action
+                            [void]$script:items.Add([pscustomobject]@{key=$key;name=$name;type=$type;action=$action;state=$state;automation_id=$current.AutomationId;class_name=$current.ClassName})
                             $script:elements[$key] = $child
                         }
                     }
@@ -46,27 +86,20 @@ try {
         }
     }
     Walk $root 0
-    if ($data.mode -eq 'observe') { @{items=@($script:items)} | ConvertTo-Json -Depth 5 -Compress; exit }
+    if ($data.mode -eq 'observe') { @{items=@($script:items);truncated=($script:remaining -le 0)} | ConvertTo-Json -Depth 5 -Compress; exit }
+    $age = ([DateTime]::UtcNow - $epoch).TotalSeconds - $data.item.observed_at
+    if ($null -eq $data.item.observed_at -or $age -lt 0 -or $age -gt 180) { throw '控件列表已过期，请重新读取并圈出目标。' }
     $target = $script:elements[$data.item.key]
     $item = @($script:items | Where-Object { $_.key -eq $data.item.key })
-    if ($null -eq $target -or $item.Count -ne 1 -or $item[0].name -ne $data.item.name -or $item[0].type -ne $data.item.type -or $item[0].action -ne $data.item.action) { throw '控件已变化，请重新定位。' }
+    if ($null -eq $target -or $item.Count -ne 1) { throw '控件已变化，请重新定位。' }
+    foreach ($field in @('name','type','action','automation_id','class_name','state')) {
+        if ($item[0].$field -cne $data.item.$field) { throw '控件或状态已变化，请重新读取并圈出目标。' }
+    }
     if ($data.mode -eq 'resolve') { '{"ok":true}'; exit }
     if ($data.mode -eq 'operate') {
-        $message = '已发送这一次操作，请检查实际结果。'
-        switch ($data.item.action) {
-            'toggle' {
-                $pattern = $target.GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern)
-                $before = $pattern.Current.ToggleState.ToString()
-                $pattern.Toggle()
-                $after = $pattern.Current.ToggleState.ToString()
-                $message = "开关状态：$before → $after。请对照本步完成标准。"
-            }
-            'select' { $target.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select() }
-            'expand' { $target.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern).Expand() }
-            'invoke' { $target.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke() }
-            default { throw '当前控件只支持定位。' }
-        }
-        @{ok=$true;message=$message} | ConvertTo-Json -Compress; exit
+        if ($target.Current.IsOffscreen -or -not $target.Current.IsEnabled -or $target.Current.IsPassword) { throw '控件当前不可操作，请重新定位。' }
+        if ((Get-ControlState $target $data.item.action) -cne $data.item.state) { throw '控件状态已变化，请重新读取并圈出目标。' }
+        Invoke-ControlAction $target $data.item.action $data.item.state | ConvertTo-Json -Compress; exit
     }
     if ($data.mode -ne 'highlight') { throw '无效操作。' }
     Add-Type -AssemblyName PresentationFramework
@@ -106,9 +139,11 @@ public static class LessonOverlay {
     $timer = New-Object Windows.Threading.DispatcherTimer
     $timer.Interval = [TimeSpan]::FromMilliseconds(100)
     $until = [DateTime]::UtcNow.AddSeconds(6)
+    $script:highlightReady = $false
     $timer.Add_Tick({
         try {
-            if ([DateTime]::UtcNow -gt $until -or $target.Current.IsOffscreen -or $root.Current.Name -ne $data.window.title) { $overlay.Close(); return }
+            if ([DateTime]::UtcNow -gt $until -or $target.Current.IsOffscreen -or -not $target.Current.IsEnabled -or $root.Current.Name -ne $data.window.title) { $overlay.Close(); return }
+            if ($target.Current.AutomationId -cne $data.item.automation_id -or $target.Current.ClassName -cne $data.item.class_name -or (Get-ControlState $target $data.item.action) -cne $data.item.state) { $overlay.Close(); return }
             $rect = $target.Current.BoundingRectangle
             if ($rect.Width -le 0 -or $rect.Height -le 0) { $overlay.Close(); return }
             $source = [Windows.PresentationSource]::FromVisual($overlay)
@@ -116,11 +151,11 @@ public static class LessonOverlay {
             $point = $matrix.Transform([Windows.Point]::new($rect.X-16,$rect.Y-16))
             $overlay.Left = $point.X; $overlay.Top = $point.Y
             $overlay.Width = ($rect.Width+32)*$matrix.M11; $overlay.Height = ($rect.Height+32)*$matrix.M22
+            if (-not $script:highlightReady) { $script:highlightReady=$true; [Console]::Out.WriteLine('READY'); [Console]::Out.Flush() }
         } catch { $overlay.Close() }
     })
     $overlay.Width = 1; $overlay.Height = 1
     $overlay.Add_Closed({ $timer.Stop() })
-    $overlay.Add_ContentRendered({ [Console]::Out.WriteLine('READY'); [Console]::Out.Flush() })
     $timer.Start()
     [void]$overlay.ShowDialog()
 } catch {

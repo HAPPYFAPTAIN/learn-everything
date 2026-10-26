@@ -30,6 +30,12 @@ def _code_block(tokens, index, options, env):
     token = tokens[index]
     language = token.info.strip().split()[0].lower() if token.info.strip() else ""
     code = token.content
+    if language == "learning-diagram":
+        from learning_ext.learning_diagrams import render_learning_diagram
+        try:
+            return render_learning_diagram(code)
+        except (ValueError, TypeError, KeyError, IndexError):
+            return '<details class="le-diagram-fallback"><summary>结构图暂未绘制 · 查看内容</summary><pre>' + escape(code) + '</pre></details>'
     rendered = escape(code)
     if language:
         try:
@@ -47,8 +53,44 @@ def _code_block(tokens, index, options, env):
     )
 
 
-def _parser():
-    parser = MarkdownIt("commonmark", {"html": False, "breaks": True}).disable("image")
+def _annotation(state, silent):
+    match = re.match(r"(?:==(重点|概念|例子|注意)\|([^\n]+?)==|\+\+([^\n]+?)\+\+)", state.src[state.pos:])
+    if not match:
+        return False
+    if not silent:
+        kind, content, underline = match.groups()
+        tag = "u" if underline is not None else "mark"
+        token = state.push("learning_annotation", "", 0)
+        tones = {"重点": "key", "概念": "concept", "例子": "example", "注意": "warning"}
+        attrs = '' if tag == "u" else f' class="le-highlight le-highlight-{tones[kind]}"'
+        token.content = f"<{tag}{attrs}>{escape(underline if underline is not None else content)}</{tag}>"
+    state.pos += match.end()
+    return True
+
+
+def _safe_disclosure(tokens, index, options, env):
+    content = tokens[index].content
+    # Preserve the workbench's existing exercise blanks without allowing
+    # arbitrary model-generated HTML attributes or styles.
+    blank = re.fullmatch(r'<span class="le-blank" style="width:([2-6]\.\d)em">', content)
+    if blank and 2.5 <= float(blank.group(1)) <= 6.0:
+        return content
+    if content == '</span>':
+        return content
+    parts = re.split(r"(</?(?:details|summary)\s*>)", content, flags=re.I)
+    return ''.join(part.lower() if re.fullmatch(r"</?(?:details|summary)\s*>", part, re.I) else escape(part) for part in parts)
+
+
+def _parser(annotations=False, lesson=False):
+    parser = MarkdownIt("commonmark", {"html": lesson, "breaks": True}).disable("image")
+    if lesson:
+        parser.enable("table")
+        parser.renderer.rules["html_block"] = _safe_disclosure
+        parser.renderer.rules["html_inline"] = _safe_disclosure
+    if annotations:
+        parser.renderer.rules["learning_annotation"] = lambda tokens, index, options, env: tokens[index].content
+        parser.enable("strikethrough")
+        parser.inline.ruler.before("emphasis", "learning_annotation", _annotation)
     parser.renderer.rules["fence"] = _code_block
     parser.renderer.rules["code_block"] = _code_block
     return parser
@@ -87,9 +129,14 @@ def _legacy_commands(text, parser):
     return "".join(output)
 
 
-def render_rich_text(value, *, legacy_commands=False):
+def render_rich_text(value, *, legacy_commands=False, annotations=False):
     text = str(value or "").replace("\r\n", "\n").replace("\r", "\n")
-    parser = _parser()
+    parser = _parser(annotations=annotations)
     if legacy_commands:
         text = _legacy_commands(text, parser)
     return '<div class="le-rich-text">' + parser.render(text) + '</div>'
+
+
+def render_lesson(value):
+    parser = _parser(annotations=True, lesson=True)
+    return '<div class="prose le-rich-text le-lesson-rich">' + parser.render(str(value or "")) + '</div>'

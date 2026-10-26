@@ -473,7 +473,11 @@
     observeTabs();
     syncFabVisibility();
     bindGlobal();
-    new MutationObserver(() => {
+    new MutationObserver(mutations => {
+      if (mutations.every(mutation => {
+        const target = mutation.target.nodeType === 1 ? mutation.target : mutation.target.parentElement;
+        return !!target?.closest('#le-coach-transcript,#le-coach-stream');
+      })) return;
       if (!fabEl()) mountFab();
       observeTabs();
       syncFabVisibility();

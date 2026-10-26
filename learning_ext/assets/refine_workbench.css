@@ -1,0 +1,1966 @@
+/* refine_workbench：学习工作台 + 学习看板。
+   加载在 refine.css 之后，用来收掉这两页残留的“管理后台”感：
+   卡片套卡片、过粗描边、首屏被工具条挤走、数字面板过密、按钮大小不一。
+   颜色只取 --le-* 语义变量；圆角只用三档：10（控件）/16（卡片）/22（主面板）。 */
+
+/* ============ 0. 页面骨架与节奏 ============ */
+
+/* 看板：整列收窄并居中，区块之间统一 28px，删掉空 Markdown 留下的空档 */
+#le-app-tabs #learning-dashboard-tab > div {
+  max-width: 1160px !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+  gap: 28px !important;
+}
+
+#le-app-tabs #learning-dashboard-tab .block:has(> .prose:empty),
+#le-app-tabs #learning-dashboard-tab .block:has(> .prose > p:empty:only-child) {
+  display: none !important;
+}
+
+#le-app-tabs #learning-dashboard-tab .block > .prose {
+  padding: 0 !important;
+}
+
+/* 工作台：三栏收窄，正文列离两侧栏更近，读起来才像一篇文章 */
+#le-app-tabs #le-workbench-row,
+#le-app-tabs #le-workbench-row.le-assistant-open {
+  max-width: 1240px !important;
+  margin: 0 auto !important;
+  gap: 24px 30px !important;
+  align-items: start !important;
+}
+
+/* ============ 1. 看板：下一步 ============ */
+
+/* 原来是一整块青底卡片 + 深色大按钮，和下面五张指标卡抢注意力。
+   现在退回一条安静的提示带：文字左、主按钮右，高度压在 36px。 */
+#le-app-tabs #learning-dashboard-tab .le-dashboard-next {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 20px !important;
+  margin: 0 0 14px !important;
+  padding: 18px 22px !important;
+  background: var(--le-surface-2) !important;
+  border: 1px solid var(--le-line) !important;
+  border-left: 1px solid var(--le-line) !important;
+  border-radius: 16px !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #learning-dashboard-tab .le-dashboard-next strong {
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  letter-spacing: -.01em !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #learning-dashboard-tab .le-dashboard-next p {
+  margin: 4px 0 0 !important;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs #learning-dashboard-tab .le-dashboard-next button {
+  flex: none !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0 16px !important;
+  border: 1px solid var(--le-accent) !important;
+  border-radius: 10px !important;
+  background: var(--le-accent) !important;
+  color: var(--le-accent-ink) !important;
+  font-size: 13px !important;
+  font-weight: 520 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+#le-app-tabs #learning-dashboard-tab .le-dashboard-next button:hover {
+  background: var(--le-accent) !important;
+  border-color: var(--le-accent) !important;
+  opacity: .86 !important;
+  transform: none !important;
+}
+
+/* ============ 2. 看板：指标概览 ============ */
+
+/* 五张带描边的数字卡 → 一张卡里的五个数字。
+   卡片只代表“学习概览”这一个对象，数字之间靠留白分隔，不用分隔线。 */
+#le-app-tabs #learning-dashboard-tab .le-metrics {
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 22px 26px !important;
+  margin: 0 !important;
+  padding: 24px 26px !important;
+  background: var(--le-surface) !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 16px !important;
+  box-shadow: var(--le-shadow-1) !important;
+}
+
+#le-app-tabs #learning-dashboard-tab .le-metric {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 6px !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #learning-dashboard-tab .le-metric .val {
+  font-size: 26px !important;
+  font-weight: 600 !important;
+  line-height: 1.1 !important;
+  letter-spacing: -.02em !important;
+  color: var(--le-ink) !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+#le-app-tabs #learning-dashboard-tab .le-metric .lbl {
+  margin: 0 !important;
+  font-size: 11.5px !important;
+  line-height: 1.5 !important;
+  letter-spacing: .01em !important;
+  color: var(--le-ink-3) !important;
+}
+
+/* 「已掌握」原来是整块深色填充，跳出来像另一个组件。
+   现在只把标签提亮半档，其余靠位置说话。 */
+#le-app-tabs #learning-dashboard-tab .le-metric-mastered:not(.is-empty) {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #learning-dashboard-tab .le-metric-mastered:not(.is-empty) .val {
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #learning-dashboard-tab .le-metric-mastered:not(.is-empty) .lbl {
+  color: var(--le-ink-2) !important;
+}
+
+/* ============ 3. 看板：两块面板 ============ */
+
+#le-app-tabs #learning-dashboard-tab #le-dashboard-charts {
+  gap: 24px !important;
+  margin: 0 !important;
+  align-items: stretch !important;
+}
+
+#le-app-tabs #learning-dashboard-tab .le-dashboard-panel {
+  min-width: 0 !important;
+  gap: 16px !important;
+  padding: 22px 24px 24px !important;
+  background: var(--le-surface) !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 16px !important;
+  box-shadow: var(--le-shadow-1) !important;
+}
+
+#le-app-tabs #learning-dashboard-tab .le-dashboard-panel h3 {
+  margin: 0 !important;
+  font-size: 20px !important;
+  font-weight: 600 !important;
+  letter-spacing: -.02em !important;
+  color: var(--le-ink) !important;
+}
+
+/* 面板里的每个 block 再套一层内边距就会和标题错位 */
+#le-app-tabs #learning-dashboard-tab .le-dashboard-panel .block,
+#le-app-tabs #learning-dashboard-tab .le-dashboard-panel .prose {
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+/* --- 掌握分布 --- */
+
+#le-app-tabs #learning-dashboard-tab .le-status-bars {
+  display: grid !important;
+  gap: 15px !important;
+  padding: 0 !important;
+}
+
+#le-app-tabs #learning-dashboard-tab .le-distribution {
+  margin: 0 !important;
+}
+
+#le-app-tabs #learning-dashboard-tab .le-distribution > div:first-child {
+  display: flex !important;
+  align-items: baseline !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  margin: 0 0 8px !important;
+}
+
+#le-app-tabs #learning-dashboard-tab .le-distribution > div:first-child span {
+  font-size: 13px !important;
+  color: var(--le-ink-2) !important;
+}
+
+#le-app-tabs #learning-dashboard-tab .le-distribution strong {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: var(--le-ink) !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+#le-app-tabs #learning-dashboard-tab .le-distribution small {
+  margin-left: 2px !important;
+  font-size: 11.5px !important;
+  font-weight: 400 !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs #learning-dashboard-tab .le-track {
+  height: 6px !important;
+  background: var(--le-surface-3) !important;
+  border-radius: 999px !important;
+  overflow: hidden !important;
+}
+
+/* 五档状态不再各配一个色相，改用同一支墨色的深浅，暗色主题下也不会翻车 */
+#le-app-tabs #learning-dashboard-tab .le-track > span {
+  display: block !important;
+  height: 100% !important;
+  background: var(--le-accent) !important;
+  border-radius: 999px !important;
+  opacity: .82 !important;
+  transition: opacity .2s var(--le-ease) !important;
+}
+
+#le-app-tabs #learning-dashboard-tab .le-track > .mastered {
+  opacity: 1 !important;
+}
+
+#le-app-tabs #learning-dashboard-tab .le-track > .learning {
+  opacity: .62 !important;
+}
+
+#le-app-tabs #learning-dashboard-tab .le-track > .weak {
+  opacity: .40 !important;
+}
+
+#le-app-tabs #learning-dashboard-tab .le-track > .pending {
+  opacity: .22 !important;
+}
+
+#le-app-tabs #learning-dashboard-tab .le-track > .skipped {
+  opacity: .10 !important;
+}
+
+/* --- 每日学习时长 --- */
+
+#le-app-tabs #learning-dashboard-tab .le-activity-summary {
+  display: flex !important;
+  align-items: baseline !important;
+  gap: 8px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 12.5px !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs #learning-dashboard-tab .le-activity-summary strong {
+  font-size: 20px !important;
+  font-weight: 600 !important;
+  letter-spacing: -.02em !important;
+  color: var(--le-ink) !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+/* 右端那句“按记录日期（UTC）统计”解释了两次同样的事，直接收掉 */
+#le-app-tabs #learning-dashboard-tab .le-activity-summary > span {
+  display: none !important;
+}
+
+#le-app-tabs #learning-dashboard-tab .le-activity-chart {
+  height: 190px !important;
+  margin: 4px 0 0 !important;
+  padding: 0 8px 26px 34px !important;
+}
+
+#le-app-tabs #learning-dashboard-tab .le-chart-axis {
+  bottom: 26px !important;
+  width: 28px !important;
+  font-size: 11px !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs #learning-dashboard-tab .le-day-grid {
+  gap: 6px !important;
+  background: repeating-linear-gradient(to top, var(--le-line) 0 1px, transparent 1px 25%) !important;
+  border-bottom: 1px solid var(--le-line) !important;
+}
+
+#le-app-tabs #learning-dashboard-tab .le-day-bar {
+  background: var(--le-accent) !important;
+  border-radius: 6px 6px 2px 2px !important;
+  opacity: .8 !important;
+  transition: opacity .16s var(--le-ease) !important;
+}
+
+#le-app-tabs #learning-dashboard-tab .le-day-bar:hover,
+#le-app-tabs #learning-dashboard-tab .le-day-bar:focus {
+  background: var(--le-accent) !important;
+  opacity: 1 !important;
+  outline: 2px solid var(--le-focus) !important;
+  outline-offset: 2px !important;
+}
+
+#le-app-tabs #learning-dashboard-tab .le-day-date {
+  top: calc(100% + 8px) !important;
+  font-size: 11px !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs #learning-dashboard-tab .le-day-tip {
+  padding: 5px 9px !important;
+  border-radius: 8px !important;
+  background: var(--le-ink) !important;
+  color: var(--le-bg) !important;
+  font-size: 11.5px !important;
+  box-shadow: var(--le-shadow-2) !important;
+}
+
+#le-app-tabs #learning-dashboard-tab .le-activity-empty {
+  left: 34px !important;
+  padding: 12px !important;
+  border-radius: 10px !important;
+  background: var(--le-surface-2) !important;
+  color: var(--le-ink-3) !important;
+  font-size: 12.5px !important;
+}
+
+/* ============ 4. 看板：工具条与分段控件 ============ */
+
+/* 两个控件不值得一张 18px 内边距的白色大卡 */
+#le-app-tabs #le-dashboard-toolbar {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #le-dashboard-toolbar > .block,
+#le-app-tabs #le-dashboard-toolbar > .form {
+  flex: 0 1 300px !important;
+  min-width: 0 !important;
+  width: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+}
+
+#le-app-tabs #le-dashboard-toolbar .wrap:has(input[role="listbox"]) {
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+#le-app-tabs #le-dashboard-toolbar .wrap-inner,
+#le-app-tabs #le-dashboard-toolbar .wrap-inner:has(input[role="listbox"]) {
+  min-height: 36px !important;
+  height: 36px !important;
+  padding: 0 12px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 10px !important;
+  background: var(--le-surface) !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #le-dashboard-toolbar .wrap-inner:hover {
+  border-color: var(--le-line-strong) !important;
+  background: var(--le-surface) !important;
+}
+
+#le-app-tabs #le-dashboard-toolbar .wrap-inner:focus-within {
+  border-color: var(--le-line-strong) !important;
+  box-shadow: 0 0 0 3px var(--le-focus) !important;
+}
+
+#le-app-tabs #le-dashboard-toolbar input[role="listbox"] {
+  font-size: 14px !important;
+  font-weight: 450 !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #le-dashboard-toolbar > button {
+  flex: none !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  margin: 0 !important;
+  padding: 0 14px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+  color: var(--le-ink-2) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #le-dashboard-toolbar > button:hover {
+  background: var(--le-surface-3) !important;
+  border-color: var(--le-line-strong) !important;
+  color: var(--le-ink) !important;
+}
+
+/* 时间范围：两个单选圆圈 → 一枚分段控件 */
+#le-app-tabs #learning-dashboard-tab #le-activity-tools {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-wrap: nowrap !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+#le-app-tabs #learning-dashboard-tab #le-activity-tools > .block {
+  flex: 0 0 auto !important;
+  min-width: 0 !important;
+  width: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #learning-dashboard-tab #le-activity-tools .wrap:has(label input[type=radio]) {
+  display: inline-flex !important;
+  gap: 2px !important;
+  padding: 3px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 10px !important;
+  background: var(--le-surface-2) !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #learning-dashboard-tab #le-activity-tools label:has(input[type=radio]) {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0 !important;
+  min-height: 26px !important;
+  margin: 0 !important;
+  padding: 4px 12px !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  color: var(--le-ink-3) !important;
+  font-size: 12.5px !important;
+  cursor: pointer !important;
+  transition: background .16s var(--le-ease), color .16s var(--le-ease) !important;
+}
+
+#le-app-tabs #learning-dashboard-tab #le-activity-tools label:has(input[type=radio]) :is(span, p, div) {
+  color: var(--le-ink-3) !important;
+  font-size: 12.5px !important;
+}
+
+#le-app-tabs #learning-dashboard-tab #le-activity-tools label:has(input[type=radio]):hover,
+#le-app-tabs #learning-dashboard-tab #le-activity-tools label:has(input[type=radio]):hover :is(span, p, div) {
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #learning-dashboard-tab #le-activity-tools label:has(input[type=radio]:checked) {
+  background: var(--le-surface) !important;
+  color: var(--le-ink) !important;
+  font-weight: 540 !important;
+  box-shadow: var(--le-shadow-1) !important;
+}
+
+#le-app-tabs #learning-dashboard-tab #le-activity-tools label:has(input[type=radio]:checked) :is(span, p, div) {
+  color: var(--le-ink) !important;
+  font-weight: 540 !important;
+}
+
+#le-app-tabs #learning-dashboard-tab #le-activity-tools input[type=radio] {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  opacity: 0 !important;
+  appearance: none !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+#le-app-tabs #learning-dashboard-tab #le-activity-tools label:has(input[type=radio]:focus-visible) {
+  outline: 2px solid var(--le-focus) !important;
+  outline-offset: -2px !important;
+}
+
+/* 导出：三级纯文字按钮，hover 才出现底色 */
+#le-app-tabs #learning-dashboard-tab #le-activity-tools > button {
+  flex: none !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  margin: 0 0 0 auto !important;
+  padding: 0 12px !important;
+  border: 1px solid transparent !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+  color: var(--le-ink-3) !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #learning-dashboard-tab #le-activity-tools > button:hover {
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink) !important;
+}
+
+/* ============ 5. 看板：学习回顾 ============ */
+
+#le-app-tabs #learning-dashboard-tab #le-dashboard-reflection {
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-top: 1px solid var(--le-line) !important;
+  border-radius: 0 !important;
+}
+
+#le-app-tabs #learning-dashboard-tab #le-dashboard-reflection > button.label-wrap {
+  min-height: 44px !important;
+  padding: 12px 0 !important;
+  border: 0 !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+  color: var(--le-ink-2) !important;
+  font-size: 13.5px !important;
+  font-weight: 500 !important;
+}
+
+#le-app-tabs #learning-dashboard-tab #le-dashboard-reflection > button.label-wrap:hover {
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #learning-dashboard-tab #le-dashboard-reflection .prose {
+  padding: 0 0 8px !important;
+  font-size: 14px !important;
+  line-height: 1.75 !important;
+  color: var(--le-ink-2) !important;
+}
+
+/* ============ 6. 工作台：顶部工具条 ============ */
+
+#le-app-tabs #le-workbench-row > #le-left-col {
+  min-height: 58px !important;
+  gap: 12px !important;
+  padding: 10px 12px 10px 16px !important;
+  background: var(--le-surface) !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 16px !important;
+  box-shadow: var(--le-shadow-1) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-left-col .form,
+#le-app-tabs #le-workbench-row #le-left-col > .block {
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+}
+
+#le-app-tabs #le-workbench-row #le-left-col .wrap:has(input[role="listbox"]) {
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+/* 下拉的可见边框在 .wrap-inner 上（旧写法用的 .container 在 Gradio 4 里已经没有，
+   “项目 / 课程”两个前缀因此一直没渲染出来）。 */
+#le-app-tabs #le-workbench-row #le-left-col :is(#le-project-picker, #le-course-picker) .wrap-inner {
+  position: relative !important;
+  min-height: 34px !important;
+  height: 34px !important;
+  padding: 0 12px 0 44px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 10px !important;
+  background: var(--le-surface-2) !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #le-workbench-row #le-left-col :is(#le-project-picker, #le-course-picker) .wrap-inner:hover {
+  border-color: var(--le-line-strong) !important;
+  background: var(--le-surface-2) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-left-col :is(#le-project-picker, #le-course-picker) .wrap-inner:focus-within {
+  border-color: var(--le-line-strong) !important;
+  box-shadow: 0 0 0 3px var(--le-focus) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-left-col :is(#le-project-picker, #le-course-picker) .wrap-inner::before {
+  position: absolute !important;
+  left: 12px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  font-size: 11.5px !important;
+  letter-spacing: .04em !important;
+  color: var(--le-ink-3) !important;
+  pointer-events: none !important;
+}
+
+#le-app-tabs #le-workbench-row #le-left-col #le-project-picker .wrap-inner::before {
+  content: "项目" !important;
+}
+
+#le-app-tabs #le-workbench-row #le-left-col #le-course-picker .wrap-inner::before {
+  content: "课程" !important;
+}
+
+#le-app-tabs #le-workbench-row #le-left-col :is(#le-project-picker, #le-course-picker) input {
+  font-size: 13.5px !important;
+  font-weight: 500 !important;
+  color: var(--le-ink) !important;
+}
+
+/* 进度：一行数字，不带底色 */
+#le-app-tabs #le-workbench-row #le-left-col #le-course-progress {
+  margin: 0 !important;
+  padding: 0 2px 0 4px !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #le-workbench-row #le-left-col #le-course-progress .prose,
+#le-app-tabs #le-workbench-row #le-left-col #le-course-progress p {
+  margin: 0 !important;
+  font-size: 12.5px !important;
+  line-height: 1.4 !important;
+  color: var(--le-ink-3) !important;
+  white-space: nowrap !important;
+}
+
+#le-app-tabs #le-workbench-row #le-left-col #le-course-progress strong {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: var(--le-ink) !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+/* 「管理」收成一枚次按钮；展开的面板浮在下方，不推正文 */
+#le-app-tabs #le-workbench-row #le-left-col #le-course-admin {
+  margin-left: auto !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #le-workbench-row #le-left-col #le-course-admin > button.label-wrap {
+  width: auto !important;
+  min-height: 34px !important;
+  height: 34px !important;
+  padding: 0 12px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+  color: var(--le-ink-2) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  gap: 6px !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #le-workbench-row #le-left-col #le-course-admin > button.label-wrap:hover {
+  background: var(--le-surface-3) !important;
+  border-color: var(--le-line-strong) !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-left-col #le-course-admin > button.label-wrap > span:first-child {
+  font-size: 13px !important;
+}
+
+#le-app-tabs #le-workbench-row #le-left-col #le-course-admin > div:last-child {
+  width: min(400px, 78vw) !important;
+  max-height: min(72vh, 540px) !important;
+  padding: 16px !important;
+  background: var(--le-surface) !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 16px !important;
+  box-shadow: var(--le-shadow-3) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-course-admin .accordion {
+  border: 1px solid var(--le-line) !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+}
+
+#le-app-tabs #le-workbench-row #le-course-admin .accordion > button.label-wrap {
+  min-height: 36px !important;
+  padding: 8px 12px !important;
+  font-size: 13px !important;
+  color: var(--le-ink-2) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-course-admin .accordion button:not(.label-wrap) {
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 0 12px !important;
+  border-radius: 10px !important;
+  font-size: 13px !important;
+}
+
+#le-app-tabs #le-workbench-row #le-project-settings {
+  border-top: 1px solid var(--le-line) !important;
+  padding-top: 12px !important;
+}
+
+#le-app-tabs #le-workbench-row #le-project-settings .le-delete-warning .prose {
+  font-size: 12.5px !important;
+  line-height: 1.65 !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-delete-project {
+  border-radius: 10px !important;
+}
+
+/* ============ 7. 工作台：本节目录 ============ */
+
+/* 目录是导航文字，不是卡片：去掉浅蓝底和描边，选中态靠底色 */
+#le-app-tabs #le-workbench-row #le-lesson-outline {
+  padding: 2px 0 18px !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-lesson-outline summary {
+  padding: 2px 10px 12px !important;
+  border: 0 !important;
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
+  letter-spacing: .06em !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-lesson-outline summary::after {
+  font-size: 11px !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-lesson-outline nav {
+  gap: 2px !important;
+}
+
+#le-app-tabs #le-workbench-row #le-lesson-outline button {
+  display: block !important;
+  width: 100% !important;
+  padding: 8px 10px !important;
+  border: 0 !important;
+  border-left: 0 !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+  color: var(--le-ink-2) !important;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  line-height: 1.55 !important;
+  text-align: left !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+}
+
+#le-app-tabs #le-workbench-row #le-lesson-outline button:hover {
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-lesson-outline button[aria-current=location] {
+  background: var(--le-accent-soft) !important;
+  color: var(--le-ink) !important;
+  font-weight: 540 !important;
+}
+
+#le-app-tabs #le-workbench-row #le-lesson-outline p {
+  padding: 8px 10px !important;
+  font-size: 12.5px !important;
+  line-height: 1.7 !important;
+  color: var(--le-ink-3) !important;
+}
+
+/* 拖拽分隔线、滚动指示、收起角标：统一用细线语义色（outline.css 里写死了浅灰） */
+#le-app-tabs #le-toc-resizer::before {
+  background: var(--le-line) !important;
+}
+
+#le-app-tabs #le-toc-gutter:hover #le-toc-resizer::before {
+  background: var(--le-line-strong) !important;
+}
+
+#le-app-tabs #le-scroll-thumb {
+  background: var(--le-line-strong) !important;
+}
+
+#le-app-tabs #le-scroll-thumb:hover {
+  background: var(--le-ink-3) !important;
+}
+
+#le-app-tabs #le-scroll-thumb.le-dragging {
+  background: var(--le-ink-2) !important;
+}
+
+#le-app-tabs #le-toc-toggle {
+  width: 22px !important;
+  height: 22px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 10px !important;
+  background: var(--le-surface) !important;
+  color: var(--le-ink-3) !important;
+  font-size: 12px !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #le-toc-toggle:hover {
+  color: var(--le-ink) !important;
+  border-color: var(--le-line-strong) !important;
+}
+
+#le-app-tabs #le-workbench-row.le-toc-collapsed #le-lesson-outline {
+  background: transparent !important;
+  border-radius: 10px !important;
+}
+
+/* ============ 8. 工作台：正文面板 ============ */
+
+#le-app-tabs #le-workbench-row > #le-center-col {
+  min-width: 0 !important;
+  gap: 20px !important;
+  padding: 26px clamp(22px, 2.4vw, 40px) 30px !important;
+  background: var(--le-surface) !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 22px !important;
+  box-shadow: var(--le-shadow-1) !important;
+}
+
+/* 标题、标签栏、正文、操作条原来各按各的宽度排，正文窄 780 而标题通栏 → 左边缘对不齐。
+   这里统一收进同一条 760 的可读列。 */
+#le-app-tabs #le-workbench-row #le-center-content {
+  width: 100% !important;
+  max-width: 760px !important;
+  margin: 0 auto !important;
+  padding: 0 0 20px !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--le-line) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-center-content .le-lesson-heading {
+  padding: 0 !important;
+  border: 0 !important;
+}
+
+#le-app-tabs #le-workbench-row #le-center-content .le-lesson-kicker {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  letter-spacing: .1em !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-center-content .le-lesson-heading h2 {
+  margin: 8px 0 14px !important;
+  font-size: 22px !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  letter-spacing: -.02em !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-center-content .le-lesson-heading > h3 {
+  margin: 0 !important;
+  font-size: 21px !important;
+  font-weight: 600 !important;
+  letter-spacing: -.02em !important;
+  line-height: 1.4 !important;
+}
+
+#le-app-tabs #le-workbench-row #le-center-content p {
+  margin: 10px 0 0 !important;
+  font-size: 14px !important;
+  line-height: 1.7 !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-center-content .le-lesson-meta {
+  gap: 8px !important;
+}
+
+#le-app-tabs #le-workbench-row #le-center-content .le-lesson-meta span {
+  padding: 4px 10px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  color: var(--le-ink-3) !important;
+  font-size: 11.5px !important;
+  line-height: 1.5 !important;
+}
+
+#le-app-tabs #le-workbench-row #le-center-content .le-lesson-meta .le-lesson-state {
+  border-color: transparent !important;
+  background: var(--le-accent-soft) !important;
+  color: var(--le-ink-2) !important;
+}
+
+/* 标签栏：从深色实心药丸退回一条浅色分段导航，吸顶时补一层模糊底 */
+#le-app-tabs #le-workbench-row #le-center-col > #le-content-tabs > .tab-nav {
+  position: sticky !important;
+  top: 62px !important;
+  z-index: 12 !important;
+  width: 100% !important;
+  max-width: 760px !important;
+  margin: 0 auto !important;
+  padding: 4px !important;
+  gap: 2px !important;
+  background: var(--le-surface-2) !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+  backdrop-filter: saturate(1.2) blur(10px) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-center-col > #le-content-tabs > .tab-nav button {
+  flex: 0 1 auto !important;
+  min-width: 0 !important;
+  min-height: 32px !important;
+  height: 32px !important;
+  padding: 0 14px !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  color: var(--le-ink-3) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #le-workbench-row #le-center-col > #le-content-tabs > .tab-nav button:hover {
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-center-col > #le-content-tabs > .tab-nav button.selected {
+  background: var(--le-surface) !important;
+  color: var(--le-ink) !important;
+  font-weight: 560 !important;
+  box-shadow: var(--le-shadow-1) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-center-col > #le-content-tabs > .tab-nav > #le-tabs-toggle {
+  flex: none !important;
+  width: 28px !important;
+  min-width: 28px !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  padding: 0 !important;
+  margin-left: 2px !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  color: var(--le-ink-3) !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #le-workbench-row #le-center-col > #le-content-tabs > .tab-nav > #le-tabs-toggle:hover {
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink) !important;
+  border: 0 !important;
+}
+
+#le-app-tabs #le-workbench-row #le-center-col > #le-content-tabs > .tab-nav > #le-master-shortcut {
+  flex: 0 0 auto !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  margin-left: auto !important;
+  padding: 0 13px !important;
+  border: 1px solid var(--le-accent) !important;
+  border-radius: 8px !important;
+  background: var(--le-accent) !important;
+  color: var(--le-accent-ink) !important;
+  font-size: 12.5px !important;
+  font-weight: 520 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #le-workbench-row #le-center-col > #le-content-tabs > .tab-nav > #le-master-shortcut:hover {
+  background: var(--le-accent) !important;
+  border-color: var(--le-accent) !important;
+  opacity: .9 !important;
+}
+
+#le-app-tabs #le-workbench-row #le-center-col > #le-content-tabs > .tabitem {
+  width: 100% !important;
+  max-width: 760px !important;
+  padding-top: 20px !important;
+}
+
+/* 收起态：整条导航缩成一枚箭头，别保留 760 的宽度 */
+#le-app-tabs #le-workbench-row #le-center-col.le-tabs-collapsed > #le-content-tabs > .tab-nav {
+  width: 40px !important;
+  max-width: 40px !important;
+  margin: 0 0 0 auto !important;
+  padding: 4px !important;
+  gap: 0 !important;
+}
+
+/* ============ 9. 工作台：节奏条 ============ */
+
+#le-app-tabs #le-workbench-row #le-center-col > #le-rhythm-bar {
+  width: 100% !important;
+  max-width: 760px !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+#le-app-tabs #le-workbench-row #le-rhythm-bar .le-rhythm-inner {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 6px 14px !important;
+  padding: 0 0 2px !important;
+  border: 0 !important;
+  background: transparent !important;
+  font: 400 12.5px/1.6 var(--le-font, system-ui) !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-rhythm-bar .le-rhythm-item {
+  font-size: 12.5px !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-rhythm-bar .le-rhythm-item b {
+  font-weight: 550 !important;
+  color: var(--le-ink) !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+#le-app-tabs #le-workbench-row #le-rhythm-bar .le-rhythm-item.info {
+  color: var(--le-ink-2) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-rhythm-bar .le-rhythm-item.warn {
+  padding: 2px 9px !important;
+  border-radius: 999px !important;
+  background: var(--le-accent-soft) !important;
+  color: var(--le-ink-2) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-rhythm-bar .le-rhythm-btn {
+  height: 28px !important;
+  padding: 0 10px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  color: var(--le-ink-2) !important;
+  font-size: 12px !important;
+  line-height: 1 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #le-workbench-row #le-rhythm-bar .le-rhythm-btn:hover {
+  background: var(--le-surface-3) !important;
+  border-color: var(--le-line-strong) !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-rhythm-bar .le-rhythm-btn.ghost {
+  border-color: transparent !important;
+  color: var(--le-ink-3) !important;
+  text-decoration: none !important;
+}
+
+#le-app-tabs #le-workbench-row #le-rhythm-bar .le-rhythm-btn.ghost:hover {
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink-2) !important;
+}
+
+/* ============ 10. 工作台：正文排版 ============ */
+
+#le-app-tabs #le-workbench-row #le-guide-md .prose {
+  width: 100% !important;
+  max-width: 760px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  padding: 0 !important;
+  font-size: 14.5px !important;
+  line-height: 1.85 !important;
+  color: var(--le-ink-2) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-guide-md :is(p, li) {
+  font-size: 14.5px !important;
+  line-height: 1.85 !important;
+  color: var(--le-ink-2) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-guide-md :is(h1, h2, h3, h4) {
+  color: var(--le-ink) !important;
+  font-weight: 600 !important;
+  letter-spacing: -.02em !important;
+}
+
+#le-app-tabs #le-workbench-row #le-guide-md h1 {
+  margin: 0 0 16px !important;
+  font-size: 22px !important;
+  line-height: 1.45 !important;
+}
+
+#le-app-tabs #le-workbench-row #le-guide-md h2 {
+  margin: 34px 0 14px !important;
+  font-size: 19px !important;
+  line-height: 1.45 !important;
+  scroll-margin-top: 152px !important;
+}
+
+#le-app-tabs #le-workbench-row #le-guide-md h3 {
+  margin: 24px 0 10px !important;
+  font-size: 16px !important;
+  line-height: 1.5 !important;
+}
+
+#le-app-tabs #le-workbench-row #le-guide-md :is(ul, ol) {
+  margin: 12px 0 !important;
+  padding-left: 20px !important;
+}
+
+#le-app-tabs #le-workbench-row #le-guide-md li {
+  margin: 6px 0 !important;
+}
+
+#le-app-tabs #le-workbench-row #le-guide-md :is(strong, b) {
+  font-weight: 600 !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-guide-md a {
+  color: var(--le-ink) !important;
+  text-decoration-color: var(--le-line-strong) !important;
+  text-underline-offset: 3px !important;
+}
+
+#le-app-tabs #le-workbench-row #le-guide-md code:not(pre code) {
+  padding: .14em .34em !important;
+  border-radius: 6px !important;
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink-2) !important;
+  font-size: .9em !important;
+}
+
+#le-app-tabs #le-workbench-row #le-guide-md pre {
+  padding: 16px 18px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 10px !important;
+  background: var(--le-surface-2) !important;
+  font-size: 13px !important;
+  overflow: auto !important;
+}
+
+#le-app-tabs #le-workbench-row #le-guide-md blockquote {
+  margin: 16px 0 !important;
+  padding: 2px 0 2px 16px !important;
+  border: 0 !important;
+  border-left: 2px solid var(--le-line-strong) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--le-ink-2) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-guide-md table {
+  display: block !important;
+  max-width: 100% !important;
+  overflow: auto !important;
+  font-size: 13.5px !important;
+}
+
+#le-app-tabs #le-workbench-row #le-guide-md :is(th, td) {
+  padding: 10px 12px !important;
+  border-color: var(--le-line) !important;
+}
+
+/* 课程开头导读：从青绿渐变卡片退成一块浅底，和正文同一套字号 */
+#le-app-tabs #le-workbench-row #le-guide-md .le-lesson-intro {
+  padding: 20px 22px !important;
+  border: 0 !important;
+  border-radius: 16px !important;
+  background: var(--le-surface-2) !important;
+  font-size: 14.5px !important;
+  line-height: 1.85 !important;
+  color: var(--le-ink-2) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-guide-md .le-learning-outcomes {
+  gap: 8px !important;
+  padding: 0 !important;
+  margin: 16px 0 !important;
+}
+
+#le-app-tabs #le-workbench-row #le-guide-md .le-learning-outcomes > li {
+  padding: 12px 14px 12px 44px !important;
+  border: 0 !important;
+  border-radius: 10px !important;
+  background: var(--le-surface-2) !important;
+  font-size: 14.5px !important;
+  line-height: 1.8 !important;
+}
+
+#le-app-tabs #le-workbench-row #le-guide-md .le-learning-outcomes > li::before {
+  left: 14px !important;
+  top: 13px !important;
+  color: var(--le-ink-3) !important;
+  font: 500 11px var(--le-font, system-ui) !important;
+}
+
+/* 自测答案的折叠块：左侧那道 3px 蓝边太抢，改成同一层浅底 */
+#le-app-tabs #le-workbench-row #le-guide-md :is(details, .le-fold) {
+  margin: 14px 0 18px !important;
+  border: 1px solid var(--le-line) !important;
+  border-left: 1px solid var(--le-line) !important;
+  border-radius: 10px !important;
+  background: var(--le-surface-2) !important;
+  overflow: hidden !important;
+}
+
+#le-app-tabs #le-workbench-row #le-guide-md details > summary {
+  gap: 8px !important;
+  padding: 11px 14px !important;
+  font-size: 13.5px !important;
+  font-weight: 500 !important;
+  color: var(--le-ink-2) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-guide-md details > summary::before {
+  font-size: 11px !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-guide-md details > summary:hover {
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-guide-md details[open] > summary {
+  border-bottom: 1px solid var(--le-line) !important;
+  background: transparent !important;
+}
+
+#le-app-tabs #le-workbench-row #le-guide-md details > :not(summary) {
+  margin-left: 14px !important;
+  margin-right: 14px !important;
+}
+
+#le-app-tabs #le-workbench-row #le-guide-md .le-blank {
+  border-bottom: 1.5px solid var(--le-line-strong) !important;
+}
+
+/* ============ 11. 工作台：操作条 / 笔记 / 批注 ============ */
+
+#le-app-tabs #le-workbench-row #le-lesson-actions {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+  width: 100% !important;
+  max-width: 760px !important;
+  margin: 6px auto 0 !important;
+  padding-top: 22px !important;
+  border-top: 1px solid var(--le-line) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-lesson-actions .accordion {
+  border: 1px solid var(--le-line) !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+}
+
+#le-app-tabs #le-workbench-row #le-lesson-actions .accordion > button.label-wrap {
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0 14px !important;
+  border: 0 !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+  color: var(--le-ink-2) !important;
+  font-size: 13px !important;
+}
+
+#le-app-tabs #le-workbench-row #le-lesson-actions #le-master-btn {
+  margin-left: auto !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  padding: 0 18px !important;
+  border-radius: 10px !important;
+  font-size: 13.5px !important;
+  font-weight: 520 !important;
+}
+
+/* 笔记页：标题跟正文同一条列宽，输入框降低到 240，把空间还给下方按钮 */
+#le-app-tabs #le-workbench-row #le-note-zone {
+  padding: 0 !important;
+}
+
+#le-app-tabs #le-workbench-row #le-note-zone .prose h3 {
+  margin: 0 0 10px !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  letter-spacing: -.015em !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-note-zone textarea {
+  min-height: 240px !important;
+  padding: 14px 16px !important;
+  border-radius: 10px !important;
+  font-size: 14.5px !important;
+  line-height: 1.8 !important;
+}
+
+#le-app-tabs #le-workbench-row #le-annotation-list {
+  margin-top: 24px !important;
+  padding-top: 18px !important;
+  border-top: 1px solid var(--le-line) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-annotation-list .le-anno-head {
+  margin: 0 0 10px !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-annotation-list .le-anno-head b {
+  font-weight: 600 !important;
+  color: var(--le-ink) !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+#le-app-tabs #le-workbench-row #le-annotation-list .le-anno-item {
+  margin: 0 0 8px !important;
+  padding: 12px 14px !important;
+  border: 0 !important;
+  border-radius: 10px !important;
+  background: var(--le-surface-2) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-annotation-list .le-anno-quote {
+  font-size: 12.5px !important;
+  line-height: 1.6 !important;
+  font-style: normal !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-annotation-list .le-anno-body {
+  margin-top: 6px !important;
+  font-size: 14px !important;
+  line-height: 1.75 !important;
+  color: var(--le-ink-2) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-annotation-list .le-anno-meta {
+  margin-top: 8px !important;
+  font-size: 11.5px !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-annotation-list .le-anno-del {
+  padding: 2px 4px !important;
+  border: 0 !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  color: var(--le-ink-3) !important;
+  font-size: 11.5px !important;
+}
+
+#le-app-tabs #le-workbench-row #le-annotation-list .le-anno-del:hover {
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-annotation-list .le-anno-stale {
+  margin-left: 8px !important;
+  padding: 1px 6px !important;
+  border-radius: 6px !important;
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink-2) !important;
+  font-size: 11px !important;
+}
+
+#le-app-tabs #le-workbench-row #le-annotation-list .le-anno-empty {
+  padding: 16px !important;
+  border: 1px dashed var(--le-line) !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+  color: var(--le-ink-3) !important;
+  font-size: 13px !important;
+  line-height: 1.8 !important;
+}
+
+/* ============ 12. 浮动层（挂载在 body 上，只能按 id 选） ============ */
+
+#le-sel-bar {
+  padding: 4px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 10px !important;
+  background: var(--le-surface) !important;
+  box-shadow: var(--le-shadow-2) !important;
+  font: 400 13px var(--le-font, system-ui) !important;
+}
+
+#le-sel-bar button {
+  padding: 6px 10px !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  color: var(--le-ink-2) !important;
+  font-size: 13px !important;
+}
+
+#le-sel-bar button:hover {
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink) !important;
+}
+
+#le-sel-bar button.le-self {
+  color: var(--le-ink-3) !important;
+}
+
+#le-sel-bar .le-bar-input {
+  padding: 7px 9px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 8px !important;
+  background: var(--le-surface-2) !important;
+  color: var(--le-ink) !important;
+  font: inherit !important;
+  font-size: 13px !important;
+  line-height: 1.55 !important;
+}
+
+#le-sel-bar .le-bar-input:focus {
+  border-color: var(--le-line-strong) !important;
+  background: var(--le-surface) !important;
+  outline: 0 !important;
+}
+
+#le-sel-bar .le-sel-hint {
+  padding: 0 8px !important;
+  color: var(--le-ink-3) !important;
+  font-size: 12px !important;
+}
+
+#le-block-pencil {
+  width: 26px !important;
+  height: 26px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 8px !important;
+  background: var(--le-surface) !important;
+  color: var(--le-ink-3) !important;
+  box-shadow: var(--le-shadow-1) !important;
+}
+
+#le-block-pencil:hover {
+  border-color: var(--le-line-strong) !important;
+  color: var(--le-ink) !important;
+}
+
+#le-anno-pins .le-anno-pin {
+  border: 1px solid var(--le-line) !important;
+  border-radius: 999px !important;
+  background: var(--le-surface) !important;
+  color: var(--le-ink-3) !important;
+  font: 500 11px/19px var(--le-font, system-ui) !important;
+  box-shadow: var(--le-shadow-1) !important;
+}
+
+#le-anno-pins .le-anno-pin:hover {
+  border-color: var(--le-line-strong) !important;
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink) !important;
+}
+
+#le-anno-card {
+  padding: 14px 16px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 10px !important;
+  background: var(--le-surface) !important;
+  box-shadow: var(--le-shadow-2) !important;
+  color: var(--le-ink-2) !important;
+  font: 400 13px var(--le-font, system-ui) !important;
+}
+
+#le-anno-card .le-card-item + .le-card-item {
+  border-top: 1px solid var(--le-line) !important;
+}
+
+#le-anno-card .le-card-quote {
+  font-size: 12.5px !important;
+  line-height: 1.6 !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-anno-card .le-card-body {
+  margin-top: 6px !important;
+  font-size: 13.5px !important;
+  line-height: 1.7 !important;
+  color: var(--le-ink) !important;
+}
+
+#le-anno-card .le-card-actions button {
+  padding: 4px 11px !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink-2) !important;
+  font-size: 12px !important;
+}
+
+#le-anno-card .le-card-actions button:hover {
+  color: var(--le-ink) !important;
+}
+
+#le-anno-card textarea {
+  padding: 7px 9px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 8px !important;
+  background: var(--le-surface-2) !important;
+  color: var(--le-ink) !important;
+  font-size: 13.5px !important;
+  line-height: 1.6 !important;
+}
+
+#le-anno-card textarea:focus {
+  border-color: var(--le-line-strong) !important;
+}
+
+#le-anno-card .le-card-x {
+  color: var(--le-ink-3) !important;
+  border-radius: 8px !important;
+}
+
+#le-anno-card .le-card-x:hover {
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink) !important;
+}
+
+/* 提示条（改写 / 批注的结果） */
+#le-rewrite-note .le-toast {
+  gap: 10px !important;
+  padding: 10px 12px 10px 16px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 10px !important;
+  background: var(--le-surface) !important;
+  box-shadow: var(--le-shadow-2) !important;
+  color: var(--le-ink-2) !important;
+  font: 400 13px var(--le-font, system-ui) !important;
+}
+
+#le-rewrite-note .le-toast-ok,
+#le-rewrite-note .le-toast-err,
+#le-rewrite-note .le-toast-busy {
+  border-color: var(--le-line-strong) !important;
+  background: var(--le-surface) !important;
+  color: var(--le-ink) !important;
+}
+
+#le-rewrite-note .le-toast-dot {
+  background: var(--le-ink-3) !important;
+}
+
+#le-rewrite-note .le-toast-act {
+  padding: 5px 10px !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink) !important;
+  font-size: 12.5px !important;
+}
+
+#le-rewrite-note .le-toast-act:hover {
+  background: var(--le-line) !important;
+}
+
+#le-rewrite-note .le-toast-x {
+  padding: 4px 6px !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  color: var(--le-ink-3) !important;
+  font-size: 16px !important;
+}
+
+#le-rewrite-note .le-toast-x:hover {
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink) !important;
+}
+
+/* ============ 13. 响应式 ============ */
+
+@media (max-width: 1080px) {
+  #le-app-tabs #learning-dashboard-tab .le-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 1000px) {
+  /* 目录在窄屏落回正文上方，需要一层底把它和正文分开 */
+  #le-app-tabs #le-workbench-row #le-lesson-outline {
+    max-height: 260px !important;
+    padding: 14px 12px !important;
+    background: var(--le-surface-2) !important;
+    border: 1px solid var(--le-line) !important;
+    border-radius: 16px !important;
+  }
+
+  #le-app-tabs #le-workbench-row > #le-center-col {
+    padding: 22px 18px 26px !important;
+  }
+}
+
+@media (max-width: 860px) {
+  #le-app-tabs #learning-dashboard-tab .le-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 18px !important;
+    padding: 20px !important;
+  }
+
+  #le-app-tabs #learning-dashboard-tab .le-dashboard-next {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+
+  #le-app-tabs #learning-dashboard-tab #le-activity-tools {
+    flex-wrap: wrap !important;
+  }
+}
+
+@media (max-width: 650px) {
+  #le-app-tabs #le-workbench-row > #le-left-col {
+    padding: 10px 12px !important;
+  }
+
+  #le-app-tabs #le-workbench-row #le-center-col > #le-content-tabs > .tab-nav {
+    gap: 0 !important;
+    padding: 3px !important;
+  }
+
+  #le-app-tabs #le-workbench-row #le-center-col > #le-content-tabs > .tab-nav button {
+    padding: 0 10px !important;
+    font-size: 12.5px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #le-app-tabs #learning-dashboard-tab :is(.le-day-bar, .le-track > span),
+  #le-app-tabs #learning-dashboard-tab #le-activity-tools label {
+    transition: none !important;
+  }
+}
+
+/* 项目名不再被截成省略号：给项目选择器多一点宽度，课程选择器相应收窄 */
+#le-app-tabs #le-workbench-row #le-project-picker {
+  flex: 0 0 280px !important;
+  min-width: 280px !important;
+  max-width: 280px !important;
+}
+
+#le-app-tabs #le-workbench-row #le-project-picker :is(.wrap-inner, .wrap, input, select) {
+  width: 100% !important;
+  min-width: 0 !important;
+  text-overflow: ellipsis !important;
+}
+
+#le-app-tabs #le-workbench-row #le-course-picker {
+  flex: 1 1 auto !important;
+  min-width: 260px !important;
+}
+
+/* 下拉里不用再重复一次「项目 / 课程」，外层标签已经说明了 */
+#le-app-tabs #le-workbench-row .wrap-inner::before {
+  content: none !important;
+}
+
+/* 工具条里的进度数字不再带下划线 */
+#le-app-tabs #le-workbench-row #le-course-progress,
+#le-app-tabs #le-workbench-row #le-course-progress :is(.prose, .md, p, span) {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #le-workbench-row #le-course-progress strong {
+  font-variant-numeric: tabular-nums !important;
+  color: var(--le-ink) !important;
+}
+
+/* 课程管理是次级操作 */
+#le-app-tabs #le-workbench-row .le-course-admin-trigger,
+#le-app-tabs #le-workbench-row #le-course-admin-trigger {
+  background: transparent !important;
+  border: 1px solid var(--le-line) !important;
+  color: var(--le-ink-2) !important;
+  box-shadow: none !important;
+  min-height: 34px !important;
+  border-radius: var(--le-radius-s) !important;
+}
+
+#le-app-tabs #le-workbench-row .le-course-admin-trigger:hover,
+#le-app-tabs #le-workbench-row #le-course-admin-trigger:hover {
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #le-workbench-row #le-left-col #le-project-picker .wrap-inner::before,
+#le-app-tabs #le-workbench-row #le-left-col #le-course-picker .wrap-inner::before {
+  content: none !important;
+}
+
+#le-app-tabs #le-workbench-row #le-left-col :is(#le-project-picker, #le-course-picker) .wrap-inner {
+  overflow: hidden !important;
+  padding-left: 12px !important;
+}
+
+#le-app-tabs #le-workbench-row #le-left-col :is(#le-project-picker, #le-course-picker) .wrap-inner input {
+  padding-left: 0 !important;
+}
+
+#le-app-tabs #le-workbench-row #le-left-col :is(#le-project-picker, #le-course-picker) .form {
+  overflow: hidden !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 0 !important;
+}
+
+#le-app-tabs #le-workbench-row #le-left-col #le-project-picker {
+  flex: 0 0 240px !important;
+  min-width: 240px !important;
+  max-width: 240px !important;
+}
+
+#le-app-tabs #le-workbench-row #le-left-col #le-project-picker .form,
+#le-app-tabs #le-workbench-row #le-left-col #le-course-picker .form {
+  overflow: hidden !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  max-height: 34px !important;
+}
+
+#le-app-tabs #le-workbench-row #le-left-col :is(#le-project-picker, #le-course-picker) .form::-webkit-scrollbar,
+#le-app-tabs #le-workbench-row #le-left-col :is(#le-project-picker, #le-course-picker) .wrap-inner::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+#le-app-tabs #le-workbench-row #le-left-col :is(#le-project-picker, #le-course-picker) .form {
+  scrollbar-width: none !important;
+}
+
+/* 下拉外层 .form 会撑出横向滚动条：让选择器服从外层宽度 */
+#le-app-tabs #le-workbench-row #le-left-col #le-project-picker {
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+}
+
+#le-app-tabs #le-workbench-row #le-left-col .form:has(> #le-project-picker),
+#le-app-tabs #le-workbench-row #le-left-col .form:has(> #le-course-picker) {
+  overflow: hidden !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  scrollbar-width: none !important;
+}
+
+#le-app-tabs #le-workbench-row #le-left-col .form:has(> #le-project-picker)::-webkit-scrollbar,
+#le-app-tabs #le-workbench-row #le-left-col .form:has(> #le-course-picker)::-webkit-scrollbar {
+  display: none !important;
+  height: 0 !important;
+}
+
+#le-app-tabs #le-workbench-row #le-left-col .form:has(> #le-project-picker) {
+  flex: 0 0 250px !important;
+  width: 250px !important;
+  max-width: 250px !important;
+}
+
+#le-app-tabs #le-workbench-row #le-left-col .form:has(> #le-course-picker) {
+  flex: 1 1 auto !important;
+  min-width: 260px !important;
+}
+
+#le-app-tabs #le-workbench-row #le-left-col #le-project-picker .wrap-inner {
+  padding-right: 26px !important;
+}
+
+#le-app-tabs #le-workbench-row .le-lesson-actions {
+  background: var(--le-surface-2) !important;
+  border-color: var(--le-line) !important;
+  color: var(--le-ink-2) !important;
+}
+
+@media (min-width: 1800px) {
+  #le-app-tabs #learning-dashboard-tab > div {
+    max-width: 1560px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+}
+
+#le-sel-bar {
+  z-index: 1000;
+  max-width: min(560px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
+  overflow: auto;
+  padding: 6px;
+  gap: 2px;
+  background: var(--le-surface);
+  color: var(--le-ink);
+  border: 1px solid var(--le-line-strong);
+  box-shadow: var(--le-shadow-2);
+  border-radius: 14px;
+}
+#le-sel-bar button {
+  color: var(--le-ink-2);
+  font-size: 13px;
+  font-weight: 600;
+  min-height: 34px;
+  padding: 7px 9px;
+}
+#le-sel-bar button:hover { background: var(--le-accent-soft); color: var(--le-accent); }
+#le-sel-bar button:focus-visible { outline: 2px solid var(--le-focus); outline-offset: -2px; }
+#le-sel-bar #le-lookup-popup {
+  flex: 1 0 100%;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  border-top: 1px solid var(--le-line);
+  margin-top: 5px;
+  padding: 12px 8px 8px;
+  color: var(--le-ink);
+  background: var(--le-surface);
+  font: 400 14px/1.7 var(--le-font);
+}
+#le-lookup-popup header { display: flex; gap: 12px; align-items: start; justify-content: space-between; }
+#le-lookup-popup strong { overflow-wrap: anywhere; font-weight: 650; }
+#le-lookup-popup header button { flex: 0 0 28px; min-height: 28px; padding: 0; font-size: 20px; }
+#le-lookup-popup .le-lookup-result { max-height: min(42dvh, 320px); overflow: auto; margin-top: 8px; color: var(--le-ink-2); }
+#le-lookup-popup .le-lookup-result p { margin: 0 0 8px; }
+#le-lookup-popup[aria-busy] .le-lookup-result { animation: le-lookup-breathe 1.5s ease-in-out infinite; }
+@keyframes le-lookup-breathe { 50% { opacity: .55; } }
+@media (prefers-reduced-motion: reduce) { #le-lookup-popup[aria-busy] .le-lookup-result { animation: none; } }
+#le-lookup-popup .le-lookup-result :is(h1,h2,h3,h4) { font-size: 15px; line-height: 1.5; color: var(--le-ink); margin: 12px 0 6px; }
+#le-lookup-popup .le-lookup-result code { color: var(--le-ink); background: var(--le-surface-3); border-radius: 4px; padding: 1px 4px; }
+
+#le-sel-bar:has(#le-lookup-popup) { width: min(560px, calc(100vw - 24px)); }
+#le-sel-bar #le-lookup-popup { padding: 16px 14px 12px; }
+#le-lookup-popup .le-lookup-identity { display: grid; gap: 6px; }
+#le-lookup-popup .le-lookup-eyebrow { font-size: 11px; font-weight: 650; letter-spacing: .06em; color: var(--le-cyan); }
+#le-lookup-popup header strong { font-size: 19px; line-height: 1.4; letter-spacing: -.02em; color: var(--le-ink); }
+#le-lookup-popup .le-lookup-result { max-height: min(52dvh, 460px); margin-top: 16px; padding-right: 6px; color: var(--le-ink-2); }
+#le-lookup-popup .le-rich-text h3 { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; margin: 18px 0 8px; color: var(--le-ink); }
+#le-lookup-popup .le-rich-text h3::before { content: ''; width: 4px; height: 14px; border-radius: 3px; background: var(--le-cyan); flex-shrink: 0; }
+#le-lookup-popup .le-rich-text strong { color: var(--le-ink); font-weight: 750; }
+.le-rich-text .le-highlight { padding: .08em .3em; border-radius: 4px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.le-rich-text .le-highlight-key { color: var(--le-mark-key); background: var(--le-mark-key-bg); }
+.le-rich-text .le-highlight-concept { color: var(--le-mark-concept); background: var(--le-mark-concept-bg); }
+.le-rich-text .le-highlight-example { color: var(--le-mark-example); background: var(--le-mark-example-bg); }
+.le-rich-text .le-highlight-warning { color: var(--le-mark-warning); background: var(--le-mark-warning-bg); }
+#le-lookup-popup .le-rich-text u { text-decoration-color: var(--le-cyan); text-decoration-thickness: 2px; text-underline-offset: 4px; }
+#le-lookup-popup .le-rich-text s { text-decoration-color: var(--le-danger); }
+#le-lookup-popup .le-rich-text blockquote { margin: 12px 0; padding: 10px 12px; border-left: 3px solid var(--le-cyan); background: var(--le-accent-soft); border-radius: 0 8px 8px 0; }
+#le-lookup-popup .le-code-block { background: var(--le-surface-2); border-color: var(--le-line); box-shadow: none; }
+#le-lookup-popup .le-code-toolbar { background: var(--le-surface-3); border-color: var(--le-line); }
+#le-lookup-popup .le-code-language, #le-lookup-popup .le-code-copy { color: var(--le-ink-2) !important; }
+#le-lookup-popup .le-code-block pre { padding: 12px !important; font-size: 12px !important; }
+#le-lookup-popup .le-code-block pre code { color: var(--le-ink) !important; }
+#le-lookup-popup[aria-busy] .le-lookup-result { animation: none; }
+.le-lookup-loading { display: grid; gap: 10px; padding: 6px 0; }
+.le-lookup-loading span { font-size: 13px; color: var(--le-ink-3); }
+.le-lookup-loading i { height: 9px; border-radius: 5px; background: var(--le-surface-3); animation: le-lookup-breathe 1.6s ease-in-out infinite; }
+.le-lookup-loading i:nth-child(3) { width: 90%; animation-delay: .12s; }
+.le-lookup-loading i:nth-child(4) { width: 65%; animation-delay: .24s; }
+@media(prefers-reduced-motion:reduce) { .le-lookup-loading i { animation: none; } }
+
+.le-learning-diagram { margin: 22px 0; padding: 18px; border: 1px solid var(--le-line); border-radius: 16px; background: var(--le-surface-2); }
+.le-learning-diagram figcaption { font-size: 14px; font-weight: 700; color: var(--le-ink); margin-bottom: 10px; }
+.le-learning-diagram svg { display: block; width: 100%; max-height: 580px; height: auto; }
+.le-diagram-link { fill: none; stroke: var(--le-accent); stroke-width: 1.6; opacity: .7; }
+.le-diagram-arrow { fill: var(--le-accent); }
+.le-diagram-node rect { fill: var(--le-mark-concept-bg); stroke: var(--le-accent-line); stroke-width: 1; }
+.le-diagram-node text { fill: var(--le-mark-concept); font: 600 12px var(--le-font, sans-serif); }
+.le-diagram-tone-1 rect { fill: var(--le-mark-example-bg); }
+.le-diagram-tone-1 text { fill: var(--le-mark-example); }
+.le-diagram-tone-2 rect { fill: var(--le-mark-key-bg); }
+.le-diagram-tone-2 text { fill: var(--le-mark-key); }
+.le-diagram-tone-3 rect { fill: var(--le-mark-warning-bg); }
+.le-diagram-tone-3 text { fill: var(--le-mark-warning); }
+.le-learning-diagram details { margin-top: 8px; font-size: 12px; color: var(--le-ink-3); }
+.le-learning-diagram summary { cursor: pointer; }
+.le-lesson-rich u { text-underline-offset: 4px; text-decoration-color: var(--le-cyan); text-decoration-thickness: 2px; }
+.le-lesson-rich s { text-decoration-color: var(--le-danger); }
+.le-lesson-rich table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+.le-lesson-rich :is(th,td) { padding: 10px 12px; border: 1px solid var(--le-line); text-align: left; }
+.le-lesson-rich th { background: var(--le-surface-3); color: var(--le-ink); }
+.le-diagram-fallback { padding: 12px; background: var(--le-surface-2); border-radius: 10px; }
+.le-diagram-fallback pre { overflow: auto; white-space: pre-wrap; }
+@media(max-width:650px) { .le-learning-diagram { padding: 10px; } }
+.le-lesson-rich .le-code-toolbar { background: var(--le-surface-3) !important; border-color: var(--le-line) !important; }
+.le-lesson-rich :is(.le-code-language,.le-code-copy) { color: var(--le-ink-2) !important; }
+.le-lesson-rich .le-code-block { background: var(--le-surface-2); border-color: var(--le-line); }
+
+#le-app-tabs #le-workbench-row #le-left-col :is(#le-project-picker,#le-course-picker) input[role=listbox] { background: transparent !important; border: 0 !important; outline: none !important; box-shadow: none !important; border-radius: 0 !important; }
+#le-app-tabs #le-workbench-row #le-left-col :is(#le-project-picker,#le-course-picker) .wrap-inner:focus-within { box-shadow: none !important; border-color: var(--le-accent-line) !important; }
+#le-app-tabs #le-workbench-row #le-left-col :is(#le-project-picker,#le-course-picker) .wrap-inner:has(input:focus-visible) { outline: none !important; border-color: var(--le-accent) !important; }
+
+#le-app-tabs #le-workbench-row #le-lesson-actions { background:var(--le-surface-2) !important; color:var(--le-ink) !important; border:1px solid var(--le-line) !important; border-radius:14px !important; padding:12px !important; }
+#le-app-tabs #le-workbench-row #le-lesson-actions :is(.form,.accordion > div) { background:transparent !important; }
+
+#le-dashboard-dimensions .le-dimension-metrics { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:10px; }
+#le-dashboard-dimensions .le-dimension-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; margin-top:14px; }
+#le-dashboard-dimensions section { min-width:0; padding:18px; background:var(--le-surface); border:1px solid var(--le-line); border-radius:16px; }
+#le-dashboard-dimensions h3 { font-size:16px; font-weight:650; margin:0 0 14px; color:var(--le-ink); }
+#le-dashboard-dimensions p { font-size:13px; color:var(--le-ink-3); margin:12px 0 0; }
+#le-dashboard-dimensions .le-dimension-row { display:flex; align-items:center; gap:12px; justify-content:space-between; font-size:13px; margin:10px 0 5px; color:var(--le-ink-2); }
+#le-dashboard-dimensions .le-dimension-row span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#le-dashboard-dimensions .le-dimension-row strong { flex:none; color:var(--le-ink); }
+#le-dashboard-dimensions progress { width:100%; height:5px; accent-color:var(--le-accent); }
+#le-dashboard-dimensions .le-review-ratings { display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:13px; color:var(--le-ink-2); }
+#le-dashboard-dimensions .le-review-ratings span { display:flex; justify-content:space-between; padding:8px; background:var(--le-surface-2); border-radius:8px; }
+#le-dashboard-dimensions .le-learning-events { margin-top:14px; padding:14px 18px; border:1px solid var(--le-line); border-radius:14px; background:var(--le-surface); }
+#le-dashboard-dimensions summary { cursor:pointer; font-size:14px; font-weight:600; color:var(--le-ink); }
+#le-dashboard-dimensions summary span { font-size:12px; font-weight:400; color:var(--le-ink-3); margin-left:12px; }
+#le-dashboard-dimensions .le-learning-event { display:grid; grid-template-columns:100px 100px minmax(0,1fr) 70px; gap:10px; border-top:1px solid var(--le-line); padding:10px 0; font-size:12px; color:var(--le-ink-2); }
+#le-dashboard-dimensions .le-learning-event span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#le-app-tabs #le-route-batch-list .wrap { display:flex; flex-direction:column; max-height:320px; overflow:auto; flex-wrap:nowrap; }
+#le-app-tabs #le-route-batch-list label { margin:0; padding:12px; font-size:14px; background:var(--le-surface); border:1px solid var(--le-line); border-radius:10px; }
+#le-app-tabs #le-route-batch-summary { font-size:14px; color:var(--le-ink-2); }
+@media(max-width:1100px) { #le-dashboard-dimensions .le-dimension-metrics { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+@media(max-width:700px) { #le-dashboard-dimensions .le-dimension-grid { grid-template-columns:1fr; } #le-dashboard-dimensions .le-learning-event { grid-template-columns:80px 1fr 60px; } #le-dashboard-dimensions .le-learning-event span { display:none; } }

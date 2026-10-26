@@ -10,13 +10,14 @@ ROOT = Path(__file__).resolve().parents[1]
 NODE = shutil.which("node")
 
 
-def test_coach_page_uses_real_lesson_engine_and_local_assets():
+def test_coach_page_uses_real_agent_and_keeps_local_lesson_assets():
     app = (ROOT / "learning_ext" / "app.py").read_text(encoding="utf-8")
     custom = (ROOT / "custom_app.py").read_text(encoding="utf-8")
     presentation = (ROOT / "learning_ext" / "presentation.py").read_text(encoding="utf-8")
     html = (ROOT / "learning_ext" / "coach.py").read_text(encoding="utf-8")
 
-    assert "CoachLessonPage(self)" in app
+    assert "CoachPage(self)" in app
+    assert "CoachLessonPage(self)" not in app
     assert custom.count("assets/coach_lesson.js") == 1
     assert 'ASSETS / "coach_lesson.css"' in presentation
     assert 'id="coach-summary"' in html

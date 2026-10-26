@@ -55,19 +55,6 @@ def route_action_label(roadmap):
     return f"{action}：{title} →"
 
 
-def _route_focus(roadmap, groups):
-    nodes = roadmap.get("nodes", [])
-    selected = next_route_node(roadmap)
-    if selected is None:
-        if all(_status(node) == "mastered" for node in nodes):
-            return '<section class="le-route-focus is-complete" aria-label="当前阶段与下一节"><span class="le-route-focus-label">当前阶段 / 下一节</span><strong>全部完成</strong><p>所有章节均已掌握，可自由回顾。</p></section>'
-        return '<section class="le-route-focus" aria-label="当前阶段与下一节"><span class="le-route-focus-label">当前阶段 / 下一节</span><strong>暂无下一节</strong><p>可展开阶段查看学习记录。</p></section>'
-    stage_key = selected.get("stage", "base")
-    stage_title = next((title for key, title, _ in groups if key == stage_key), stage_key)
-    status = STATUS_LABELS.get(_status(selected), "待学习")
-    return f'<section class="le-route-focus" aria-label="当前阶段与下一节"><div class="le-route-focus-stage"><span class="le-route-focus-label">当前阶段</span><strong>{esc(stage_title)}</strong></div><div class="le-route-next"><span class="le-route-focus-label">下一节 · {status}</span><h3>{esc(_node_display_title(selected))}</h3><p>{esc(selected.get("est_hours", 2))} 小时</p></div></section>'
-
-
 def render_route(roadmap):
     nodes = roadmap.get("nodes", []) if roadmap else []
     if not nodes:
@@ -76,21 +63,29 @@ def render_route(roadmap):
     groups = [("base", "打好基础", ""), ("strengthen", "动手练习", ""), ("sprint", "综合运用", "")]
     known = {key for key, _, _ in groups}
     groups += [(key, key, "") for key in dict.fromkeys(n.get("stage", "base") for n in nodes) if key not in known]
-    stage_count = sum(any(n.get("stage", "base") == key for n in nodes) for key, _, _ in groups)
+    groups = [(key, title, _ordered_nodes([n for n in nodes if n.get("stage", "base") == key])) for key, title, _ in groups]
+    groups = [group for group in groups if group[2]]
+    stage_count = len(groups)
     selected = next_route_node(roadmap)
     current_stage = selected.get("stage", "base") if selected else None
-    parts = ['<div class="le-route-map">', _route_focus(roadmap, groups), f'<div class="le-route-metrics"><div><strong>{len(nodes)}</strong><span>学习步骤</span></div><div><strong>{hours:g}<small> 小时</small></strong><span>预计学时</span></div><div><strong>{stage_count}</strong><span>学习阶段</span></div></div>']
-    if roadmap.get("summary"):
-        parts.append(f'<details class="le-route-intro"><summary>路线说明</summary><p>{esc(roadmap["summary"])}</p></details>')
-    for index, (key, title, _) in enumerate(groups, 1):
-        stage_nodes = sorted([n for n in nodes if n.get("stage", "base") == key], key=lambda n: course_code_sort_key(n.get("code", "")))
-        if not stage_nodes:
-            continue
+    active_stage = current_stage or groups[0][0]
+    mastered = sum(_status(node) == "mastered" for node in nodes)
+    title = roadmap.get("topic") or roadmap.get("title") or "课程总览"
+    completion = "全部完成" if mastered == len(nodes) else f"已掌握 {mastered} / {len(nodes)} 节"
+    parts = ['<div class="le-route-map le-route-browser">', f'<div class="le-route-overview"><div class="le-route-title"><h3>{esc(title)}</h3><span class="le-route-completion">{completion}</span></div><div class="le-route-metrics"><div><strong>{len(nodes)}</strong><span>节课程</span></div><div><strong>{hours:g}<small> 小时</small></strong><span>预计学时</span></div><div><strong>{stage_count}</strong><span>个阶段</span></div></div></div>']
+    parts.append('<div class="le-route-browser-grid"><nav class="le-route-stage-nav" role="tablist" aria-label="学习阶段" aria-orientation="vertical" hidden>')
+    for index, (key, title, stage_nodes) in enumerate(groups, 1):
+        is_active = key == active_stage
+        done = sum(_status(node) == "mastered" for node in stage_nodes)
+        current_badge = '<span class="le-stage-current">当前阶段</span>' if key == current_stage else ""
+        parts.append(f'<button type="button" class="le-route-stage-tab" role="tab" data-stage-index="{index}" aria-selected="{str(is_active).lower()}" tabindex="{0 if is_active else -1}"><span class="le-stage-number">{index:02}</span><span class="le-stage-heading"><span class="le-stage-title">{esc(title)}</span><span class="le-stage-progress">{done} / {len(stage_nodes)} 已掌握</span></span>{current_badge}<span class="le-stage-count">{len(stage_nodes)} 节</span></button>')
+    parts.append('</nav><div class="le-route-stage-panels">')
+    for index, (key, title, stage_nodes) in enumerate(groups, 1):
         is_current = key == current_stage
         current_class = " is-current" if is_current else ""
-        is_open = " open" if is_current else ""
+        is_open = " open" if key == active_stage else ""
         current_badge = '<span class="le-stage-current">当前阶段</span>' if is_current else ""
-        parts.append(f'<details class="le-route-stage{current_class}"{is_open}><summary><span class="le-stage-number">{index:02}</span><span class="le-stage-heading"><span class="le-stage-title">{esc(title)}</span></span>{current_badge}<span class="le-stage-count">{len(stage_nodes)} 节</span><span class="le-stage-chevron" aria-hidden="true">⌄</span></summary><div class="le-stage-courses">')
+        parts.append(f'<section class="le-route-stage-panel" data-stage-index="{index}" role="tabpanel" tabindex="0"><details class="le-route-stage{current_class}"{is_open}><summary><span class="le-stage-number">{index:02}</span><span class="le-stage-heading"><span class="le-stage-title">{esc(title)}</span></span>{current_badge}<span class="le-stage-count">{len(stage_nodes)} 节</span><span class="le-stage-chevron" aria-hidden="true">⌄</span></summary><div class="le-stage-courses">')
         for node in stage_nodes:
             status = STATUS_LABELS.get(_status(node), "待学习")
             prerequisites = "、".join(str(c) for c in node.get("prerequisites", [])) or "可以从这里开始"
@@ -99,8 +94,13 @@ def render_route(roadmap):
             description = re.sub(r"\s+", " ", description).strip()
             if len(description) > 220:
                 description = description[:220] + "…"
-            parts.append(f'<details class="le-route-course"><summary><span class="le-course-code">[{esc(node.get("code"))}]</span><span class="le-course-title">{esc(node.get("title"))}</span><span class="le-course-time">{esc(node.get("est_hours", 2))} 小时</span><span class="le-course-chevron" aria-hidden="true">⌄</span></summary><div class="le-course-detail"><span class="le-course-state">{status}</span><p>{esc(description)}</p><div>前置步骤：{esc(prerequisites)}</div></div></details>')
-        parts.append('</div></details>')
+            next_class = " is-next" if node is selected else ""
+            next_badge = '<span class="le-course-next-label">接下来</span>' if node is selected else ""
+            parts.append(f'<details class="le-route-course{next_class}"><summary><span class="le-course-code">[{esc(node.get("code"))}]</span><span class="le-course-title">{esc(node.get("title"))}</span>{next_badge}<span class="le-course-time">{esc(node.get("est_hours", 2))} 小时</span><span class="le-course-chevron" aria-hidden="true">⌄</span></summary><div class="le-course-detail"><span class="le-course-state">{status}</span><p>{esc(description)}</p><div>前置步骤：{esc(prerequisites)}</div></div></details>')
+        parts.append('</div></details></section>')
+    parts.append('</div></div>')
+    if roadmap.get("summary"):
+        parts.append(f'<details class="le-route-intro"><summary>路线说明</summary><p>{esc(roadmap["summary"])}</p></details>')
     parts.append('</div>')
     return "".join(parts)
 

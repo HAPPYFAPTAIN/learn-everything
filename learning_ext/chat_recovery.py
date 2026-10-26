@@ -4,6 +4,7 @@ import logging
 
 import gradio as gr
 
+from learning_ext import chat_thinking
 from learning_ext.local_embeddings import LocalEmbeddingUnavailable
 
 
@@ -50,9 +51,34 @@ def configure_chat_recovery(page):
             question, partial = history[-1]
             if not isinstance(partial, str) or partial.strip().lower() in ('thinking ...', 'thinking…', 'thinking...', '') or _MARKER in partial:
                 partial = ''
+            state = latest[4] if isinstance(latest, tuple) and len(latest) == 5 else bound.arguments.get('chat_state')
+            preferences = chat_thinking.from_state(state)
+            if not partial and isinstance(question, str) and question.strip():
+                try:
+                    from learning_ext.llm import chat as direct_chat
+
+                    answer = ''
+                    for chunk in direct_chat(
+                        question,
+                        system='你是一位耐心的学习助教，用简洁清楚的中文回答问题，需要时举一个小例子。',
+                        stream=True,
+                        effort=preferences['effort'],
+                        show_thinking=preferences['show_thinking'],
+                    ):
+                        answer += chunk
+                        history[-1] = (question, answer)
+                        yield list(history), '', gr.update(visible=False), None, state
+                    history[-1] = (
+                        question,
+                        answer + '\n\n<small>本地资料检索暂时不可用，本次由模型直接回答。</small>',
+                    )
+                    yield list(history), '', gr.update(visible=False), None, state
+                    _LOG.info('chat_direct_fallback type=%s', type(error).__name__)
+                    return
+                except Exception:
+                    pass
             notice = f'{_MARKER}**回答暂时中断**\n\n{_message(error)}\n\n{_RETRY}'
             history[-1] = (question, f'{partial}\n\n---\n\n{notice}' if partial else notice)
-            state = latest[4] if isinstance(latest, tuple) and len(latest) == 5 else bound.arguments.get('chat_state')
             refs = latest[1] if partial and isinstance(latest, tuple) else ''
             _LOG.warning('chat_interrupted type=%s', type(error).__name__)
             yield history, refs, gr.update(visible=False), None, state

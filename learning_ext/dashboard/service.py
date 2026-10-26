@@ -276,10 +276,13 @@ def build_dashboard_data(
     if project_id is None and projects:
         project_id = projects[0].id
 
-    nodes_stmt = select(KnowledgeNode)
-    progress_stmt = select(ProgressRecord).where(ProgressRecord.user_id == user_id)
-    reports_stmt = select(DailyReport).where(DailyReport.user_id == user_id)
-    cards_stmt = select(Card).where(Card.user_id == user_id)
+    if project_id not in {p.id for p in projects}:
+        project_id = None
+    scope_id = project_id if project_id is not None else -1
+    nodes_stmt = select(KnowledgeNode).where(KnowledgeNode.project_id == scope_id)
+    progress_stmt = select(ProgressRecord).where(ProgressRecord.user_id == user_id, ProgressRecord.project_id == scope_id)
+    reports_stmt = select(DailyReport).where(DailyReport.user_id == user_id, DailyReport.project_id == scope_id)
+    cards_stmt = select(Card).where(Card.user_id == user_id, Card.project_id == scope_id)
     if project_id is not None:
         nodes_stmt = nodes_stmt.where(KnowledgeNode.project_id == project_id)
         progress_stmt = progress_stmt.where(ProgressRecord.project_id == project_id)
@@ -320,7 +323,10 @@ def build_dashboard_data(
         )
         heatmap.append({"date": day.isoformat(), "minutes": minutes})
 
+    from learning_ext.dashboard.analytics import learning_dimensions
+
     return {
+        "dimensions": learning_dimensions(session, project_id, user_id),
         "project_id": project_id,
         "projects": [
             (f"#{p.id} {p.title}", str(p.id)) for p in projects if p.id is not None

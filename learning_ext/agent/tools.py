@@ -12,15 +12,19 @@ from __future__ import annotations
 import base64
 import json
 import os
+import re
 import subprocess
 import sys
+import threading
 import time
+import uuid
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
 from learning_ext.agent.safety import blocked_reason, needs_approval
 from learning_ext.agent.zcode_core import Capability, permission
+from learning_ext.agent.outcomes import ToolOutput, tool_succeeded
 
 MAX_OUTPUT = 6000
 _REPO = Path(__file__).resolve().parents[2]
@@ -119,7 +123,7 @@ def _run_command(command: str, cwd: str | None = None, timeout: float = 30) -> s
     spent = time.time() - started
     if not out:
         out = "（无输出）"
-    return f"退出码 {code} · 用时 {spent:.1f}s\n{_cut(out)}"
+    return ToolOutput(f"退出码 {code} · 用时 {spent:.1f}s\n{_cut(out)}", ok=code == 0)
 
 
 def _list_dir(path: str = ".") -> str:
@@ -190,27 +194,20 @@ def _write_file(path: str, content: str, mode: str = "overwrite") -> str:
     return f"已{verb} {target}（现 {size:,} 字节）"
 
 
-def _search_files(root: str, pattern: str, limit: int = 80) -> str:
-    base = Path(root or ".").expanduser()
-    if not base.exists():
-        return f"路径不存在：{base}"
-    limit = max(1, min(int(limit or 80), 500))
-    hits: list[str] = []
-    skipped = 0
-    for item in base.rglob(pattern or "*"):
-        try:
-            if item.is_file():
-                hits.append(f"{item}  ({item.stat().st_size:,} 字节)")
-        except OSError:
-            skipped += 1
-        if len(hits) >= limit:
-            break
-    if not hits:
-        return f"在 {base} 下没有匹配 {pattern} 的文件"
-    tail = f"\n…只列前 {limit} 个" if len(hits) >= limit else ""
-    if skipped:
-        tail += f"（{skipped} 个无权限项已跳过）"
-    return f"在 {base} 下匹配 {pattern}：{len(hits)} 个\n" + "\n".join(hits) + tail
+def _search_files(root: str, pattern: str, limit: int = 40, max_depth: int = 8) -> str:
+    from learning_ext.agent.search import search_files
+    return json.dumps(search_files(root, pattern, limit, max_depth), ensure_ascii=False)
+
+
+def _search_text(root: str, query: str, pattern: str = "*", limit: int = 30,
+                 max_depth: int = 8, case_sensitive: bool = False) -> str:
+    from learning_ext.agent.search import search_text
+    return json.dumps(search_text(root, query, pattern, limit, max_depth, case_sensitive), ensure_ascii=False)
+
+
+def _search_web(query: str, domains: list[str] | None = None, limit: int = 6) -> str:
+    from learning_ext.agent.web_search import search_web
+    return json.dumps(search_web(query, domains, limit), ensure_ascii=False)
 
 
 def _open_path(path: str) -> str:
@@ -328,6 +325,97 @@ def _clipboard_set(text: str) -> str:
 
 # ---------------------------------------------------------------- 屏幕与操作
 
+_UI_OBSERVATIONS = {}
+_UI_OBSERVATION_LOCK = threading.Lock()
+_UI_OBSERVATION_TTL = 90
+
+
+def _window_identity(hwnd):
+    import ctypes
+    import psutil
+
+    pid = ctypes.c_ulong()
+    _win_api().GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+    return int(hwnd), int(pid.value), psutil.Process(pid.value).create_time()
+
+
+def _remember_ui(hwnd, title, items, identity, observed):
+    key = uuid.uuid4().hex[:20]
+    with _UI_OBSERVATION_LOCK:
+        expired = [token for token, entry in _UI_OBSERVATIONS.items()
+                   if time.monotonic() - entry["observed"] > _UI_OBSERVATION_TTL]
+        for token in expired:
+            _UI_OBSERVATIONS.pop(token, None)
+        while len(_UI_OBSERVATIONS) >= 32:
+            _UI_OBSERVATIONS.pop(next(iter(_UI_OBSERVATIONS)))
+        _UI_OBSERVATIONS[key] = dict(hwnd=hwnd, title=title, items=json.loads(json.dumps(items)),
+                                     identity=identity, observed=observed)
+    return key
+
+
+def _observed_target(window, observation):
+    if not isinstance(window, str) or not window.strip() or not isinstance(observation, str):
+        raise ValueError("先用 read_ui 读取目标窗口，再提供完整 window 和 observation。")
+    with _UI_OBSERVATION_LOCK:
+        target = _UI_OBSERVATIONS.pop(observation, None)
+    if not target or not 0 <= time.monotonic() - target["observed"] <= _UI_OBSERVATION_TTL:
+        raise ValueError("观察已过期或已使用，请重新读取界面。")
+    if window != target["title"] or _find_window(window) != (target["hwnd"], window):
+        raise ValueError("目标窗口不再唯一或标题已变化，请重新读取界面。")
+    if _window_identity(target["hwnd"]) != target["identity"]:
+        raise ValueError("目标窗口进程已变化，请重新读取界面。")
+    return target
+
+
+def _activate_target(hwnd, title, identity):
+    if _find_window(title) != (hwnd, title) or _window_identity(hwnd) != identity:
+        raise ValueError("目标窗口已变化，请重新读取界面。")
+    api = _win_api()
+    if api.IsIconic(hwnd):
+        api.ShowWindow(hwnd, 9)
+    api.SetForegroundWindow(hwnd)
+    time.sleep(0.25)
+    if _foreground() != (hwnd, title) or _window_identity(hwnd) != identity:
+        raise ValueError("目标窗口未能获得焦点，请先切换到该窗口。")
+
+
+def _verify_observed_ui(target):
+    fresh, error = _ui_items(target["hwnd"])
+    if error or not fresh or fresh[0] != target["title"] or fresh[1] != target["items"]:
+        raise ValueError("界面内容已经变化，请重新观察后再输入。")
+    return fresh[1]
+
+
+def _control_at(items, x, y):
+    candidates = [item for item in items if item.get("x") == x and item.get("y") == y
+                  and item.get("enabled") is not False and item.get("offscreen") is not True]
+    if len(candidates) != 1:
+        raise ValueError("坐标没有对应唯一可操作控件，请重新读取界面，不能猜测点击。")
+    return candidates[0]
+
+
+def _send_pointer(hwnd, title, identity, item, button):
+    import ctypes
+
+    class POINT(ctypes.Structure):
+        _fields_ = [("x", ctypes.c_long), ("y", ctypes.c_long)]
+
+    x, y = int(item["x"]), int(item["y"])
+    rect = _window_rect(hwnd)
+    if not rect or not (rect[0] <= x < rect[0] + rect[2] and rect[1] <= y < rect[1] + rect[3]):
+        raise ValueError("控件坐标已离开目标窗口，请重新定位。")
+    api = _win_api()
+    api.SetCursorPos(x, y)
+    time.sleep(0.08)
+    under_pointer = api.WindowFromPoint(POINT(x, y))
+    if (_foreground() != (hwnd, title) or _window_identity(hwnd) != identity
+            or int(api.GetAncestor(under_pointer, 2) or under_pointer or 0) != hwnd):
+        raise ValueError("窗口焦点或点击位置已变化，本次没有点击。")
+    down, up = (0x0008, 0x0010) if button == "right" else (0x0002, 0x0004)
+    api.mouse_event(down, 0, 0, 0, 0)
+    api.mouse_event(up, 0, 0, 0, 0)
+    return ToolOutput(f"已向「{title}」的「{item.get('n')}」发送一次点击。请重新读取界面验证结果。")
+
 _UI_SCRIPT = r'''
 $ErrorActionPreference='Stop'
 Add-Type -AssemblyName UIAutomationClient
@@ -340,21 +428,23 @@ if ($root -eq $null) { '{"error":"这个窗口不提供界面元素"}'; exit }
 $walker = [System.Windows.Automation.TreeWalker]::ControlViewWalker
 $out = New-Object System.Collections.ArrayList
 $script:left = 70
+$script:scanned = 500
 function Walk($el, $depth) {
   if ($depth -gt 4) { return }
   $child = $walker.GetFirstChild($el)
   while ($child -ne $null) {
-    if ($script:left -le 0) { return }
+    if ($script:left -le 0 -or $script:scanned -le 0) { return }
+    $script:scanned--
     try {
       $name = $child.Current.Name
       $type = $child.Current.ControlType.ProgrammaticName -replace 'ControlType\.',''
       $r = $child.Current.BoundingRectangle
-      if ($name -and $r.Width -gt 0) {
+      if ($name -and $r.Width -gt 0 -and -not $child.Current.IsPassword) {
         $script:left--
-        [void]$out.Add([pscustomobject]@{ t=$type; n=$name; x=[int]($r.X+$r.Width/2); y=[int]($r.Y+$r.Height/2) })
+        [void]$out.Add([pscustomobject]@{ t=$type; n=$name; x=[int]($r.X+$r.Width/2); y=[int]($r.Y+$r.Height/2); id=$child.Current.AutomationId; key=($child.GetRuntimeId() -join '.'); enabled=$child.Current.IsEnabled; offscreen=$child.Current.IsOffscreen })
       }
     } catch {}
-    Walk $child ($depth+1)
+    if (-not $child.Current.IsPassword) { Walk $child ($depth+1) }
     $child = $walker.GetNextSibling($child)
   }
 }
@@ -366,7 +456,18 @@ Walk $root 0
 def _win_api():
     import ctypes
 
-    return ctypes.windll.user32
+    api = ctypes.windll.user32
+    api.GetForegroundWindow.restype = ctypes.c_void_p
+    api.GetAncestor.argtypes = [ctypes.c_void_p, ctypes.c_uint]
+    api.GetAncestor.restype = ctypes.c_void_p
+    api.WindowFromPoint.restype = ctypes.c_void_p
+    for name in ("IsWindowVisible", "IsIconic", "SetForegroundWindow"):
+        getattr(api, name).argtypes = [ctypes.c_void_p]
+    api.ShowWindow.argtypes = [ctypes.c_void_p, ctypes.c_int]
+    api.GetWindowTextW.argtypes = [ctypes.c_void_p, ctypes.c_wchar_p, ctypes.c_int]
+    api.GetWindowThreadProcessId.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_ulong)]
+    api.GetWindowRect.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+    return api
 
 
 def _foreground():
@@ -380,7 +481,7 @@ def _foreground():
         _win_api().GetWindowTextW(h, buf, 512)
     except Exception:  # noqa: BLE001
         pass
-    return int(h), (buf.value if buf else "")
+    return int(h or 0), (buf.value if buf else "")
 
 
 def _window_rect(hwnd: int):
@@ -438,7 +539,9 @@ def _find_window(title_part: str):
     """按标题片段找窗口句柄（找不到返回 0）。"""
     import ctypes
 
-    target = (title_part or "").lower()
+    target = (title_part or "").strip().casefold()
+    if not target:
+        return 0, ""
     found = []
 
     @ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)
@@ -447,13 +550,14 @@ def _find_window(title_part: str):
             return True
         buf = ctypes.create_unicode_buffer(512)
         _win_api().GetWindowTextW(hwnd, buf, 512)
-        if buf.value and target in buf.value.lower():
+        if buf.value and target in buf.value.casefold():
             found.append((int(hwnd), buf.value))
-            return False
         return True
 
     _win_api().EnumWindows(_cb, 0)
-    return found[0] if found else (0, "")
+    exact = [item for item in found if item[1].casefold() == target]
+    matches = exact or found
+    return matches[0] if len(matches) == 1 else (0, "")
 
 
 def _ui_items(hwnd: int):
@@ -478,104 +582,154 @@ def _read_ui(window: str = "") -> str:
         if window:
             hwnd, title = _find_window(window)
             if not hwnd:
-                return f"没找到标题包含「{window}」的窗口。先用 observe_screen 或 list_windows 看看有哪些窗口。"
+                return f"未执行：没有唯一匹配「{window}」的窗口。请用 list_windows 获取完整标题后重试。"
         else:
             hwnd, title = _foreground()
         if not hwnd:
             return "当前没有前台窗口。"
 
+        observed = time.monotonic()
+        identity = _window_identity(hwnd)
         data, err = _ui_items(hwnd)
         if err:
             return f"「{title}」：{err}（很多自绘界面应用会这样，比如微信）"
         win_name, items = data
+        if win_name != title or _window_identity(hwnd) != identity:
+            return ToolOutput("未执行：读取期间窗口已改变，请重新观察。", ok=False)
         if not items:
-            return f"「{win_name or title}」里没有可识别的标准控件（可能是自绘界面）。想要精确操作就截图看看，或者改用键盘快捷键。"
+            return ToolOutput(f"「{win_name or title}」里没有可识别的标准控件。本次只提供文字引导，请你亲自操作；不要猜测坐标或发送按键。", ok=False)
+        observation = _remember_ui(hwnd, title, items, identity, observed)
         lines = [f"{it.get('t')}「{it.get('n')}」坐标 {it.get('x')},{it.get('y')}" for it in items]
         return (
-            f"窗口「{win_name or title}」共 {len(lines)} 个元素（坐标是中心点，可给 click_at；"
-            f"但更稳的是直接用 click_ui 按名字点）：\n" + "\n".join(lines)
+            f"window={title}\nobservation={observation}（90 秒内单次使用，操作后重新观察）\n"
+            f"共 {len(lines)} 个控件。所有点击和键盘操作必须传完整 window 和 observation。优先按名称 click_ui：\n" + "\n".join(lines)
         )
     except Exception as exc:  # noqa: BLE001
         return f"读取界面元素出错：{type(exc).__name__}: {exc}"
 
 
-def _click_ui(text: str, window: str = "") -> str:
+def _click_ui(text: str, window: str = "", observation: str = "") -> str:
     """按控件名字找到它并立刻点下去（读坐标与点击在同一口气里完成，避免窗口移位导致点错）。"""
     target = (text or "").strip()
     if not target:
         return "要点击哪个控件？把按钮上的文字告诉我。"
+    if not window:
+        return ToolOutput("未执行：请提供 read_ui 中的完整窗口标题，不使用当前前台窗口。", ok=False)
     try:
-        if window:
-            hwnd, title = _find_window(window)
-        else:
-            hwnd, title = _foreground()
-        if not hwnd:
-            return "当前没有前台窗口。"
-
-        # 先把目标窗口提到最前，否则点击会落到别的窗口上
-        try:
-            _win_api().SetForegroundWindow(hwnd)
-            time.sleep(0.35)
-        except Exception:  # noqa: BLE001
-            pass
-
-        data, err = _ui_items(hwnd)
-        if err:
-            return f"读不到「{title}」的控件：{err}"
-        win_name, items = data
-        if not items:
-            return f"「{win_name or title}」里没有可识别的标准控件，没法按名字点。改用键盘或截图。"
+        observed = _observed_target(window, observation)
+        hwnd, title, identity, items = observed["hwnd"], observed["title"], observed["identity"], observed["items"]
         low = target.lower()
         exact = [it for it in items if (it.get("n") or "").strip() == target]
         partial = [it for it in items if low in (it.get("n") or "").lower()]
-        pick = (exact or partial or [None])[0]
-        if not pick:
+        matches = exact or partial
+        if len(matches) > 1:
+            return ToolOutput(f"未执行：有 {len(matches)} 个控件匹配「{target}」，请重新定位，不能猜测点击。", ok=False)
+        if not matches:
             names = "、".join(f"「{it.get('n')}」" for it in items[:20])
-            return f"「{win_name or title}」里没有叫「{target}」的控件。可选的有：{names}"
+            return ToolOutput(f"「{title}」里没有叫「{target}」的控件。可选的有：{names}", ok=False)
+        pick = matches[0]
+        if pick.get("enabled") is False or pick.get("offscreen") is True:
+            return ToolOutput("未执行：目标控件当前不可操作，请重新读取界面。", ok=False)
+        _activate_target(hwnd, title, identity)
+        fresh = _verify_observed_ui(observed)
+        current = [item for item in fresh if item == pick]
+        if len(current) != 1 or _foreground()[0] != hwnd:
+            return ToolOutput("未执行：目标控件或窗口发生变化，请重新定位。", ok=False)
         x, y = int(pick.get("x") or 0), int(pick.get("y") or 0)
-        _click_at(x, y)
+        result = _send_pointer(hwnd, title, identity, pick, "left")
+        if not tool_succeeded(result):
+            return result
         time.sleep(0.3)
-        return f"已点击「{pick.get('n')}」（{x},{y}）。"
+        return f"已向「{pick.get('n')}」（{x},{y}）发送点击。请重新读取界面验证效果。"
     except Exception as exc:  # noqa: BLE001
-        return f"点击控件出错：{type(exc).__name__}: {exc}"
+        return ToolOutput(f"点击控件出错：{exc}", ok=False)
 
 
-def _click_at(x: float, y: float, button: str = "left") -> str:
+def _click_at(x: float, y: float, button: str = "left", window: str = "", observation: str = "") -> str:
     try:
-        import ctypes
-
-        u = _win_api()
-        u.SetCursorPos(int(x), int(y))
-        time.sleep(0.15)
-        down, up = (0x0008, 0x0010) if str(button).lower() == "right" else (0x0002, 0x0004)
-        u.mouse_event(down, 0, 0, 0, 0)
-        time.sleep(0.05)
-        u.mouse_event(up, 0, 0, 0, 0)
-        return f"已在 ({int(x)}, {int(y)}) 点击{('右键' if down == 0x0008 else '左键')}。"
+        if type(x) is not int or type(y) is not int or button not in {"left", "right"}:
+            raise ValueError("请使用 read_ui 返回的整数坐标和 left/right 按钮。")
+        target = _observed_target(window, observation)
+        item = _control_at(target["items"], x, y)
+        _activate_target(target["hwnd"], target["title"], target["identity"])
+        fresh = _verify_observed_ui(target)
+        if _control_at(fresh, x, y) != item:
+            raise ValueError("控件位置或状态已变化，请重新读取界面。")
+        return _send_pointer(target["hwnd"], target["title"], target["identity"], item, button)
     except Exception as exc:  # noqa: BLE001
-        return f"点击失败：{type(exc).__name__}: {exc}"
+        return ToolOutput(f"未执行：{exc}", ok=False)
 
 
-def _press_keys(keys: str) -> str:
-    """发送按键组合，语法同 SendKeys：^ 是 Ctrl，% 是 Alt，{ENTER} / {TAB} / {ESC}。"""
+def _send_keys_to_target(keys, target, expected_text=None):
     safe = (keys or "").replace("'", "''")
+    title = base64.b64encode(target["title"].encode("utf-8")).decode("ascii")
+    hwnd, pid, started = target["identity"]
+    input_guard = ""
+    if expected_text is not None:
+        payload = base64.b64encode(expected_text.encode("utf-8")).decode("ascii")
+        input_guard = (
+            "Add-Type -AssemblyName UIAutomationClient; Add-Type -AssemblyName UIAutomationTypes; "
+            "$edit=[System.Windows.Automation.AutomationElement]::FocusedElement; "
+            "if ($null -eq $edit -or $edit.Current.ProcessId -ne $actualPid -or $edit.Current.IsPassword -or "
+            "$edit.Current.ControlType.ProgrammaticName -notin @('ControlType.Edit','ControlType.Document')) "
+            "{ throw '请先选中目标窗口的非密码输入区域。' }; "
+            f"$text=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('{payload}')); "
+            "if ([Windows.Forms.Clipboard]::GetText() -cne $text) { throw '剪贴板内容已变化，未粘贴。' }; "
+        )
     code, out = _ps(
-        "Add-Type -AssemblyName System.Windows.Forms; "
+        "$ErrorActionPreference='Stop'; Add-Type -AssemblyName System.Windows.Forms; "
+        "Add-Type -TypeDefinition 'using System; using System.Text; using System.Runtime.InteropServices; "
+        "public static class DesktopInputGuard {"
+        "[DllImport(\"user32.dll\")] public static extern IntPtr GetForegroundWindow();"
+        "[DllImport(\"user32.dll\")] public static extern uint GetWindowThreadProcessId(IntPtr h, out uint p);"
+        "[DllImport(\"user32.dll\", CharSet=CharSet.Unicode)] public static extern int GetWindowText(IntPtr h, StringBuilder b, int n); }'; "
+        f"$h=[IntPtr]{hwnd}; $expected=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('{title}')); "
+        "$caption=[Text.StringBuilder]::new(512); $actualPid=[uint32]0; "
+        "[void][DesktopInputGuard]::GetWindowText($h,$caption,512); "
+        "[void][DesktopInputGuard]::GetWindowThreadProcessId($h,[ref]$actualPid); "
+        f"if ($actualPid -ne {pid} -or $caption.ToString() -cne $expected) {{ throw '目标窗口已变化，未发送按键。' }}; "
+        "$epoch=[DateTime]::SpecifyKind([datetime]'1970-01-01',[DateTimeKind]::Utc); "
+        f"if ([Math]::Abs(((Get-Process -Id $actualPid).StartTime.ToUniversalTime()-$epoch).TotalSeconds-{started}) -gt 0.1) {{ throw '窗口进程已变化，未发送按键。' }}; "
+        + input_guard +
+        "if ([DesktopInputGuard]::GetForegroundWindow() -ne $h) { throw '窗口焦点已变化，未发送按键。' }; "
         f"[System.Windows.Forms.SendKeys]::SendWait('{safe}'); 'sent'",
         timeout=20,
     )
-    if code != 0:
-        return f"按键发送失败（退出码 {code}）：{out[:200]}"
-    return f"已发送按键：{keys}"
+    if code != 0 or out.strip() != "sent":
+        return ToolOutput("按键发送未获确认。请检查目标窗口并重新观察，不要重复发送。", ok=False)
+    return ToolOutput(f"已向「{target['title']}」发送按键：{keys}。请重新读取界面验证结果。")
 
 
-def _type_text(text: str) -> str:
+def _press_keys(keys: str, window: str = "", observation: str = "") -> str:
+    try:
+        if not isinstance(keys, str) or not re.fullmatch(r"[+^%]*(?:\{[A-Za-z0-9]+\}|[A-Za-z0-9])", keys):
+            raise ValueError("每次只发送一个按键或快捷键，不接受连续脚本。")
+        key = keys.lstrip("+^%").upper()
+        modifiers = keys[:len(keys) - len(key)]
+        if ("%" in modifiers and key in {"{TAB}", "{ESC}"}) or ("^" in modifiers and key == "{ESC}"):
+            raise ValueError("请明确选择目标窗口，不使用全局切换快捷键。")
+        target = _observed_target(window, observation)
+        _activate_target(target["hwnd"], target["title"], target["identity"])
+        _verify_observed_ui(target)
+        return _send_keys_to_target(keys, target)
+    except Exception as exc:
+        return ToolOutput(f"未执行：{exc}", ok=False)
+
+
+def _type_text(text: str, window: str = "", observation: str = "") -> str:
     """用剪贴板粘贴输入，中文和符号都可靠。注意会覆盖剪贴板。"""
     if not text:
         return "没有要输入的内容。"
-    _clipboard_set(text)
-    time.sleep(0.12)
-    return _press_keys("^v")
+    try:
+        target = _observed_target(window, observation)
+        _activate_target(target["hwnd"], target["title"], target["identity"])
+        _verify_observed_ui(target)
+        result = _clipboard_set(text)
+        if not tool_succeeded(result):
+            return result
+        return _send_keys_to_target("^v", target, expected_text=text)
+    except Exception as exc:
+        return ToolOutput(f"未执行：{exc}", ok=False)
 
 
 def _launch_app(target: str) -> str:
@@ -617,9 +771,48 @@ def _inspect_learning_environment(task):
         raise ValueError("请提供当前学习任务")
     return json.dumps(audited_exploration(task), ensure_ascii=False)
 
+
+def validate_question(question, options):
+    if not isinstance(question, str) or not 1 <= len(question.strip()) <= 160 or any(char in question for char in "\r\n"):
+        raise ValueError("请提出一个不超过 160 字的单行短问题。")
+    if not isinstance(options, list) or len(options) != 3:
+        raise ValueError("每个问题需要恰好 3 个具体建议，第四项由界面提供。")
+    cleaned, labels = [], set()
+    for option in options:
+        if not isinstance(option, dict) or set(option) - {"label", "description"}:
+            raise ValueError("选项仅包含 label 和可选的 description。")
+        label = option.get("label")
+        if not isinstance(label, str) or not 1 <= len(label.strip()) <= 60 or any(char in label for char in "\r\n"):
+            raise ValueError("每个选项需要不超过 60 字的单行名称。")
+        label = label.strip()
+        key = " ".join(label.casefold().split())
+        if key in labels:
+            raise ValueError("选项不能重复，请提供互斥的具体选择。")
+        labels.add(key)
+        item = {"label": label}
+        if "description" in option:
+            description = option["description"]
+            if not isinstance(description, str) or len(description.strip()) > 160 or any(char in description for char in "\r\n"):
+                raise ValueError("选项说明需要是不超过 160 字的单行文字。")
+            if description.strip():
+                item["description"] = description.strip()
+        cleaned.append(item)
+    return {"question": question.strip(), "options": cleaned}
+
+
 TOOLS: dict[str, ToolSpec] = {
     spec.name: spec
     for spec in [
+        ToolSpec("ask_user", "向学习者提出一个短问题，提供恰好 3 个互斥具体建议，界面自动提供第四项自己填写，并暂停等待用户确认回答。用于澄清学习目标、起点或当前卡点；选择不代表允许执行操作。单独调用，不与其他工具同批。",
+                 {"type": "object", "properties": {
+                     "question": {"type": "string", "minLength": 1, "maxLength": 160, "description": "当前最需要明确的一个短问题"},
+                     "options": {"type": "array", "minItems": 3, "maxItems": 3, "items": {
+                         "type": "object", "properties": {
+                             "label": {"type": "string", "minLength": 1, "maxLength": 60},
+                             "description": {"type": "string", "maxLength": 160}},
+                         "required": ["label"], "additionalProperties": False}}},
+                  "required": ["question", "options"], "additionalProperties": False},
+                 lambda question, options: json.dumps(validate_question(question, options), ensure_ascii=False)),
         ToolSpec("inspect_learning_environment", "根据当前学习任务探索本机的软件、终端命令和版本，只读检查并保留证据，不安装或修改配置。",
                  {"type": "object", "properties": {"task": {"type": "string", "description": "学习目标、当前课节和已明确的工具要求"}}, "required": ["task"], "additionalProperties": False},
                  _inspect_learning_environment),
@@ -680,17 +873,37 @@ TOOLS: dict[str, ToolSpec] = {
         ),
         ToolSpec(
             "search_files",
-            "在目录下按文件名通配符递归搜索，例如 *.py、报告*.docx。",
+            "在指定目录按文件名搜索。返回路径、大小和截断原因；自动跳过缓存、隐藏目录和链接，不代表全盘不存在。",
             {
                 "type": "object",
                 "properties": {
                     "root": {"type": "string", "description": "搜索起点目录"},
                     "pattern": {"type": "string", "description": "通配符，例如 *.md"},
-                    "limit": {"type": "integer", "description": "最多返回条数，默认 80"},
+                    "limit": {"type": "integer", "description": "最多返回条数，默认 40"},
+                    "max_depth": {"type": "integer", "minimum": 0, "maximum": 12,
+                                  "description": "子目录深度，0 表示仅搜索 root 顶层；1 包含下一层子目录；默认 8。用户要求顶层时必须用 0。"},
                 },
                 "required": ["root", "pattern"],
             },
             _search_files,
+        ),
+        ToolSpec(
+            "search_text", "在用户指定目录的文本文件中查找原文，返回文件、行号、片段和截断信息。读取内容前需授权。",
+            {"type": "object", "properties": {
+                "root": {"type": "string", "description": "用户指定的目录"},
+                "query": {"type": "string", "description": "原文关键词，不是正则表达式"},
+                "pattern": {"type": "string", "description": "文件名通配符，默认 *"},
+                "limit": {"type": "integer"}, "max_depth": {"type": "integer"},
+                "case_sensitive": {"type": "boolean"}}, "required": ["root", "query"], "additionalProperties": False},
+            _search_text,
+        ),
+        ToolSpec(
+            "search_web", "向已配置搜索服务查询公开网页。返回标题、链接、摘要；摘要不是已读取的全文，未配置时明确报错。请用产品名、版本和错误关键词，不发送密钥或私密内容。",
+            {"type": "object", "properties": {
+                "query": {"type": "string"},
+                "domains": {"type": "array", "items": {"type": "string"}, "description": "可选域名范围，优先官方文档"},
+                "limit": {"type": "integer"}}, "required": ["query"], "additionalProperties": False},
+            _search_web,
         ),
         ToolSpec(
             "open_path",
@@ -755,36 +968,39 @@ TOOLS: dict[str, ToolSpec] = {
         ),
         ToolSpec(
             "click_at",
-            "在屏幕坐标处点击鼠标。坐标一般来自 read_ui 给出的元素中心。",
+            "点击 read_ui 已观察控件的中心点。必须提供完整窗口标题和本次 observation；坐标过期、控件变动或窗口被遮挡时不点击。",
             {
                 "type": "object",
                 "properties": {
                     "x": {"type": "integer", "description": "横坐标"},
                     "y": {"type": "integer", "description": "纵坐标"},
+                    "window": {"type": "string", "description": "read_ui 返回的完整 window"},
+                    "observation": {"type": "string", "description": "read_ui 返回的单次 observation 标识"},
                     "button": {
                         "type": "string",
                         "enum": ["left", "right"],
                         "description": "左键或右键，默认 left",
                     },
                 },
-                "required": ["x", "y"],
+                "required": ["x", "y", "window", "observation"],
             },
             _click_at,
         ),
         ToolSpec(
             "click_ui",
             "按控件上的文字找到按钮/菜单项并直接点下去。优先用这个：比 read_ui 拿坐标再 click_at 稳，"
-            "不会因为窗口移位点错。例：「保存」「下一步」「七」。",
+            "必须传 read_ui 的完整 window 和 observation，界面变化则重新读取。例：「保存」「下一步」「七」。",
             {
                 "type": "object",
                 "properties": {
                     "text": {"type": "string", "description": "控件上的文字（按钮名、菜单项名）"},
                     "window": {
                         "type": "string",
-                        "description": "窗口标题片段，留空则用当前前台窗口",
+                        "description": "read_ui 返回的完整窗口标题，不能省略或猜测",
                     },
+                    "observation": {"type": "string", "description": "read_ui 返回的单次 observation 标识"},
                 },
-                "required": ["text"],
+                "required": ["text", "window", "observation"],
             },
             _click_ui,
         ),
@@ -792,21 +1008,25 @@ TOOLS: dict[str, ToolSpec] = {
             "press_keys",
             "按下按键或快捷键。语法：^ 是 Ctrl、% 是 Alt、+ 是 Shift，"
             "特殊键用花括号，如 {ENTER} {TAB} {ESC} {F2} {DEL}。"
-            "例：^s 保存、%{TAB} 切窗口、^%{T} 打开任务管理器。",
+            "一次只发一个按键/组合，例如 ^s。必须传 read_ui 的完整 window 和 observation，操作后重新观察；不使用全局切窗。",
             {
                 "type": "object",
-                "properties": {"keys": {"type": "string", "description": "按键序列"}},
-                "required": ["keys"],
+                "properties": {"keys": {"type": "string", "description": "单个按键或快捷键"},
+                               "window": {"type": "string", "description": "read_ui 返回的完整 window"},
+                               "observation": {"type": "string", "description": "read_ui 返回的单次 observation 标识"}},
+                "required": ["keys", "window", "observation"],
             },
             _press_keys,
         ),
         ToolSpec(
             "type_text",
-            "往当前焦点里输入一段文字（通过剪贴板粘贴，中文和符号都可靠）。会覆盖剪贴板。",
+            "向已观察窗口中选中的非密码输入区域粘贴文字。先选中输入框并 read_ui；必须传完整 window 和 observation，会覆盖剪贴板。",
             {
                 "type": "object",
-                "properties": {"text": {"type": "string", "description": "要输入的文字"}},
-                "required": ["text"],
+                "properties": {"text": {"type": "string", "description": "要输入的文字"},
+                               "window": {"type": "string", "description": "read_ui 返回的完整 window"},
+                               "observation": {"type": "string", "description": "read_ui 返回的单次 observation 标识"}},
+                "required": ["text", "window", "observation"],
             },
             _type_text,
         ),
@@ -859,6 +1079,8 @@ def build_tool_specs() -> list[dict]:
 
 
 def tool_needs_approval(name: str) -> bool:
+    if name == "ask_user":
+        return False
     if name in TOOLS:
         ask = needs_approval(name)
         decision, _ = permission(Capability(read_only=not ask, scope="system" if ask else "none", needs_approval=ask), plan=False)
@@ -890,12 +1112,15 @@ def execute_tool(name: str, args: dict) -> str:
 def tool_titles() -> dict[str, str]:
     """给前端的中文名。"""
     return {
+        "ask_user": "了解你的目标",
         "inspect_learning_environment": "检查学习环境",
         "run_command": "执行命令",
         "list_dir": "列出目录",
         "read_file": "读取文件",
         "write_file": "写入文件",
         "search_files": "搜索文件",
+        "search_text": "查找文件内容",
+        "search_web": "搜索公开网页",
         "open_path": "打开文件",
         "open_url": "打开网址",
         "screenshot": "截屏",

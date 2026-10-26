@@ -23,7 +23,12 @@
     if (!scheduled) { scheduled = true; requestAnimationFrame(decorate); }
   }
   function start() {
-    new MutationObserver(schedule).observe(document.body, {childList:true, subtree:true, attributes:true, attributeFilter:['style','aria-expanded','aria-label']});
+    new MutationObserver(mutations => {
+      if (mutations.some(mutation => {
+        const target = mutation.target.nodeType === 1 ? mutation.target : mutation.target.parentElement;
+        return !target?.closest('#le-coach-transcript,#le-coach-stream');
+      })) schedule();
+    }).observe(document.body, {childList:true, subtree:true, attributes:true, attributeFilter:['style','aria-expanded','aria-label']});
     schedule();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, {once:true});

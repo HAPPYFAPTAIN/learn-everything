@@ -52,6 +52,63 @@ def test_preserves_calls_multimodal_and_non_assistant_messages():
     assert sanitize_messages(messages) == messages
 
 
+def test_outbound_assistant_history_drops_only_our_thinking_prefix():
+    from learning_ext.chat_thinking import thinking_html
+
+    thinking = thinking_html("旧一轮的推理 <b>")
+    history = [{"role": "user", "content": "问题"},
+               {"role": "assistant", "content": f"{thinking}\n\n上一轮回答"},
+               {"role": "user", "content": "追问"}]
+    cleaned = sanitize_messages(history)
+    assert cleaned[1] == {"role": "assistant", "content": "上一轮回答"}
+    assert cleaned[0] is history[0] and cleaned[2] is history[2]
+    assert history[1]["content"].startswith('<details class="le-reasoning">')
+
+
+def test_outbound_history_keeps_foreign_details_and_non_assistant_content():
+    from learning_ext.chat_thinking import thinking_html
+
+    thinking = thinking_html("推理")
+    foreign = "<details><summary>摘要</summary><blockquote>正文</blockquote></details>"
+    messages = [{"role": "user", "content": f"{thinking}\n\n用户内容"},
+                {"role": "assistant", "content": f"{foreign}\n\n回答"},
+                {"role": "tool", "tool_call_id": "call_1", "content": thinking}]
+    assert sanitize_messages(messages) == messages
+
+
+def test_outbound_tool_call_message_keeps_calls_after_prefix_strip():
+    from learning_ext.chat_thinking import thinking_html
+
+    message = {"role": "assistant", "content": f"{thinking_html('推理')}\n\n", "tool_calls": [TOOL]}
+    cleaned = sanitize_messages([{"role": "user", "content": "hi"}, message])
+    assert cleaned[1]["content"] == ""
+    assert cleaned[1]["tool_calls"] == [TOOL]
+
+
+def test_outbound_only_thinking_assistant_is_dropped():
+    from learning_ext.chat_thinking import thinking_html
+
+    messages = [{"role": "user", "content": "问题"},
+                {"role": "assistant", "content": f"{thinking_html('只有推理')}\n\n"},
+                {"role": "user", "content": "再问"}]
+    assert sanitize_messages(messages) == [messages[0], messages[2]]
+
+
+def test_prepare_messages_strips_thinking_from_real_assistant_history():
+    from learning_ext.chat_thinking import thinking_html
+
+    thinking = thinking_html("上一轮推理")
+    history = [HumanMessage(content="问题"),
+               AIMessage(content=f"{thinking}\n\n上一轮回答"),
+               HumanMessage(content="追问")]
+    assert prepare_messages(history) == [
+        {"role": "user", "content": "问题"},
+        {"role": "assistant", "content": "上一轮回答"},
+        {"role": "user", "content": "追问"},
+    ]
+    assert history[1].content.startswith('<details class="le-reasoning">')
+
+
 def test_real_message_serialization_retains_tool_calls():
     raw = AIMessage(content="", additional_kwargs={"tool_calls": [TOOL]})
     structured = AIMessage(content="", tool_calls=[{"id": "call_1", "name": "lookup", "args": {}}])

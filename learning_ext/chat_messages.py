@@ -1,10 +1,17 @@
 from collections.abc import Mapping
 
+from learning_ext.chat_thinking import strip_reasoning_prefix
+
 
 def sanitize_messages(messages):
     cleaned = []
     for message in messages:
         content = message.get("content")
+        if message.get("role") == "assistant" and isinstance(content, str):
+            stripped = strip_reasoning_prefix(content)
+            if stripped != content:
+                message = {**message, "content": stripped}
+                content = stripped
         empty = content is None or (
             isinstance(content, str) and not content.strip()
         ) or (isinstance(content, (list, tuple, dict)) and not content)

@@ -13,19 +13,19 @@
   box-sizing:border-box;
   min-height:48px!important;
   padding:10px 14px!important;
-  border:1px solid #d5e3eb!important;
+  border:1px solid var(--le-line)!important;
   border-radius:12px!important;
-  background:#fff!important;
-  box-shadow:0 2px 4px #163e5204!important;
+  background:var(--le-surface)!important;
+  box-shadow:0 2px 4px var(--le-shadow-color-soft)!important;
   transition:border-color .16s,box-shadow .16s,background .16s;
 }
 :is(.gradio-container,#le-chat-flyout) .wrap-inner:has(input[role="listbox"]):hover {
-  border-color:#9dbfce!important;
-  background:#fcfeff!important;
+  border-color:var(--le-line-strong)!important;
+  background:var(--le-surface-2)!important;
 }
 :is(.gradio-container,#le-chat-flyout) .wrap-inner:has(input[role="listbox"]):focus-within {
-  border-color:#2796b1!important;
-  box-shadow:0 0 0 3px #35d8f71c!important;
+  border-color:var(--le-accent-line)!important;
+  box-shadow:0 0 0 3px var(--le-focus)!important;
 }
 :is(.gradio-container,#le-chat-flyout) input[role="listbox"] {
   min-width:0!important;
@@ -36,14 +36,14 @@
   outline:0!important;
   box-shadow:none!important;
   background:transparent!important;
-  color:#244859!important;
+  color:var(--le-ink)!important;
   font:500 14px/1.6 var(--le-font,system-ui)!important;
   text-overflow:ellipsis;
 }
-:is(.gradio-container,#le-chat-flyout) input[role="listbox"]::placeholder {color:#8397a4!important;font-weight:400}
+:is(.gradio-container,#le-chat-flyout) input[role="listbox"]::placeholder {color:var(--le-ink-3)!important;font-weight:400}
 :is(.gradio-container,#le-chat-flyout) .wrap-inner:has(input[role="listbox"]) .secondary-wrap {gap:10px!important;min-width:0}
 :is(.gradio-container,#le-chat-flyout) .wrap-inner:has(input[role="listbox"]) .icon-wrap {
-  width:20px!important;height:24px!important;align-self:center;flex-shrink:0;color:#7794a3;position:relative;
+  width:20px!important;height:24px!important;align-self:center;flex-shrink:0;color:var(--le-ink-3);position:relative;
 }
 :is(.gradio-container,#le-chat-flyout) .wrap-inner:has(input[role="listbox"]) .dropdown-arrow {opacity:0}
 :is(.gradio-container,#le-chat-flyout) .wrap-inner:has(input[role="listbox"]) .icon-wrap:has(.dropdown-arrow)::after {
@@ -51,56 +51,56 @@
   border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;
   transform:rotate(45deg);transition:transform .16s,top .16s;
 }
-:is(.gradio-container,#le-chat-flyout) .wrap-inner:has(input[aria-expanded="true"]) .icon-wrap:has(.dropdown-arrow)::after {transform:rotate(225deg);top:10px;color:#23849e}
-:is(.gradio-container,#le-chat-flyout) .wrap-inner:has(input[role="listbox"]:disabled) {background:#f2f6f8!important;box-shadow:none!important;border-color:#e1e9ee!important;opacity:.7}
+:is(.gradio-container,#le-chat-flyout) .wrap-inner:has(input[aria-expanded="true"]) .icon-wrap:has(.dropdown-arrow)::after {transform:rotate(225deg);top:10px;color:var(--le-accent)}
+:is(.gradio-container,#le-chat-flyout) .wrap-inner:has(input[role="listbox"]:disabled) {background:var(--le-surface-3)!important;box-shadow:none!important;border-color:var(--le-line)!important;opacity:.7}
 :is(.gradio-container,#le-chat-flyout) ul.options[role="listbox"] {
   box-sizing:border-box!important;
   max-height:min(360px,48dvh,calc(var(--le-menu-room,48dvh) - 8px))!important;
   margin-top:7px!important;
   padding:6px!important;
-  border:1px solid #d9e7ee!important;
+  border:1px solid var(--le-line)!important;
   border-radius:14px!important;
-  background:#fff!important;
-  color:#244859!important;
-  box-shadow:0 16px 40px -12px #163e5233,0 3px 10px #163e520a!important;
+  background:var(--le-surface)!important;
+  color:var(--le-ink)!important;
+  box-shadow:0 16px 40px -12px var(--le-shadow-color),0 3px 10px var(--le-shadow-color-soft)!important;
   overflow-x:hidden!important;
   overflow-y:auto!important;
   overscroll-behavior:contain;
   scrollbar-width:thin;
-  scrollbar-color:#c2d5df transparent;
+  scrollbar-color:var(--le-line-strong) transparent;
   scroll-padding:40px 0 8px;
   z-index:1000!important;
 }
 :is(.gradio-container,#le-chat-flyout) ul.options[data-le-hint]::before {
   content:attr(data-le-hint);display:block;position:sticky;top:-6px;z-index:1;
   padding:10px 10px 11px;margin:-6px -6px 5px;
-  background:#fff;border-bottom:1px solid #eef3f6;
-  color:#8297a4;font:400 11px/1.5 var(--le-font,system-ui);letter-spacing:.02em;
+  background:var(--le-surface);border-bottom:1px solid var(--le-line);
+  color:var(--le-ink-3);font:400 11px/1.5 var(--le-font,system-ui);letter-spacing:.02em;
 }
 :is(.gradio-container,#le-chat-flyout) ul.options li[role="option"] {
   position:relative;box-sizing:border-box!important;width:100%!important;
   display:block!important;min-height:42px!important;
   padding:11px 34px 11px 12px!important;margin:2px 0!important;
   border:0!important;border-radius:8px!important;
-  color:#355363!important;background:transparent!important;
+  color:var(--le-ink-2)!important;background:transparent!important;
   font:400 14px/1.5 var(--le-font,system-ui)!important;
   white-space:normal!important;overflow-wrap:anywhere;
   cursor:pointer;transition:background .12s,color .12s;
 }
 :is(.gradio-container,#le-chat-flyout) ul.options li[role="option"] .inner-item {display:none!important}
 :is(.gradio-container,#le-chat-flyout) ul.options li[role="option"]:hover,
-:is(.gradio-container,#le-chat-flyout) ul.options li[role="option"].active {background:#f0f7fa!important;color:#163e52!important}
-:is(.gradio-container,#le-chat-flyout) ul.options li[role="option"][aria-selected="true"] {background:#e9f7fb!important;color:#146980!important;font-weight:550!important}
+:is(.gradio-container,#le-chat-flyout) ul.options li[role="option"].active {background:var(--le-surface-3)!important;color:var(--le-ink)!important}
+:is(.gradio-container,#le-chat-flyout) ul.options li[role="option"][aria-selected="true"] {background:var(--le-accent-soft)!important;color:var(--le-accent)!important;font-weight:550!important}
 :is(.gradio-container,#le-chat-flyout) ul.options li[role="option"][aria-selected="true"]::after {
   content:"";position:absolute;right:15px;top:16px;width:5px;height:9px;
-  border-right:2px solid #249ab5;border-bottom:2px solid #249ab5;transform:rotate(45deg);
+  border-right:2px solid var(--le-accent);border-bottom:2px solid var(--le-accent);transform:rotate(45deg);
 }
 :is(.gradio-container,#le-chat-flyout) ul.options li[role="option"][aria-disabled="true"] {opacity:.45;cursor:not-allowed}
 :is(.gradio-container,#le-chat-flyout) ul.options:not(:has([role="option"]))::after {
   content:"没有匹配的选项，试试更短的关键词";display:block;padding:22px 14px;
-  color:#718895;text-align:center;font:400 13px/1.7 var(--le-font,system-ui);
+  color:var(--le-ink-3);text-align:center;font:400 13px/1.7 var(--le-font,system-ui);
 }
-:is(.gradio-container,#le-chat-flyout) .wrap-inner:has(input[role="listbox"]) .token {border-radius:6px!important;background:#edf7fa!important;border:1px solid #d8ebf2!important;color:#25596e!important;font-size:13px!important}
+:is(.gradio-container,#le-chat-flyout) .wrap-inner:has(input[role="listbox"]) .token {border-radius:6px!important;background:var(--le-accent-soft)!important;border:1px solid var(--le-accent-line)!important;color:var(--le-accent)!important;font-size:13px!important}
 @media(prefers-reduced-motion:reduce){
  :is(.gradio-container,#le-chat-flyout) .wrap-inner,:is(.gradio-container,#le-chat-flyout) ul.options li[role="option"]{transition:none!important}
 }

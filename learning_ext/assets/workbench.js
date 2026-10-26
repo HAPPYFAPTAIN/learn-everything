@@ -211,6 +211,7 @@
   const BAR = 'le-sel-bar';
   const PENCIL = 'le-block-pencil';
   const PRESETS = [
+    ['explain', '解释名词'],
     ['annotate', '记一笔'],
     ['simplify', '讲浅一点'],
     ['example', '加个例子'],
@@ -238,7 +239,7 @@
     b = document.createElement('div');
     b.id = BAR;
     b.setAttribute('role', 'toolbar');
-    b.setAttribute('aria-label', '改写这一段');
+    b.setAttribute('aria-label', '选中文本工具');
     b.hidden = true;
     PRESETS.forEach(([act, label]) => {
       const btn = document.createElement('button');
@@ -283,6 +284,12 @@
       const btn = e.target.closest('button[data-act]');
       if (!btn) return;
       const act = btn.dataset.act;
+      if (act === 'explain') {
+        input.hidden = true;
+        if (window.__leExplainSelection) window.__leExplainSelection(target, b);
+        return;
+      }
+      if (window.__leCloseExplanation) window.__leCloseExplanation();
       if (act === 'annotate' || act === 'custom') {
         // 这两个都是「先打开输入框」，区别只在提示语和提交去哪
         // 同一段上重复打开时保留上次没写完的草稿，别因为手滑点没了就白写
@@ -326,7 +333,8 @@
 
   function showAt(x, y, text) {
     const clean = (text || '').trim();
-    if (clean.length < 3) return;
+    if (!clean) return;
+    if (target !== clean.slice(0, 800) && window.__leCloseExplanation) window.__leCloseExplanation();
     target = clean.slice(0, 800);
     const b = bar();
     b.hidden = false;
@@ -342,6 +350,7 @@
   function hideBar() {
     const b = document.getElementById(BAR);
     if (b) b.hidden = true;
+    if (window.__leCloseExplanation) window.__leCloseExplanation();
     const p = document.getElementById(PENCIL);
     if (p) p.hidden = true;
   }
@@ -353,6 +362,7 @@
   function typingInBar() {
     const b = document.getElementById(BAR);
     if (!b || b.hidden) return false;
+    if (b.querySelector('#le-lookup-popup')) return true;
     if (document.querySelector('.le-polish-popover[open]')) return true;
     const t = b.querySelector('.le-bar-input');
     // 只要光标在框里就算在用，不要求已经写了字——空框被收起来后
@@ -365,7 +375,8 @@
     hideBar();
   }
 
-  function fromSelection() {
+  function fromSelection(event) {
+    if (event && event.target && event.target.closest('#le-sel-bar')) return;
     // 正在浮条里写字（尤其 Shift+回车换行）时别去接管选区，
     // 否则会把这次要批注的那段 target 换成别的段落
     if (typingInBar()) return;
@@ -373,10 +384,10 @@
     if (!sel || sel.isCollapsed) return;
     const text = sel.toString().trim();
     if (!text) return;
-    const g = guide();
-    if (!g) return;
     const node = sel.anchorNode;
-    if (!node || !g.contains(node.nodeType === 3 ? node.parentNode : node)) return;
+    const anchor = node && (node.nodeType === 3 ? node.parentElement : node);
+    const g = anchor && anchor.closest('#le-guide-md, #le-center-content, .le-lookup-zone');
+    if (!g || !g.contains(sel.focusNode)) return;
     const range = sel.getRangeAt(0);
     const r = range.getBoundingClientRect();
     if (!r || (!r.width && !r.height)) return;
@@ -518,7 +529,6 @@
   }
   const poll = setInterval(() => { if (watchNote()) clearInterval(poll); }, 500);
 
-  // 同步执行：名词解释浮窗在 mouseup 的 0ms 回调里要能看到我们是否已经接管
   document.addEventListener('mouseup', fromSelection);
   document.addEventListener('keyup', (e) => {
     if (e.shiftKey || /^Arrow/.test(e.key)) setTimeout(fromSelection, 10);
@@ -531,7 +541,10 @@
     lastEvt = e;
     if (!raf) raf = requestAnimationFrame(onMove);
   }, { passive: true });
-  document.addEventListener('wheel', hideBarUnlessTyping, { passive: true });
+  document.addEventListener('wheel', (e) => {
+    if (!e.target.closest('#le-sel-bar')) hideBarUnlessTyping();
+  }, { passive: true });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideBar(); });
   // 输入框自己滚动（文字多到撑出高度）也会冒到 window 的捕获阶段，得挡掉
   window.addEventListener('scroll', (e) => {
     const b = document.getElementById(BAR);

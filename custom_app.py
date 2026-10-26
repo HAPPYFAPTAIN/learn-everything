@@ -130,6 +130,69 @@ _make_umap_optional()
 from learning_ext.app import LearningApp  # noqa: E402
 
 
+def _presentation_stylesheet() -> str:
+    """按需拼装全部样式：编辑 CSS 后刷新页面即可生效，不必重启进程。"""
+    assets = Path(_HERE, "learning_ext", "assets")
+    order = (
+        "theme_tokens.css",
+        "shell.css",
+        "assistant.css",
+        "text_polish.css",
+        "theme_toggle.css",
+    )
+    css = "\n".join((assets / name).read_text(encoding="utf-8") for name in order)
+    from learning_ext.presentation import presentation_css  # noqa: WPS433
+
+    css += "\n" + presentation_css()
+    return css.replace("__ASSETS__", "/file=" + assets.as_posix())
+
+
+_PRESENTATION_CSS_URL = "/le-presentation.css"
+
+
+def _register_presentation_route(routes_app) -> bool:
+    """把样式挂到一条路由上，页面用 <link> 引用，刷新就拿到最新内容。"""
+    try:
+        from fastapi.responses import Response  # noqa: WPS433
+
+        def stylesheet():
+            return Response(
+                _presentation_stylesheet(),
+                media_type="text/css",
+                headers={"Cache-Control": "no-store, max-age=0"},
+            )
+
+        routes_app.add_api_route(
+            _PRESENTATION_CSS_URL, stylesheet, methods=["GET"], include_in_schema=False
+        )
+        return True
+    except Exception as e:  # noqa: WPS433
+        print(f"[learning_ext] stylesheet route failed: {e}", flush=True)
+        return False
+
+
+def _hook_presentation_route_into_gradio() -> None:
+    """gradio 在 launch() 里会重建 FastAPI 实例，所以包一层 create_app。"""
+    try:
+        import gradio.routes as gradio_routes  # noqa: WPS433
+
+        original = gradio_routes.App.create_app
+        if getattr(original, "_le_route_hooked", False):
+            return
+
+        def create_app_with_styles(*args, **kwargs):
+            created = original(*args, **kwargs)
+            _register_presentation_route(created)
+            from learning_ext.account.routes import register_account_routes
+            register_account_routes(created)
+            return created
+
+        create_app_with_styles._le_route_hooked = True
+        gradio_routes.App.create_app = staticmethod(create_app_with_styles)
+    except Exception as e:  # noqa: WPS433
+        print(f"[learning_ext] stylesheet hook failed: {e}", flush=True)
+
+
 def _patch_gradio_template_for_learning_assets():
     """Insert learning_ext browser assets into Gradio's initial HTML template."""
     try:
@@ -138,7 +201,10 @@ def _patch_gradio_template_for_learning_assets():
 
         script_path = "learning_ext/assets/word_lookup.js"
         word_lookup_js = Path(_HERE, script_path).read_text(encoding="utf-8")
-        workspace_js = Path(_HERE, "learning_ext/assets/workspace.js").read_text(encoding="utf-8")
+        assets_base = "/file=" + Path(_HERE, "learning_ext", "assets").as_posix()
+        theme_mode_js = Path(_HERE, "learning_ext/assets/theme_mode.js").read_text(encoding="utf-8")
+        workspace_js = theme_mode_js.replace("__LE_ASSETS__", assets_base)
+        workspace_js += "\n" + Path(_HERE, "learning_ext/assets/workspace.js").read_text(encoding="utf-8")
         workspace_js += "\n" + Path(_HERE, "learning_ext/assets/coach.js").read_text(encoding="utf-8")
         workspace_js += "\n" + Path(_HERE, "learning_ext/assets/coach_lesson.js").read_text(encoding="utf-8")
         workspace_js += "\n" + Path(_HERE, "learning_ext/assets/workbench.js").read_text(encoding="utf-8")
@@ -153,22 +219,20 @@ def _patch_gradio_template_for_learning_assets():
         workspace_js += "\n" + Path(_HERE, "learning_ext/assets/document_preview.js").read_text(encoding="utf-8")
         workspace_js += "\n" + Path(_HERE, "learning_ext/assets/consumer.js").read_text(encoding="utf-8")
         workspace_js += "\n" + Path(_HERE, "learning_ext/assets/settings_panels.js").read_text(encoding="utf-8")
+        workspace_js += "\n" + Path(_HERE, "learning_ext/assets/chat_thinking.js").read_text(encoding="utf-8")
         workspace_js += "\n" + Path(_HERE, "learning_ext/assets/chat_streaming.js").read_text(encoding="utf-8")
+        workspace_js += "\n" + Path(_HERE, "learning_ext/assets/chat_references.js").read_text(encoding="utf-8")
         workspace_js += "\n" + Path(_HERE, "learning_ext/assets/action_learning.js").read_text(encoding="utf-8")
         workspace_js += "\n" + Path(_HERE, "learning_ext/assets/rich_text.js").read_text(encoding="utf-8")
         workspace_js += "\n" + Path(_HERE, "learning_ext/assets/text_polish.js").read_text(encoding="utf-8")
         workspace_js += "\n" + Path(_HERE, "learning_ext/assets/motion.js").read_text(encoding="utf-8")
+        workspace_js += "\n" + Path(_HERE, "learning_ext/assets/fullscreen_shell.js").read_text(encoding="utf-8")
+        workspace_js += "\n" + Path(_HERE, "learning_ext/assets/route_browser.js").read_text(encoding="utf-8")
         script_tag = f"<script>\n{word_lookup_js}\n</script>"
         script_tag = f"<script>\n{workspace_js}\n</script>" + script_tag
-        # body 级外壳与助教面板、入口需要原始 style；其余样式统一走 Gradio 样式链
-        raw_css = Path(_HERE, "learning_ext/assets/shell.css").read_text(encoding="utf-8")
-        raw_css += "\n" + Path(_HERE, "learning_ext/assets/assistant.css").read_text(encoding="utf-8")
-        raw_css += "\n" + Path(_HERE, "learning_ext/assets/text_polish.css").read_text(encoding="utf-8")
-        # 与 presentation_css() 共用 __ASSETS__ 占位符：助教头像等图片走 Gradio 的 /file= 静态路径
-        raw_css = raw_css.replace(
-            "__ASSETS__", "/file=" + Path(_HERE, "learning_ext", "assets").as_posix()
-        )
-        style_tag = f"<style>\n{raw_css}\n</style>"
+        # 样式走 <link>：内容由 /le-presentation.css 每次请求重新拼装，
+        # 改完 CSS 刷新页面就能看到，不必重启应用（也不会被 Gradio 改写选择器）。
+        style_tag = f'<link rel="stylesheet" href="{_PRESENTATION_CSS_URL}">'
         # CSS 的 {# 和脚本中的模板字符应按原文输出，不能交给 Jinja 解析。
         browser_assets = "{% raw %}" + style_tag + "\n" + script_tag + "{% endraw %}"
         template_root = Path(gradio_routes.STATIC_TEMPLATE_LIB)
@@ -201,9 +265,14 @@ def _patch_gradio_template_for_learning_assets():
 
 _patch_gradio_template_for_learning_assets()
 
+from learning_ext.account.identity import require_local_desktop
+
+require_local_desktop()
 app = LearningApp()
+_hook_presentation_route_into_gradio()
 demo = app.make()
-demo.queue().launch(
+demo.queue()
+demo.launch(
     favicon_path=app._favicon,
     inbrowser=False,
     prevent_thread_lock=False,

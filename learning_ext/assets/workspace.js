@@ -118,7 +118,7 @@
       modelInput?.setAttribute('title','选择回答模型');
     }
     const title=document.createElement('div');title.id='le-chat-welcome';
-    title.innerHTML='<div class="le-chat-hero-art" aria-hidden="true"></div><h1>把问题，聊明白。</h1>';
+    title.innerHTML='<div class="le-chat-hero-art" aria-hidden="true"></div><h1>今天想弄明白什么？</h1>';
     const starters=document.createElement('div');starters.className='le-chat-starters';
     starters.innerHTML='<button type="button" data-le-prompt="请用一个生活中的例子，帮我解释这个概念："><span aria-hidden="true">✦</span><strong>讲懂一个概念</strong><b aria-hidden="true">↗</b></button><button type="button" data-le-source-starter data-le-prompt="请帮我梳理已选资料中的核心观点，并标出对应来源。"><span aria-hidden="true">▤</span><strong>读懂一份资料</strong><b aria-hidden="true">↗</b></button><button type="button" data-le-prompt="我想检查自己的理解。请先问我一个问题，等我回答后再给反馈。主题是："><span aria-hidden="true">✓</span><strong>检验我的理解</strong><b aria-hidden="true">↗</b></button>';
     starters.addEventListener('click',event=>{
@@ -141,45 +141,22 @@
     sourceTools.append(sourceButton,libraryButton);composer.append(sourceTools);
     if(suggestions)area.append(suggestions);
     document.querySelector('#suggest-chat-checkbox input')?.setAttribute('role','switch');
-    const plus=document.createElement('button');plus.id='le-chat-plus';plus.type='button';plus.textContent='+';plus.setAttribute('aria-label','打开问答工具');plus.setAttribute('aria-expanded','false');composer.append(plus);
+    const plus=document.createElement('button');plus.id='le-chat-plus';plus.type='button';plus.textContent='+';plus.setAttribute('aria-label','打开问答工具');plus.setAttribute('aria-expanded','false');sourceTools.prepend(plus);
+    const submitButton=input.querySelector('.submit-button');
+    if(submitButton)sourceTools.append(submitButton);
+    const polishObserver=new MutationObserver(()=>{
+      const polishTools=input.querySelector('.le-polish-tools');
+      if(polishTools&&!sourceTools.contains(polishTools))sourceTools.insertBefore(polishTools,submitButton||null);
+    });
+    polishObserver.observe(input,{childList:true,subtree:true});
     const menu=document.createElement('div');menu.id='le-chat-tool-menu';menu.hidden=true;
     const options=[['sources','参考资料'],['answer','回答方式'],['citation','引用展示'],['mindmap','思维导图']];
     menu.innerHTML='<div class="le-menu-caption">问答工具</div>'+options.map(([key,label])=>`<button type="button" data-chat-menu="${key}"><span>${label}</span><span aria-hidden="true">›</span></button>`).join('');composer.append(menu);composer.append(settings);
     const flyout=document.createElement('section');flyout.id='le-chat-flyout';flyout.hidden=true;flyout.setAttribute('aria-label','问答工具设置');
     flyout.innerHTML='<div class="le-flyout-head"><button type="button" data-flyout-back>‹ 返回</button><strong></strong><button type="button" data-flyout-close aria-label="关闭工具菜单">×</button></div>';
     composer.append(flyout);
-    const sources=document.getElementById('conv-settings-panel'),evidence=document.getElementById('chat-info-panel');
+    const sources=document.getElementById('conv-settings-panel');
     [settings,sources].filter(Boolean).forEach(el=>flyout.append(el));
-    if(evidence){
-      const references=document.createElement('details');references.id='le-answer-references';references.hidden=true;references.setAttribute('aria-label','回答的引用资料');const summary=document.createElement('summary');summary.textContent='查看引用资料与思维导图';references.append(summary);bot.after(references);references.append(evidence);
-      let frame;
-      function updateReferences(){
-        cancelAnimationFrame(frame);frame=requestAnimationFrame(()=>{
-          const content=document.getElementById('html-info-panel');
-          content?.querySelectorAll('summary').forEach(summary=>{
-            const walk=document.createTreeWalker(summary,NodeFilter.SHOW_TEXT);
-            while(walk.nextNode()){
-              const node=walk.currentNode;
-              let next=node.textContent;
-              if(node.parentElement?.tagName==='I')next=next.replace(/^Image from /,'图片 · ').replace(/^Table from /,'表格 · ').replace(/^(图片 · |表格 · )?\[Page (\d+)\]/,'$1第 $2 页 ·');
-              else if(node.parentElement?.closest('a.pdf-link')&&next.trim()==='[Preview]')next='查看原页';
-              else if(next.trim()==='Relevance score')next='相关度详情';
-              else if(/^\s*\[score: [\d.]+\]\s*$/.test(next))next=next.replace(/\[score: ([\d.]+)\]/,' · 相关度 $1');
-              if(next!==node.textContent)node.textContent=next;
-            }
-          });
-          const hasAnswer=!!bot.querySelector('[data-testid="bot"], [data-testid="assistant"]');
-          const busy=!!bot.querySelector('.wrap:not(.hide).translucent, .wrap.generating, .message.pending');
-          const referenceText=content?.textContent.trim()||'';
-          const hasReferences=!!content&&!/^No evidence found[.!]?$/i.test(referenceText)&&(referenceText.length>0||!!content.querySelector('a[href],img,svg,canvas'));
-          references.hidden=!(hasAnswer&&hasReferences&&!busy);
-        });
-      }
-      const refsObserver=new MutationObserver(updateReferences);
-      refsObserver.observe(bot,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['class']});
-      refsObserver.observe(evidence,{subtree:true,childList:true,characterData:true});
-      updateReferences();
-    }
     if(sources){
       const history=document.createElement('details');history.id='le-chat-history';
       history.innerHTML='<summary>历史对话 <span aria-hidden="true">⌄</span></summary><section aria-label="管理历史对话"><h2>历史对话</h2></section>';
@@ -198,8 +175,14 @@
       historyPanel.append(actions);
       const emptyHistory=document.createElement('p');emptyHistory.className='le-history-empty';emptyHistory.textContent='还没有历史对话';emptyHistory.hidden=true;
       historyPanel.insertBefore(emptyHistory,actions);
-      function updateHistoryEmpty(){emptyHistory.hidden=!!conversation?.querySelector('[role="option"]');}
-      if(conversation)new MutationObserver(updateHistoryEmpty).observe(conversation,{subtree:true,childList:true});
+      let historyExpanded=false;
+      function updateHistoryEmpty(){
+        const expanded=conversation?.querySelector('input')?.getAttribute('aria-expanded')==='true';
+        emptyHistory.hidden=!expanded||!!conversation?.querySelector('[role="option"]');
+        if(historyExpanded&&!expanded)history.open=false;
+        historyExpanded=expanded;
+      }
+      if(conversation)new MutationObserver(updateHistoryEmpty).observe(conversation,{subtree:true,childList:true,attributes:true,attributeFilter:['aria-expanded']});
       history.addEventListener('toggle',()=>{
         if(!history.open)return;
         const selector=conversation?.querySelector('input[role="listbox"]');
@@ -207,8 +190,10 @@
         updateHistoryEmpty();
       });
       conversation?.addEventListener('click',event=>{
-        if(event.target.closest('[role="option"]')){history.open=false;history.querySelector('summary').focus();}
-      });
+        if(event.target.closest('[role="option"]'))requestAnimationFrame(()=>{history.open=false;});
+      },true);
+      conversation?.addEventListener('change',()=>{history.open=false;});
+      newButton?.addEventListener('click',()=>{history.open=false;});
 
       document.addEventListener('click',e=>{if(!e.composedPath().includes(history))history.open=false;});
       document.addEventListener('keydown',e=>{if(e.key==='Escape'&&history.open&&!e.defaultPrevented&&!document.querySelector('dialog[open]')){e.preventDefault();history.open=false;history.querySelector('summary').focus({preventScroll:true});}});

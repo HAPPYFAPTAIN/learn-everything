@@ -42,6 +42,7 @@ class PathGeneratorPage(BasePage):
         super().__init__(app)
         # 当前项目 id 状态
         self.current_project_id = gr.State(None)
+        self.delete_confirmation_project_id = gr.State(None)
         # 保存后那一段进度文案的固定部分（备课进度会追加在后面）
         self._save_base_md = ""
         self._last_prep_md = ""
@@ -50,55 +51,45 @@ class PathGeneratorPage(BasePage):
     def on_building_ui(self):
         gr.HTML(page_intro("route"))
         gr.HTML('<div class="le-flow-context"><button type="button" data-le-nav="learning-guide-tab">返回学习安排</button></div>')
-        # 历史路线放最上面：回来第一件事是找回上次那条，
-        # 藏在页面最底部的折叠面板里，相当于看不见。
         with gr.Accordion("已有路线与管理 · 需要时展开", open=False, elem_id="le-route-history"):
-            gr.HTML(
-                '<div class="le-history-head"><div><h2>你的学习路线</h2>'
-                '<p>生成过的路线都存在本机，点一条继续学；没有合适的就在下面新建。</p></div></div>'
+            self.project_list = gr.Radio(
+                label="选择学习路线",
+                show_label=False,
+                choices=[],
+                value=None,
+                interactive=True,
+                elem_id="le-route-picker",
             )
-            self.project_list = gr.Dataframe(
-                headers=["ID", "标题", "进度", "创建时间"],
-                datatype=["number", "str", "str", "str"],
-                interactive=False,
-                value=[],
-                row_count=(3, "dynamic"),
-                elem_id="le-route-table",
+            self.history_empty = gr.HTML(
+                '<div class="le-route-picker-empty"><strong>从第一条路线开始</strong>'
+                '<span>先选择你想学会的事。</span></div>',
+                elem_id="le-route-history-empty",
             )
             with gr.Row(elem_id="le-route-actions"):
                 self.refresh_btn = gr.Button("刷新列表", size="sm")
-                self.load_project_id = gr.Number(
-                    label="项目 ID", value=0, precision=0
-                )
-                self.load_btn = gr.Button(
-                    "打开这条路线", variant="primary", elem_id="le-route-load"
-                )
+                self.export_roadmap_btn = gr.Button("导出学习路线", size="sm")
+            self.export_roadmap_file = gr.File(
+                label="下载路线文件", interactive=False, visible=False,
+                elem_id="le-route-export-file",
+            )
             with gr.Accordion("路线文件 · 导入与导出", open=False, elem_id="le-route-files"):
-                gr.Markdown(
-                    "导出会生成格式化 JSON 文件，包含项目元信息和完整路线；导入会新建一个学习项目。"
-                )
-                with gr.Row():
-                    self.export_project_id = gr.Number(
-                        label="导出项目 ID", value=0, precision=0
-                    )
-                    self.export_roadmap_btn = gr.Button("导出学习路线")
-                self.export_roadmap_file = gr.File(
-                    label="下载导出的学习路线 JSON", interactive=False
-                )
                 self.import_roadmap_file = gr.File(
-                    label="导入学习路线 JSON", file_types=[".json"]
+                    label="选择路线文件", file_types=[".json"],
+                    elem_id="le-route-import-file",
                 )
                 self.import_roadmap_btn = gr.Button("导入学习路线", variant="primary")
-            with gr.Accordion("项目管理", open=False, elem_id="le-route-management"):
-                gr.Markdown("输入项目 ID，并输入 `DELETE` 确认后删除。")
-                with gr.Row():
-                    self.delete_project_id = gr.Number(
-                        label="删除项目 ID", value=0, precision=0
-                    )
+            with gr.Accordion("项目管理", open=False, elem_id="le-route-management") as self.management:
+                self.batch_selection = gr.CheckboxGroup(label="选择要删除的路线", choices=[], interactive=True, elem_id="le-route-batch-list")
+                self.batch_review = gr.Button("删除选中路线", variant="stop", size="sm")
+                self.batch_summary = gr.Markdown("", elem_id="le-route-batch-summary")
+                self.batch_confirmed = gr.State([])
+                self.batch_commit = gr.Button("确认删除", variant="stop", interactive=False, visible=False)
+                with gr.Row(visible=False):
                     self.delete_confirm = gr.Textbox(
-                        label="确认文本", placeholder="DELETE", lines=1
+                        label="确认删除", show_label=False, placeholder="DELETE", lines=1,
+                        elem_id="le-route-delete-confirm",
                     )
-                    self.delete_btn = gr.Button("删除项目", variant="stop")
+                    self.delete_btn = gr.Button("删除所选路线", variant="stop", size="sm")
         with gr.Row(elem_id="le-planner"):
             with gr.Column(visible=False, elem_id="le-plan-input"):
                 gr.HTML('<div id="le-wizard-header"><div class="le-wizard-top"><span data-wizard-count>01 / 04</span><span>为你定制学习路线</span></div><div class="le-wizard-track"><i></i></div><h2 data-wizard-title>想学点什么？</h2><p data-wizard-hint>从一个想解决的问题开始，一句话就够。</p><div data-wizard-feedback role="status" aria-live="polite"></div></div>')
@@ -154,12 +145,11 @@ class PathGeneratorPage(BasePage):
 
     def on_register_events(self):
         """绑定按钮事件"""
-        # 打开页面就把历史路线填进列表。以前这里只靠「刷新项目列表」按钮，
-        # 面板又是默认收起的，等于生成过的路线全看不见。
         self._app.app.load(
-            fn=self._refresh_projects,
-            inputs=[],
-            outputs=[self.project_list],
+            fn=self._refresh_picker,
+            inputs=[self.current_project_id],
+            outputs=[self.project_list, self.history_empty],
+            show_progress="hidden",
         )
         self._app.app.load(self._latest_route, outputs=[self.roadmap_output, self.roadmap_json, self.current_project_id, self.status], show_progress="hidden").then(self._load_preparation, inputs=[self.current_project_id], outputs=[self.save_progress, self.prep_context, self.prep_timer], show_progress="hidden")
         self.roadmap_json.change(
@@ -168,12 +158,20 @@ class PathGeneratorPage(BasePage):
             outputs=[self.save_btn, self.regenerate_btn, self.open_course, self.save_note],
             show_progress="hidden",
         )
-        self.current_project_id.change(
+        project_changed = self.current_project_id.change(
             fn=self._route_actions,
             inputs=[self.roadmap_json, self.current_project_id],
             outputs=[self.save_btn, self.regenerate_btn, self.open_course, self.save_note],
             show_progress="hidden",
+        ).then(
+            self._sync_route_selection,
+            inputs=[self.current_project_id],
+            outputs=[self.project_list, self.history_empty, self.delete_confirm,
+                     self.export_roadmap_file, self.delete_confirmation_project_id],
+            show_progress="hidden",
         )
+        for event in self._app.get_event("onProjectSwitched"):
+            project_changed = project_changed.then(**event)
         self.generate_btn.click(
             self._begin_generation,
             outputs=[self.current_project_id, self.save_progress, self.status, self.roadmap_json, self.roadmap_output, self.generating, self.generate_btn, self.regenerate_btn],
@@ -189,8 +187,10 @@ class PathGeneratorPage(BasePage):
             outputs=[self.roadmap_output, self.roadmap_json, self.status, self.generating, self.generate_btn, self.regenerate_btn],
             show_progress="full",
         ).then(
-            fn=self._refresh_projects,
-            outputs=[self.project_list],
+            fn=self._refresh_picker,
+            inputs=[self.current_project_id],
+            outputs=[self.project_list, self.history_empty],
+            show_progress="hidden",
         )
 
         self.regenerate_btn.click(
@@ -222,8 +222,10 @@ class PathGeneratorPage(BasePage):
             outputs=[self.current_project_id, self.save_progress, self.status, self.prep_context],
             show_progress="hidden",
         ).then(
-            fn=self._refresh_projects,
-            outputs=[self.project_list],
+            fn=self._refresh_picker,
+            inputs=[self.current_project_id],
+            outputs=[self.project_list, self.history_empty],
+            show_progress="hidden",
         ).then(
             # 备课排队了才把定时器打开；备完由 _poll_prep 自己关掉。
             # 常驻轮询会让每次 tick 都重绘一遍组件，界面就一直在闪。
@@ -241,21 +243,22 @@ class PathGeneratorPage(BasePage):
             show_progress="hidden",
         )
 
-        self.refresh_btn.click(fn=self._refresh_projects, outputs=[self.project_list])
+        self.refresh_btn.click(
+            fn=self._refresh_current_route,
+            inputs=[self.current_project_id],
+            outputs=[self.project_list, self.history_empty, self.roadmap_output,
+                     self.roadmap_json, self.current_project_id, self.status,
+                     self.save_progress, self.prep_context, self.prep_timer],
+            show_progress="hidden",
+        )
 
-        self.load_btn.click(
+        self.project_list.input(
+            fn=self._begin_route_selection,
+            outputs=[self.delete_confirm, self.delete_confirmation_project_id,
+                     self.export_roadmap_file],
+            show_progress="hidden",
+        ).then(
             fn=self._handle_load,
-            inputs=[self.load_project_id],
-            outputs=[
-                self.roadmap_output,
-                self.roadmap_json,
-                self.current_project_id,
-                self.status,
-            ],
-        ).then(self._load_preparation, inputs=[self.current_project_id], outputs=[self.save_progress, self.prep_context, self.prep_timer], show_progress="hidden")
-        # 点表格里的某一行 = 打开这条路线
-        self.project_list.select(
-            fn=self._handle_pick_row,
             inputs=[self.project_list],
             outputs=[
                 self.roadmap_output,
@@ -263,28 +266,91 @@ class PathGeneratorPage(BasePage):
                 self.current_project_id,
                 self.status,
             ],
+            show_progress="hidden",
         ).then(self._load_preparation, inputs=[self.current_project_id], outputs=[self.save_progress, self.prep_context, self.prep_timer], show_progress="hidden")
+        self.delete_confirm.input(
+            fn=self._bind_delete_confirmation,
+            inputs=[self.delete_confirm, self.project_list, self.current_project_id],
+            outputs=[self.delete_confirmation_project_id],
+            show_progress="hidden",
+        )
         self.export_roadmap_btn.click(
-            fn=self._handle_export_roadmap,
-            inputs=[self.export_project_id],
+            fn=self._handle_export_roadmap_selection,
+            inputs=[self.project_list],
             outputs=[self.export_roadmap_file, self.status],
+            show_progress="hidden",
         )
         self.import_roadmap_btn.click(
-            fn=self._handle_import_roadmap,
-            inputs=[self.import_roadmap_file],
+            fn=self._handle_import_roadmap_selection,
+            inputs=[self.import_roadmap_file, self.current_project_id],
             outputs=[
                 self.project_list,
+                self.history_empty,
                 self.roadmap_output,
                 self.roadmap_json,
                 self.current_project_id,
                 self.status,
             ],
+            show_progress="hidden",
         ).then(self._load_preparation, inputs=[self.current_project_id], outputs=[self.save_progress, self.prep_context, self.prep_timer], show_progress="hidden")
         self.delete_btn.click(
-            fn=self._handle_delete_project,
-            inputs=[self.delete_project_id, self.delete_confirm],
-            outputs=[self.project_list, self.status],
-        )
+            fn=self._handle_delete_selection,
+            inputs=[self.project_list, self.delete_confirm, self.current_project_id,
+                    self.delete_confirmation_project_id],
+            outputs=[self.project_list, self.history_empty, self.roadmap_output, self.roadmap_json,
+                     self.current_project_id, self.status, self.delete_confirm,
+                     self.delete_confirmation_project_id],
+            show_progress="hidden",
+        ).then(self._load_preparation, inputs=[self.current_project_id], outputs=[self.save_progress, self.prep_context, self.prep_timer], show_progress="hidden")
+
+        self._app.app.load(self._batch_choices, outputs=self.batch_selection, show_progress="hidden")
+        self.current_project_id.change(self._batch_choices, outputs=self.batch_selection, show_progress="hidden")
+        self.refresh_btn.click(self._batch_choices, outputs=self.batch_selection, show_progress="hidden")
+        self.batch_selection.input(lambda: ([], "", gr.update(visible=False, interactive=False)),
+            outputs=[self.batch_confirmed, self.batch_summary, self.batch_commit], show_progress="hidden")
+        self.batch_review.click(self._review_batch_delete, inputs=self.batch_selection,
+            outputs=[self.batch_confirmed, self.batch_summary, self.batch_commit], show_progress="hidden")
+        self.batch_commit.click(self._commit_batch_delete,
+            inputs=[self.batch_selection, self.batch_confirmed, self.current_project_id],
+            outputs=[self.batch_selection, self.batch_confirmed, self.batch_summary, self.batch_commit,
+                     self.project_list, self.history_empty, self.roadmap_output, self.roadmap_json,
+                     self.current_project_id, self.status], show_progress="hidden"
+        ).then(self._load_preparation, inputs=self.current_project_id,
+               outputs=[self.save_progress, self.prep_context, self.prep_timer], show_progress="hidden")
+
+    def _batch_choices(self):
+        return gr.update(choices=[(row[1], row[0]) for row in self._refresh_projects()], value=[])
+
+    def _review_batch_delete(self, selection):
+        from html import escape
+        ids = sorted({int(value) for value in (selection or [])})
+        rows = {row[0]: row[1] for row in self._refresh_projects()}
+        if not ids or any(pid not in rows for pid in ids):
+            return [], "请选择当前列表中的路线。", gr.update(visible=False, interactive=False)
+        names = "".join(f"<li>{escape(rows[pid])}</li>" for pid in ids)
+        return ids, f"<strong>将删除 {len(ids)} 条路线</strong><ul>{names}</ul><p>课程、笔记和学习记录会一并删除，无法撤销。</p>", gr.update(value=f"确认删除 {len(ids)} 条路线", visible=True, interactive=True)
+
+    def _commit_batch_delete(self, selection, confirmed, current_project_id):
+        from learning_ext.project_ops import delete_projects
+        ids = sorted({int(value) for value in (selection or [])})
+        if not ids or ids != sorted(confirmed or []):
+            return (gr.update(), [], "选择已变化，请重新确认。", gr.update(visible=False),
+                    *(gr.update() for _ in range(6)))
+        try:
+            with Session(engine) as session:
+                result = delete_projects(session, ids)
+            logger.info("Batch deleted learning projects: %s", result["project_ids"])
+        except Exception:
+            logger.exception("批量删除失败")
+            return (gr.update(), [], "未能完成删除，请刷新后重试。", gr.update(visible=False),
+                    *(gr.update() for _ in range(6)))
+        current = self._selected_project_id(current_project_id)
+        if current in ids:
+            markdown, raw, current, _ = self._latest_route()
+        else:
+            markdown, raw = gr.update(), gr.update()
+        return (self._batch_choices(), [], f"已删除 {len(ids)} 条路线。", gr.update(visible=False),
+                *self._refresh_picker(current), markdown, raw, current, "")
 
     # ---- 业务处理函数 ----
 
@@ -447,20 +513,57 @@ class PathGeneratorPage(BasePage):
         content = self._preparation_view(context)
         yield pid, content, "", {**context, "last": content}
 
-    def _handle_pick_row(self, data, evt: gr.SelectData):
-        """点表格里的一行，直接打开那条路线（不用再输 ID）。"""
-        pid = 0
+    @staticmethod
+    def _selected_project_id(value):
         try:
-            row = evt.index[0]
-            if hasattr(data, "iloc"):
-                pid = int(data.iloc[row, 0])
-            else:
-                pid = int(data[row][0])
-        except Exception:
-            pid = 0
-        if pid <= 0:
-            return tuple(gr.update() for _ in range(4))
-        return self._handle_load(pid)
+            project_id = int(value)
+        except (TypeError, ValueError):
+            return None
+        return project_id if project_id > 0 else None
+
+    @classmethod
+    def _picker_updates(cls, rows, project_id=None):
+        choices = [
+            (f"{row[1]}\n{row[2].split(' ', 1)[0]} 节已完成", row[0])
+            for row in rows
+        ]
+        selected = cls._selected_project_id(project_id)
+        if selected not in {value for _, value in choices}:
+            selected = None
+        return (
+            gr.update(choices=choices, value=selected, visible=bool(choices)),
+            gr.update(visible=not choices),
+        )
+
+    def _refresh_picker(self, project_id=None):
+        return self._picker_updates(self._refresh_projects(), project_id)
+
+    def _refresh_current_route(self, project_id=None):
+        picker = self._refresh_picker(project_id)
+        if self._selected_project_id(project_id) is None:
+            return *picker, *(gr.update() for _ in range(7))
+        markdown, raw, current, status = self._handle_load(project_id)
+        return *picker, markdown, raw, current, status, *self._load_preparation(current)
+
+    @staticmethod
+    def _begin_route_selection():
+        return gr.update(value=""), None, gr.update(value=None, visible=False)
+
+    @classmethod
+    def _bind_delete_confirmation(cls, confirmation, project_id, current_project_id):
+        selected = cls._selected_project_id(project_id)
+        current = cls._selected_project_id(current_project_id)
+        if (confirmation or "").strip() == "DELETE" and selected == current:
+            return selected
+        return None
+
+    def _sync_route_selection(self, project_id):
+        return (
+            *self._refresh_picker(project_id),
+            gr.update(value=""),
+            gr.update(value=None, visible=False),
+            None,
+        )
 
     def _project_brief_md(self, proj) -> str:
         """把建档时填的那几项原样摆出来。
@@ -487,14 +590,15 @@ class PathGeneratorPage(BasePage):
 
     def _handle_load(self, project_id):
         """加载已有项目"""
-        if not project_id or int(project_id) <= 0:
-            return "", "{}", None, "⚠️ 请输入有效的项目 ID"
+        project_id = self._selected_project_id(project_id)
+        if project_id is None:
+            return gr.update(), gr.update(), gr.update(), "请先选择一条学习路线。"
         try:
             with Session(engine) as session:
                 proj = session.get(LearningProject, int(project_id))
                 brief = self._project_brief_md(proj)
                 roadmap = load_roadmap(session, int(project_id))
-                md = self._roadmap_to_markdown(roadmap)
+                md = self._roadmap_to_markdown({**roadmap, "topic": proj.topic if proj else ""})
                 if brief:
                     md = f'{md}\n\n<details class="le-goal-disclosure"><summary>我的学习初衷</summary>{brief}</details>'
                 return (
@@ -517,19 +621,26 @@ class PathGeneratorPage(BasePage):
 
     def _handle_export_roadmap(self, project_id):
         """导出项目学习路线为格式化 JSON 文件。"""
-        if not project_id or int(project_id) <= 0:
-            return None, "⚠️ 请输入有效的项目 ID"
+        project_id = self._selected_project_id(project_id)
+        if project_id is None:
+            return None, "请先选择要导出的学习路线。"
         try:
             with Session(engine) as session:
                 payload = export_roadmap_bundle(session, int(project_id))
+                project = session.get(LearningProject, project_id)
+                title = project.title or "未命名路线"
             export_dir = Path(".tmp") / "roadmap_exports"
             export_dir.mkdir(parents=True, exist_ok=True)
             path = export_dir / f"learning_route_{int(project_id)}.json"
             path.write_text(payload, encoding="utf-8")
-            return str(path), f"✅ 已导出项目 #{int(project_id)} 的学习路线"
+            return str(path), f"已导出「{title}」。"
         except Exception as e:
             logger.exception("导出学习路线失败")
             return None, f"❌ 导出失败: {e}"
+
+    def _handle_export_roadmap_selection(self, project_id):
+        path, status = self._handle_export_roadmap(project_id)
+        return gr.update(value=path, visible=bool(path)), status
 
     def _handle_import_roadmap(self, file_obj):
         """导入格式化学习路线 JSON，创建新项目。"""
@@ -542,18 +653,18 @@ class PathGeneratorPage(BasePage):
                 "⚠️ 请先选择 JSON 文件",
             )
         try:
-            path = getattr(file_obj, "name", None) or str(file_obj)
+            path = str(file_obj) if isinstance(file_obj, (str, Path)) else file_obj.name
             payload = Path(path).read_text(encoding="utf-8")
             with Session(engine) as session:
                 project = import_roadmap_bundle(session, payload, user_id="default")
                 roadmap = load_roadmap(session, project.id)
-                md = self._roadmap_to_markdown(roadmap)
+                md = self._roadmap_to_markdown({**roadmap, "topic": project.topic})
                 return (
                     self._refresh_projects(),
                     md,
                     json.dumps(roadmap, ensure_ascii=False, indent=2),
                     project.id,
-                    f"✅ 已导入学习路线并创建项目 #{project.id}",
+                    f"已导入「{project.title or '未命名路线'}」。",
                 )
         except Exception as e:
             logger.exception("导入学习路线失败")
@@ -565,26 +676,70 @@ class PathGeneratorPage(BasePage):
                 f"❌ 导入失败: {e}",
             )
 
+    def _handle_import_roadmap_selection(self, file_obj, current_project_id):
+        rows, markdown, raw, project_id, status = self._handle_import_roadmap(file_obj)
+        selected = project_id if project_id is not None else current_project_id
+        return (
+            *self._picker_updates(rows, selected),
+            markdown,
+            raw,
+            project_id if project_id is not None else gr.update(),
+            status,
+        )
+
     def _handle_delete_project(self, project_id, confirm):
         """删除项目及其学习数据"""
-        if not project_id or int(project_id) <= 0:
-            return self._refresh_projects(), "⚠️ 请输入有效的项目 ID"
+        project_id = self._selected_project_id(project_id)
+        if project_id is None:
+            return self._refresh_projects(), "请先选择要删除的学习路线。"
         if (confirm or "").strip() != "DELETE":
             return self._refresh_projects(), "⚠️ 如需删除，请在确认文本中输入 DELETE"
         try:
             from learning_ext.project_ops import delete_project
 
             with Session(engine) as session:
-                result = delete_project(session, int(project_id))
-            deleted = result["deleted"]
-            total = sum(deleted.values())
+                project = session.get(LearningProject, project_id)
+                title = project.title if project else "未命名路线"
+                delete_project(session, int(project_id))
             return (
                 self._refresh_projects(),
-                f"✅ 已删除项目 #{int(project_id)}，清理 {total} 条相关数据",
+                f"✅ 已删除项目「{title}」及其学习记录。",
             )
         except Exception as e:
             logger.exception("删除项目失败")
             return self._refresh_projects(), f"❌ 删除失败: {e}"
+
+    def _handle_delete_selection(self, project_id, confirm, current_project_id, confirmed_project_id=None):
+        selected = self._selected_project_id(project_id)
+        current = self._selected_project_id(current_project_id)
+        confirmed = self._selected_project_id(confirmed_project_id)
+        if (confirm or "").strip() == "DELETE" and (
+            selected is None or selected != current or selected != confirmed
+        ):
+            return (
+                *self._refresh_picker(current),
+                gr.update(), gr.update(), gr.update(),
+                "路线已切换，请重新输入 DELETE 确认。", "", None,
+            )
+        rows, status = self._handle_delete_project(project_id, confirm)
+        deleted = status.startswith("✅") and selected not in {row[0] for row in rows}
+        if not deleted:
+            return (
+                *self._picker_updates(rows, current_project_id),
+                gr.update(), gr.update(), gr.update(), status, gr.update(), gr.update(),
+            )
+        if current == selected:
+            next_id = rows[0][0] if rows else None
+            if next_id:
+                markdown, raw, current, _ = self._handle_load(next_id)
+            else:
+                markdown, raw, current = self._roadmap_to_markdown({}), "{}", None
+        else:
+            markdown, raw = gr.update(), gr.update()
+        return (
+            *self._picker_updates(rows, current),
+            markdown, raw, current, status, "", None,
+        )
 
     def _handle_audit_project(self, project_id):
         """审计旧项目路线，替换路线并批量重生成课程内容。"""
@@ -741,16 +896,16 @@ class PathGeneratorPage(BasePage):
             with Session(engine) as session:
                 projects = session.exec(
                     select(LearningProject)
+                    .where(LearningProject.user_id == "default")
                     .order_by(LearningProject.id.desc())
-                    .limit(50)
+                    .limit(100)
                 ).all()
                 rows = []
                 for p in projects:
                     prog = get_project_progress(session, p.id)
-                    title = p.title or "（未命名路线）"
-                    # 生成的标题经常是一整段话，不截断会把表格撑成横向滚动
-                    if len(title) > 46:
-                        title = title[:46] + "…"
+                    title = " ".join((p.topic or p.title or "未命名路线").split())
+                    if len(title) > 34:
+                        title = title[:34] + "…"
                     rows.append(
                         [
                             p.id,

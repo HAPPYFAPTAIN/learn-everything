@@ -1,0 +1,83 @@
+#le-app-tabs #chat-tab #main-chat-bot #le-answer-reference-trigger {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  width: auto !important;
+  min-width: 0 !important;
+  height: 30px !important;
+  padding: 5px 9px !important;
+  margin-left: 6px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 999px !important;
+  background: var(--le-surface-2) !important;
+  color: var(--le-ink-2) !important;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  cursor: pointer !important;
+}
+#le-app-tabs #chat-tab #main-chat-bot #le-answer-reference-trigger[hidden] { display:none !important; }
+#le-chat-reference-dialog {
+  position: fixed !important;
+  width: min(440px, calc(100vw - 24px));
+  max-height: min(680px, calc(100dvh - 32px));
+  margin: 0;
+  padding: 0 !important;
+  border: 1px solid var(--le-line-strong) !important;
+  border-radius: 18px !important;
+  background: var(--le-surface) !important;
+  color: var(--le-ink) !important;
+  box-shadow: var(--le-shadow-3) !important;
+  overflow: hidden;
+}
+#le-chat-reference-dialog:not([open]) { display: none !important; }
+#le-chat-reference-dialog[open] { display: flex !important; flex-direction:column; animation:le-references-in 160ms var(--le-ease); }
+#le-chat-reference-dialog::backdrop { background:transparent; }
+#le-chat-reference-dialog > header {
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+  padding:12px 16px; border-bottom:1px solid var(--le-line); flex:none;
+}
+#le-chat-reference-dialog h2 { margin:0 !important; font-size:15px !important; font-weight:650 !important; color:var(--le-ink) !important; }
+#le-chat-reference-dialog > header button {
+  display:grid; place-items:center; width:30px; height:30px; padding:0; min-width:0;
+  border:0; border-radius:8px; background:transparent; color:var(--le-ink-2); font-size:23px; cursor:pointer;
+}
+#le-chat-reference-dialog > header button:hover { background:var(--le-surface-3); }
+#le-chat-reference-dialog .le-reference-body { overflow:auto; min-height:0; max-height:min(520px, 65dvh); padding:16px; overscroll-behavior:contain; }
+#chat-tab #le-chat-reference-dialog #chat-info-panel {
+  display:flex !important; position:static !important; width:100% !important; min-width:0 !important;
+  max-width:none !important; height:auto !important; max-height:none !important; margin:0 !important; padding:0 !important;
+  border:0 !important; background:transparent !important; box-shadow:none !important; overflow:visible !important;
+}
+#le-chat-reference-dialog #info-expand { border:0 !important; width:100% !important; background:transparent !important; }
+#le-chat-reference-dialog #info-expand > .label-wrap,
+#le-chat-reference-dialog #info-expand-button { display:none !important; }
+#le-chat-reference-dialog #info-expand > div { display:block !important; }
+#le-chat-reference-dialog #info-expand > .wrap,
+#le-chat-reference-dialog .wrap:not(.error) { display:none !important; }
+#le-chat-reference-dialog #html-info-panel { padding:0 !important; border:0 !important; background:transparent !important; }
+#le-chat-reference-dialog .prose { font-size:14px !important; line-height:1.65 !important; color:var(--le-ink) !important; }
+#le-chat-reference-dialog details.evidence { margin:0 0 10px; padding:0; border:1px solid var(--le-line); border-radius:12px; background:var(--le-surface-2); overflow:hidden; }
+#le-chat-reference-dialog details.evidence > summary { padding:12px; color:var(--le-ink) !important; font-size:13px; font-weight:600; cursor:pointer; }
+#le-chat-reference-dialog details.evidence > summary i { font-style:normal; }
+#le-chat-reference-dialog details.evidence details.evidence { margin-inline:12px; font-size:12px; }
+#le-chat-reference-dialog .evidence-content { padding:0 12px 12px; overflow-wrap:anywhere; }
+#le-chat-reference-dialog a { color:var(--le-accent) !important; }
+#le-chat-reference-dialog img, #le-chat-reference-dialog svg.markmap { max-width:100%; }
+#le-chat-reference-dialog .evidence-content figure { margin:4px 0 12px; }
+#le-chat-reference-dialog #chat-info-panel figure > img { max-height:180px; width:100%; object-fit:contain; filter:none !important; }
+#le-chat-reference-dialog.le-reference-preview .le-reference-body { max-height:calc(100dvh - 112px); }
+#le-chat-reference-dialog .prose table { display:block; max-width:100%; overflow:auto; }
+#le-chat-reference-dialog mark { background:var(--le-accent-soft); color:var(--le-ink); }
+#le-chat-reference-dialog #pdf-modal {
+  position:relative !important; inset:auto !important; width:100% !important; height:min(720px, calc(100dvh - 150px)) !important;
+  padding:0 !important; background:var(--le-surface) !important;
+}
+#le-chat-reference-dialog #pdf-modal .modal-content { width:100%; height:100%; margin:0; padding:0; border:0; background:var(--le-surface); }
+#le-chat-reference-dialog #pdf-modal .modal-header { height:32px; padding:0 0 8px; color:var(--le-ink); }
+#le-chat-reference-dialog #pdf-modal .modal-body { height:calc(100% - 32px); padding:0; }
+#le-chat-reference-dialog #pdf-viewer { height:100%; width:100%; }
+#le-chat-reference-dialog #modal-expand { display:none; }
+@keyframes le-references-in { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:none; } }
+@media (prefers-reduced-motion:reduce) { #le-chat-reference-dialog[open] { animation:none; } }

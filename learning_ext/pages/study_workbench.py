@@ -213,9 +213,12 @@ class StudyWorkbenchPage(BasePage):
                 self.action_learning = ActionLearningPanel(self).build()
                 with gr.Tabs(elem_id="le-content-tabs"):
                     with gr.TabItem("阅读", elem_id="le-lookup-zone"):
-                        self.node_guide = gr.Markdown(
+                        from learning_ext.rich_text import render_lesson
+
+                        self.node_guide = gr.HTML(
                             "", elem_id="le-guide-md", elem_classes=["le-lookup-zone"]
                         )
+                        self.node_guide.postprocess = render_lesson
                         with gr.Accordion("课程内容工具", open=False):
                             with gr.Row():
                                 self.regen_node_btn = gr.Button(
@@ -268,7 +271,7 @@ class StudyWorkbenchPage(BasePage):
                 )
                 with gr.Accordion("划词解释结果", open=False, elem_id="le-term-result"):
                     self.term_explain_btn = gr.Button("解释选中词汇", size="sm")
-                    self.term_explain_output = gr.Markdown("", elem_id="le-term-output")
+                    self.term_explain_output = gr.HTML("", elem_id="le-term-output")
                 with gr.Row(elem_id="le-lesson-actions"):
                     with gr.Accordion("调整学习状态", open=False):
                         self.start_btn = gr.Button("标记为学习中", size="sm")
@@ -1571,6 +1574,12 @@ class StudyWorkbenchPage(BasePage):
         return self._do_explain(term.strip(), node_id)
 
     def _do_explain(self, term, node_id=None):
+        from html import escape
+        from learning_ext.rich_text import render_rich_text
+
+        def render(text):
+            return f'<div data-le-explained-term="{escape(term, quote=True)}">' + render_rich_text(text, annotations=True) + '</div>'
+
         try:
             with Session(engine) as s:
                 nid = int(node_id) if node_id else None
@@ -1578,11 +1587,11 @@ class StudyWorkbenchPage(BasePage):
                 proj = s.get(LearningProject, node.project_id) if node else None
                 topic = proj.topic if proj else ""
             if not node:
-                return f"**{term}**: 请先选择一个知识点, 以获得基于上下文的解释。"
+                return render("请先选择一节课程，以获得基于上下文的解释。")
             result = explain_term(term, node, topic)
-            return f"### 🔍 {term}\n\n{result}"
+            return render(result)
         except Exception as e:
-            return f"❌ 解释失败: {e}"
+            return render(f"暂时无法生成解释，请稍后重试。\n\n{e}")
 
     def _append_last_assistant_to_node(self, node_id, history):
         if not node_id:

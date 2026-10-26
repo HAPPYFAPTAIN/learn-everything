@@ -61,7 +61,7 @@ class QuizPage(BasePage):
             with gr.Column(elem_id="le-quiz-settings", scale=1, min_width=280):
                 gr.HTML(section_heading("01", "测验设置"))
                 self.project_id = gr.Dropdown(label="学习项目", choices=[], interactive=True)
-                self.refresh = gr.Button("更新项目列表", size="sm", elem_id="le-quiz-refresh")
+                self.refresh = gr.Button("刷新列表", size="sm", elem_id="le-quiz-refresh")
                 # 测什么比测几道更重要：先定范围，再定题型。
                 self.scope = gr.Radio(
                     label="测试范围",

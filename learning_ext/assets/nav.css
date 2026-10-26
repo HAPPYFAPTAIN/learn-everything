@@ -95,7 +95,7 @@
     flex: none;
     display: flex;
     align-items: center;
-    padding: 0 14px 0 var(--le-brand-pl, 16px) !important;
+    padding: 0 14px 0 var(--le-brand-pl, 12px) !important;
     box-sizing: border-box;
     gap: 0 !important;
     transition: width .2s ease, padding-left .2s ease;
@@ -112,7 +112,8 @@
     transition: opacity .2s ease;
   }
   .le-brand img {
-    width: var(--le-brand-img, 148px) !important;
+    width: var(--le-brand-img, 172px) !important;
+    flex: none;
     height: auto;
     transition: width .2s ease;
   }

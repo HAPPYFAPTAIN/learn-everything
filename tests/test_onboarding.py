@@ -128,10 +128,11 @@ def test_resume_identifies_latest_active_course_with_nodes(session, sample_proje
     empty = LearningProject(user_id='default', topic='Empty draft')
     session.add(empty)
     session.commit()
-    visible, markup, pid = onboarding.GuidedHomePage._resume_info()
+    visible, markup, pid, rail_html = onboarding.GuidedHomePage._resume_info()
     assert visible['visible'] is True
     assert pid == sample_project.id
     assert sample_project.topic in markup
+    assert "本周节奏" in rail_html
 
 
 def test_saved_route_only_offers_opening_course():

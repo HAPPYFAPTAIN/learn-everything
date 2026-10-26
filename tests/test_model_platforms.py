@@ -127,6 +127,22 @@ def test_provider_params_work_for_test_learning_and_history_replay(monkeypatch):
     assert post.call_args.kwargs["headers"]["User-Agent"] == "LearnEverything/1.0"
 
 
+def test_reasoning_effort_uses_ui_capability_and_keeps_minimax_legacy_default():
+    from learning_ext.chat_thinking import supports_effort
+    from learning_ext.model_platforms import adapt_chat_params
+    base = "https://api.moonshot.cn/v1"
+    assert adapt_chat_params(base, {"model": "kimi-k3.1-pro"})["reasoning_effort"] == "low"
+    assert adapt_chat_params(base, {"model": "kimi-k3.1-pro", "reasoning_effort": "high"})["reasoning_effort"] == "high"
+    assert adapt_chat_params(base, {"model": "glm-5.3"})["reasoning_effort"] == "low"
+    assert adapt_chat_params(base, {"model": "glm-5.3-flash", "reasoning_effort": "max"})["reasoning_effort"] == "max"
+    assert adapt_chat_params(base, {"model": "kimi-k3.1-pro", "reasoning_effort": "medium"})["reasoning_effort"] == "low"
+    assert supports_effort("minimax-m3.1") is False
+    assert adapt_chat_params(base, {"model": "minimax-m3.1"})["reasoning_effort"] == "low"
+    assert adapt_chat_params(base, {"model": "minimax-m3.1-flash", "reasoning_effort": "high"})["reasoning_effort"] == "high"
+    for model in ("deepseek-chat", "kimi-k3", "glm-5"):
+        assert "reasoning_effort" not in adapt_chat_params(base, {"model": model})
+
+
 def test_catalog_has_regional_endpoints_and_no_embedded_credentials():
     from learning_ext.model_platforms import PLATFORMS, origin
     assert len(PLATFORMS) >= 30

@@ -48,47 +48,51 @@ class GuidedHomePage:
     def on_building_ui(self):
         with gr.Column(elem_id="le-guided-home"):
             self.resume_id = gr.State(None)
-            with gr.Row(visible=False, elem_id="le-resume-row") as self.resume_row:
-                self.resume = gr.HTML("")
-                self.resume_btn = gr.Button("继续学习 →", variant="primary", size="sm", min_width=110)
-            gr.HTML(HERO)
-            with gr.Column(elem_id="le-home-journey"):
-                self.steps = gr.HTML(self._steps(1))
-                with gr.Column(visible=True, elem_id="le-home-goal-panel") as self.goal_panel:
-                    gr.HTML(DIRECTIONS_HEADING, elem_id="le-discovery-heading")
-                    with gr.Row(elem_id="le-discovery-cards"):
-                        with gr.Column(elem_classes=["le-direction-card"]):
-                            gr.HTML(direction_art("python"))
-                            self.example_python = gr.Button("做出第一个小工具\n用 Python 整理一张表格", elem_classes=["le-direction-button"])
-                        with gr.Column(elem_classes=["le-direction-card"]):
-                            gr.HTML(direction_art("ai"))
-                            self.example_ai = gr.Button("看懂 AI 如何工作\n从零认识一个 Agent", elem_classes=["le-direction-button"])
-                        with gr.Column(elem_classes=["le-direction-card"]):
-                            gr.HTML(direction_art("writing"))
-                            self.example_writing = gr.Button("把想法表达清楚\n写一份让人看懂的工作汇报", elem_classes=["le-direction-button"])
-                    with gr.Column(elem_id="le-onboarding-card"):
-                        gr.HTML('<div class="le-custom-heading"><h3>或者直接写下目标</h3></div>')
-                        self.topic = gr.Textbox(label="写下你想学会的事", placeholder="我想学会……，这样就能……", lines=2, max_lines=4, elem_id="le-onboarding-topic")
-                        with gr.Accordion("我的学习节奏", open=False, elem_id="le-learning-preferences"):
-                            with gr.Row():
-                                with gr.Column(scale=3):
-                                    self.background = gr.Textbox(label="从哪里开始", placeholder="零基础，或写下你已经会的…", lines=2)
-                                with gr.Column(scale=2, elem_id="le-time-preference"):
-                                    self.hours = gr.Slider(minimum=1, maximum=20, value=3, step=1, label="每周留给学习的时间 · 小时")
-                        with gr.Row(elem_id="le-home-goal-action"):
-                            self.next_btn = gr.Button("为我安排第一步 →", variant="primary")
-                with gr.Column(visible=False, elem_id="le-home-confirm") as self.confirm_panel:
-                    self.summary = gr.HTML("")
-                    self.connection = gr.Markdown("")
-                    self.begin_btn = gr.Button("生成学习路线 →", variant="primary")
-                    self.back_btn = gr.Button("返回修改目标", variant="secondary", elem_id="le-home-back")
-                    gr.HTML('<p class="le-reassurance">生成时会把学习目标与背景发送给你配置的模型服务。路线先供你预览，确认之后才会保存和备课。</p>')
-                self.feedback = gr.Markdown("", elem_id="le-onboarding-feedback")
-            gr.HTML(SAMPLE)
-            gr.HTML('<div class="le-guided-footer"><button type="button" data-le-tour-start="learning">需要逐步操作提示？</button></div>')
-            self.marker = gr.HTML("", elem_id="le-onboarding-marker")
-            with gr.Row(elem_id="le-home-bridge"):
-                self.refresh = gr.Button("刷新首页", elem_id="le-home-refresh")
+            with gr.Row(elem_id="le-home-wide"):
+                with gr.Column(elem_id="le-home-main"):
+                    with gr.Row(visible=False, elem_id="le-resume-row") as self.resume_row:
+                        self.resume = gr.HTML("")
+                        self.resume_btn = gr.Button("继续学习 →", variant="primary", size="sm", min_width=110)
+                    gr.HTML(HERO)
+                    with gr.Column(elem_id="le-home-journey"):
+                        self.steps = gr.HTML(self._steps(1))
+                        with gr.Column(visible=True, elem_id="le-home-goal-panel") as self.goal_panel:
+                            gr.HTML(DIRECTIONS_HEADING, elem_id="le-discovery-heading")
+                            with gr.Row(elem_id="le-discovery-cards"):
+                                with gr.Column(elem_classes=["le-direction-card"]):
+                                    gr.HTML(direction_art("python"))
+                                    self.example_python = gr.Button("做出第一个小工具\n用 Python 整理一张表格", elem_classes=["le-direction-button"])
+                                with gr.Column(elem_classes=["le-direction-card"]):
+                                    gr.HTML(direction_art("ai"))
+                                    self.example_ai = gr.Button("看懂 AI 如何工作\n从零认识一个 Agent", elem_classes=["le-direction-button"])
+                                with gr.Column(elem_classes=["le-direction-card"]):
+                                    gr.HTML(direction_art("writing"))
+                                    self.example_writing = gr.Button("把想法表达清楚\n写一份让人看懂的工作汇报", elem_classes=["le-direction-button"])
+                            with gr.Column(elem_id="le-onboarding-card"):
+                                gr.HTML('<div class="le-custom-heading"><h3>或者直接写下目标</h3></div>')
+                                self.topic = gr.Textbox(show_label=False, placeholder="我想学会……，这样就能……", lines=2, max_lines=4, elem_id="le-onboarding-topic")
+                                with gr.Accordion("我的学习节奏", open=False, elem_id="le-learning-preferences"):
+                                    with gr.Row():
+                                        with gr.Column(scale=3):
+                                            self.background = gr.Textbox(label="从哪里开始", placeholder="零基础，或写下你已经会的…", lines=2)
+                                        with gr.Column(scale=2, elem_id="le-time-preference"):
+                                            self.hours = gr.Slider(minimum=1, maximum=20, value=3, step=1, label="每周留给学习的时间 · 小时")
+                                with gr.Row(elem_id="le-home-goal-action"):
+                                    self.next_btn = gr.Button("为我安排第一步 →", variant="primary")
+                        with gr.Column(visible=False, elem_id="le-home-confirm") as self.confirm_panel:
+                            self.summary = gr.HTML("")
+                            self.connection = gr.Markdown("")
+                            self.begin_btn = gr.Button("生成学习路线 →", variant="primary")
+                            self.back_btn = gr.Button("返回修改目标", variant="secondary", elem_id="le-home-back")
+                            gr.HTML('<p class="le-reassurance">生成时会把学习目标与背景发送给你配置的模型服务。路线先供你预览，确认之后才会保存和备课。</p>')
+                        self.feedback = gr.Markdown("", elem_id="le-onboarding-feedback")
+                    gr.HTML(SAMPLE)
+                    gr.HTML('<div class="le-guided-footer"><button type="button" data-le-tour-start="learning">需要逐步操作提示？</button></div>')
+                    self.marker = gr.HTML("", elem_id="le-onboarding-marker")
+                    with gr.Row(elem_id="le-home-bridge"):
+                        self.refresh = gr.Button("刷新首页", elem_id="le-home-refresh")
+                with gr.Column(elem_id="le-home-rail"):
+                    self.rail = gr.HTML("")
 
     @staticmethod
     def _steps(active):
@@ -127,9 +131,12 @@ class GuidedHomePage:
 
         with Session(engine) as session:
             project = session.exec(select(LearningProject).join(KnowledgeNode).where(LearningProject.user_id == "default", LearningProject.status == "active").order_by(LearningProject.id.desc())).first()
+            from learning_ext.home_rail import build_home_rail
+
             if not project:
-                return gr.update(visible=False), "", None
+                return gr.update(visible=False), "", None, build_home_rail(session, None)
             project_id = project.id
+            rail_html = build_home_rail(session, project_id)
             title = html.escape(project.topic or project.title or f"未命名学习项目 · {project_id}")
             progress = get_project_progress(session, project_id)
             next_nodes = get_next_learnable_nodes(session, project_id, limit=1)
@@ -162,7 +169,7 @@ class GuidedHomePage:
             f'{next_markup}<div class="le-resume-review"><small>待复习</small><strong>{due} <span>张</span></strong></div>'
             '</div></section>'
         )
-        return gr.update(visible=True), markup, project_id
+        return gr.update(visible=True), markup, project_id, rail_html
 
     def on_register_events(self):
         page = self._app.learning_path_page
@@ -182,7 +189,7 @@ class GuidedHomePage:
         def refresh_home():
             ready = connection_configured()
             return *self._resume_info(), ("已找到保存的模型配置。可以继续生成路线。" if ready else "先连接 AI，再回来继续，当前页面里的目标会保留。"), gr.update(value="生成学习路线 →" if ready else "先连接 AI →")
-        self.refresh.click(refresh_home, outputs=[self.resume_row, self.resume, self.resume_id, self.connection, self.begin_btn], show_progress="hidden")
-        self._app.app.load(self._resume_info, outputs=[self.resume_row, self.resume, self.resume_id], show_progress="hidden")
+        self.refresh.click(refresh_home, outputs=[self.resume_row, self.resume, self.resume_id, self.rail, self.connection, self.begin_btn], show_progress="hidden")
+        self._app.app.load(self._resume_info, outputs=[self.resume_row, self.resume, self.resume_id, self.rail], show_progress="hidden")
         self.resume_btn.click(wb._auto_init, [self.resume_id], wb.load_outputs).then(lambda: flow_target("learning-workbench-tab", "study"), outputs=self.marker)
         page.open_course.click(wb._auto_init, [page.current_project_id], wb.load_outputs).then(lambda: flow_target("learning-workbench-tab", "study"), outputs=self.marker)

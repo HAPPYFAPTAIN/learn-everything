@@ -9,15 +9,15 @@
   position: fixed;
   right: 28px;
   bottom: 28px;
-  width: 58px;
-  height: 58px;
+  width: 54px;
+  height: 54px;
   padding: 0;
-  border: 1px solid #dbe7f3;
+  border: 1px solid var(--le-line);
   border-radius: 50%;
-  background-color: #f7fbfe;
+  background-color: var(--le-surface);
   background-image: url("__ASSETS__/coach-mascot.png") !important;
   background-position: center !important;
-  background-size: 82% !important;
+  background-size: 78% !important;
   background-repeat: no-repeat !important;
   color: transparent;
   font-size: 0;
@@ -26,19 +26,19 @@
   justify-content: center;
   cursor: grab;
   z-index: 70;
-  box-shadow: 0 8px 22px #1d355826, inset 0 0 0 2px #fff;
+  box-shadow: var(--le-shadow-2);
   touch-action: none;
-  transition: background-color .16s ease, border-color .16s ease,
-    transform .2s ease, box-shadow .16s ease, opacity .2s ease;
+  transition: background-color .16s var(--le-ease), border-color .16s var(--le-ease),
+    transform .2s var(--le-ease), box-shadow .16s var(--le-ease), opacity .2s var(--le-ease);
 }
 #le-assistant-fab:hover {
-  background-color: #fff;
-  border-color: #c6dbee;
-  transform: translateY(-2px) scale(1.04);
-  box-shadow: 0 14px 30px #1d355833, inset 0 0 0 2px #fff;
+  background-color: var(--le-surface);
+  border-color: var(--le-line-strong);
+  transform: translateY(-1px) scale(1.03);
+  box-shadow: var(--le-shadow-3);
 }
 #le-assistant-fab:focus-visible {
-  outline: 2px solid #7e9fc9;
+  outline: 2px solid var(--le-focus);
   outline-offset: 3px;
 }
 #le-assistant-fab.le-dragging {
@@ -47,8 +47,8 @@
   transition: none;
 }
 #le-assistant-fab[aria-expanded="true"] {
-  background-color: #fff;
-  border-color: #b9d2e9;
+  background-color: var(--le-surface);
+  border-color: var(--le-line-strong);
 }
 
 /* 对话框打开时淡出并不可点（对话内容不受影响） */
@@ -293,27 +293,33 @@ body.le-assistant-open #le-global-assistant {
   inset: auto;
   flex: 0 0 auto;
   width: auto;
-  min-width: 94px;
-  height: 42px;
-  padding: 0 13px 0 43px;
-  margin-left: 12px;
-  margin-right: 18px;
-  border: 1px solid #cde4ec !important;
-  border-radius: 13px;
-  background-position: 10px center !important;
-  background-size: 30px !important;
-  box-shadow: 0 3px 12px #1d35581a, inset 0 0 0 2px #fff;
+  min-width: 0;
+  height: 32px;
+  padding: 0 11px 0 34px;
+  margin-left: 6px;
+  margin-right: 0;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 999px;
+  background-color: transparent !important;
+  background-position: 8px center !important;
+  background-size: 22px !important;
+  color: var(--le-ink-2);
+  box-shadow: none;
   cursor: pointer;
   touch-action: auto;
+  transition: background .16s var(--le-ease), border-color .16s var(--le-ease), color .16s var(--le-ease);
 }
 #le-assistant-fab.le-fab-docked::after {
   content: '小助';
-  color: #163e52;
-  font: 650 13px var(--le-font, 'Microsoft YaHei', sans-serif);
-  letter-spacing: .02em;
+  color: inherit;
+  font: 500 12.5px var(--le-font, 'Microsoft YaHei', sans-serif);
+  letter-spacing: 0;
 }
 #le-assistant-fab.le-fab-docked:hover {
-  transform: translateY(-1px);
+  transform: none;
+  background-color: var(--le-surface-3) !important;
+  border-color: var(--le-line-strong) !important;
+  color: var(--le-ink);
 }
 
 @media (max-width: 1100px) {

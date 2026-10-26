@@ -135,11 +135,13 @@ def test_dashboard_page_seed_demo_data_outputs_dashboard(session, monkeypatch):
     monkeypatch.setattr(dashboard_page_module, "engine", session.get_bind())
     page = DashboardPage(MagicMock())
 
-    project_update, metrics_html, status_md, fig, report, status = page._seed_demo_data()
+    project_update, metrics_html, status_md, week_html, fig, report, status, dimensions = page._seed_demo_data()
 
     assert project_update["choices"]
     assert "知识点总数" in metrics_html
     assert "已掌握" in status_md
+    assert "本周节奏" in week_html
+    assert "le-rail-days" in week_html
     assert "le-activity-chart" in fig
     assert "今日学习日报" in report
     assert "演示项目已创建" in status
@@ -155,6 +157,7 @@ def test_dashboard_page_registers_no_arg_events_with_empty_inputs():
     page.seed_btn = MagicMock()
     page.metric_html = MagicMock()
     page.status_md = MagicMock()
+    page.week_html = MagicMock()
     page.heatmap = MagicMock()
     page.period = MagicMock()
     page.export_btn = MagicMock()
@@ -162,6 +165,10 @@ def test_dashboard_page_registers_no_arg_events_with_empty_inputs():
     page.export_status = MagicMock()
     page.report = MagicMock()
     page.status = MagicMock()
+    page.dimension_html = MagicMock()
+    page.records_btn = MagicMock()
+    page.records_file = MagicMock()
+    page.records_status = MagicMock()
 
     page.on_register_events()
 

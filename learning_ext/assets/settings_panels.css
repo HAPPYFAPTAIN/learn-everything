@@ -51,7 +51,6 @@
 #chat-tab #le-chat-flyout #index-0 label:has(input[type=radio]) { min-height: 70px; padding: 14px !important; font-weight: 600 !important; }
 #chat-tab #le-chat-flyout #index-0 label::after { display: none !important; }
 #chat-tab #le-chat-flyout #index-0 { margin-bottom: 10px !important; }
-#chat-tab .le-chat-hero-art { display: none !important; }
 #chat-tab #le-chat-welcome h1 { font-size: 30px !important; font-weight: 650 !important; letter-spacing: -.02em; }
 #chat-tab #chat-area.le-chat-empty { padding-top: clamp(120px,20vh,260px) !important; gap: 26px !important; }
 #chat-tab #le-composer { border-radius: 24px !important; border-color: #d4e0e7 !important; box-shadow: 0 3px 14px #24465608 !important; }
@@ -219,7 +218,7 @@
 #le-chat-model-trigger .le-entry-icon img { display: block; width: 24px; height: 24px; object-fit: contain; }
 
 #le-app-tabs #le-course-admin-trigger { width: auto !important; flex: none !important; order: 4; margin-left: auto; padding: 7px 11px !important; border: 1px solid #dbe8ed !important; background: #fff !important; }
-#le-app-tabs #le-course-admin.le-panel-current > div:last-child { position: static !important; width: 100% !important; max-height: none !important; overflow: visible !important; border: 0 !important; padding: 0 !important; box-shadow: none !important; }
+#le-app-tabs #le-course-admin.le-panel-current > div:last-child { position: static !important; width: 100% !important; max-height: none !important; overflow: visible !important; border: 0 !important; padding: 0 !important; box-shadow: none !important; background: transparent !important; border-radius: 0 !important; }
 #le-app-tabs #le-env-setup.le-panel-current { margin: 0 !important; }
 #le-app-tabs #le-env-status { padding: 0 !important; border: 0 !important; min-height: 0 !important; background: transparent !important; }
 #le-app-tabs .le-env-state { display: grid; grid-template-columns: 42px minmax(0,1fr); gap: 12px; padding: 18px 14px; border: 1px solid #dcebf0; border-radius: 14px; background: linear-gradient(125deg,#edf9fc,#f7fafc); }
@@ -248,3 +247,46 @@
 @keyframes le-env-sweep { 0%,100% { transform: translateX(-110%); } 50% { transform: translateX(265%); } }
 @media(prefers-reduced-motion:reduce) { #le-app-tabs .le-env-loading i,#le-app-tabs .le-env-symbol::after { animation: none !important; } }
 @media(max-width:1000px) { #le-app-tabs #le-course-admin-trigger { grid-column: 2; justify-self: end; } }
+
+/* Portalled panels retain their surfaces independently of the original page. */
+#le-app-tabs dialog.le-settings-deck { background: var(--le-surface-2); color: var(--le-ink); border-color: var(--le-line); box-shadow: var(--le-shadow-3); }
+#le-app-tabs .le-settings-deck .le-panel-header { border-color: var(--le-line); }
+#le-app-tabs .le-settings-deck .le-panel-current > div:not(.wrap) { background: transparent !important; }
+#le-app-tabs .le-settings-deck :is(.le-settings-entry,.le-panel-header button) { color: var(--le-ink-2) !important; }
+#le-app-tabs .le-settings-deck :is(.le-settings-entry,.le-panel-header button):hover { background: var(--le-surface-3) !important; color: var(--le-ink) !important; }
+#le-app-tabs .le-settings-deck :is(.le-settings-entry,.le-panel-header button):focus:not(:focus-visible) { outline: none !important; box-shadow: none !important; }
+#le-app-tabs .le-settings-deck button.le-settings-entry:focus-visible { outline: 2px solid var(--le-accent) !important; outline-offset: -2px; }
+#le-app-tabs .le-settings-deck :is(label>span,.block-label,.prose strong,.le-panel-header h2) { color: var(--le-ink) !important; }
+#le-app-tabs .le-settings-deck .prose p { color: var(--le-ink-2) !important; }
+#le-app-tabs .le-settings-deck #le-env-confirm { background: var(--le-surface-3) !important; color: var(--le-ink) !important; border-color: var(--le-line) !important; }
+#le-app-tabs .le-settings-deck .le-env-state { background: var(--le-surface-3); border-color: var(--le-line); }
+#le-app-tabs .le-settings-deck .le-env-state .le-env-symbol { background: var(--le-accent-soft); color: var(--le-accent); }
+#le-app-tabs .le-settings-deck .le-env-copy h3 { color: var(--le-ink) !important; }
+#le-app-tabs .le-settings-deck .le-env-copy p { color: var(--le-ink-2) !important; }
+
+#le-app-tabs .le-settings-deck #le-course-admin.le-panel-current :is(#le-course-refresh-actions button,#le-adapt-open,#le-course-reload,.le-settings-entry) {
+ display:flex !important; align-items:center !important; justify-content:flex-start !important;
+ gap:12px !important; width:100% !important; min-height:42px !important; padding:10px 12px !important;
+ border:0 !important; border-radius:9px !important; background:transparent !important;
+ color:var(--le-ink) !important; font:550 14px/1.5 var(--le-ui-font) !important; text-align:left !important;
+}
+#le-app-tabs .le-settings-deck #le-course-admin.le-panel-current :is(#le-course-refresh-actions button,#le-adapt-open,#le-course-reload,.le-settings-entry):hover { background:var(--le-surface-3) !important; }
+#le-app-tabs .le-settings-deck #le-course-admin .le-entry-icon { display:flex; width:18px; height:18px; flex:none; color:var(--le-ink-3); }
+#le-app-tabs .le-settings-deck #le-course-admin .le-entry-icon svg { width:18px; height:18px; }
+#le-app-tabs .le-settings-deck #le-course-admin .le-entry-title { font:inherit !important; }
+#le-app-tabs .le-settings-deck #le-course-refresh-actions { gap:0 !important; }
+#le-app-tabs .le-settings-deck #le-course-admin .le-entry-title { color:inherit !important; font-weight:550 !important; font-size:14px !important; }
+#le-app-tabs .le-settings-deck #le-route-batch-list label {
+ display:flex !important; align-items:center !important; gap:10px !important;
+ margin:0 !important; padding:11px 12px !important; min-height:42px !important;
+ background:var(--le-surface-3) !important; color:var(--le-ink) !important;
+ border:1px solid var(--le-line) !important; border-radius:10px !important;
+ box-shadow:none !important; font:550 14px/1.5 var(--le-ui-font) !important;
+ transition:background .15s ease,border-color .15s ease;
+}
+#le-app-tabs .le-settings-deck #le-route-batch-list label span { color:inherit !important; font:inherit !important; }
+#le-app-tabs .le-settings-deck #le-route-batch-list label:hover { border-color:var(--le-line-strong) !important; }
+#le-app-tabs .le-settings-deck #le-route-batch-list label:has(input:checked) { background:var(--le-accent-soft) !important; border-color:var(--le-accent-line) !important; }
+#le-app-tabs .le-settings-deck #le-route-batch-list input[type=checkbox] { width:17px !important; height:17px !important; flex:none; border:1px solid var(--le-line-strong) !important; background-color:var(--le-surface) !important; }
+#le-app-tabs .le-settings-deck #le-route-batch-list input[type=checkbox]:checked { background-color:var(--le-accent) !important; border-color:var(--le-accent) !important; }
+#le-app-tabs .le-settings-deck #le-route-batch-list .wrap { gap:7px !important; }

@@ -23,15 +23,17 @@ def _project_nodes(session, project_id):
     return sort_nodes_by_code(list(nodes))
 
 
-def test_resume_without_course_keeps_three_value_new_user_contract(session, monkeypatch):
+def test_resume_without_course_keeps_new_user_contract(session, monkeypatch):
     _use_test_engine(session, monkeypatch)
 
     result = onboarding.GuidedHomePage._resume_info()
 
-    assert len(result) == 3
+    assert len(result) == 4
     assert result[0]["visible"] is False
     assert result[1] == ""
     assert result[2] is None
+    assert "从这里开始" in result[3]
+    assert "接下来" in result[3]
 
 
 def test_resume_zero_progress_and_no_cards_has_real_fallbacks(
@@ -40,7 +42,7 @@ def test_resume_zero_progress_and_no_cards_has_real_fallbacks(
     _use_test_engine(session, monkeypatch)
     nodes = _project_nodes(session, sample_project.id)
 
-    visible, markup, project_id = onboarding.GuidedHomePage._resume_info()
+    visible, markup, project_id, rail_html = onboarding.GuidedHomePage._resume_info()
 
     assert visible["visible"] is True
     assert project_id == sample_project.id
@@ -50,6 +52,8 @@ def test_resume_zero_progress_and_no_cards_has_real_fallbacks(
     assert "<strong>0 <span>张</span></strong>" in markup
     assert "暂无复习卡" not in markup
     assert '<div class="le-resume-review"><small>待复习</small>' in markup
+    assert "本周节奏" in rail_html
+    assert "le-rail-days" in rail_html
 
 
 def test_resume_renders_real_progress_next_lesson_and_due_count(
@@ -94,9 +98,9 @@ def test_resume_renders_real_progress_next_lesson_and_due_count(
     session.commit()
 
     result = onboarding.GuidedHomePage._resume_info()
-    visible, markup, project_id = result
+    visible, markup, project_id, rail_html = result
 
-    assert len(result) == 3
+    assert len(result) == 4
     assert visible["visible"] is True
     assert project_id == sample_project.id
     assert "Python &lt;数据&gt; &amp; &quot;AI&quot;" in markup
@@ -108,6 +112,8 @@ def test_resume_renders_real_progress_next_lesson_and_due_count(
     assert "<strong>1 <span>张</span></strong>" in markup
     assert "现在可以复习" not in markup
     assert '<div class="le-resume-review"><small>待复习</small>' in markup
+    assert "本周节奏" in rail_html
+    assert "le-rail-links" in rail_html
 
 
 def test_resume_card_precedes_hero_without_changing_event_contract():

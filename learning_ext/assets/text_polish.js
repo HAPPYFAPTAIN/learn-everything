@@ -273,7 +273,12 @@
   }
 
   new MutationObserver(mutations => {
-    if (mutations.some(mutation => !mutation.target.closest?.('.le-polish-tools,.le-polish-popover'))) schedule();
+    // Streaming content owns its rendering. Root mount/removal still has an
+    // outside parent as its target, so newly mounted controls remain discoverable.
+    if (mutations.some(mutation => {
+      const target = mutation.target.nodeType === 1 ? mutation.target : mutation.target.parentElement;
+      return !target?.closest('.le-polish-tools,.le-polish-popover,#le-coach-transcript,#le-coach-stream');
+    })) schedule();
   }).observe(document.documentElement, {
     subtree: true, childList: true, characterData: true, attributes: true,
     attributeFilter: ['class', 'style', 'hidden', 'disabled', 'readonly', 'inert', 'aria-hidden', 'data-le-polish-kind'],

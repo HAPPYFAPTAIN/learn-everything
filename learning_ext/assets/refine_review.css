@@ -1,0 +1,930 @@
+/* refine_review：间隔复习页与查漏测验页。
+   一屏只留一层卡片（题目卡），左栏退成一条 1px 分隔线后的控件区；
+   颜色只取 --le-* 语义变量，前缀用 #le-app-tabs #具体 tab 提高特异性压过暗色覆盖。 */
+
+/* ---------- 页头 ---------- */
+
+#le-app-tabs #learning-review-tab .le-editorial-head,
+#le-app-tabs #learning-quiz-tab .le-editorial-head {
+  margin: 0 0 26px !important;
+  padding: 2px 0 16px !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--le-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  min-height: 0 !important;
+}
+
+#le-app-tabs #learning-review-tab .le-editorial-head::after,
+#le-app-tabs #learning-quiz-tab .le-editorial-head::after {
+  display: none !important;
+}
+
+#le-app-tabs #learning-review-tab .le-editorial-head .le-section-label,
+#le-app-tabs #learning-quiz-tab .le-editorial-head .le-section-label {
+  color: var(--le-ink-3) !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  letter-spacing: .18em !important;
+}
+
+#le-app-tabs #learning-review-tab .le-editorial-head .le-section-label::before,
+#le-app-tabs #learning-quiz-tab .le-editorial-head .le-section-label::before {
+  width: 18px !important;
+  height: 1px !important;
+  border-radius: 0 !important;
+  background: var(--le-line-strong) !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #learning-review-tab .le-editorial-copy h1,
+#le-app-tabs #learning-quiz-tab .le-editorial-copy h1 {
+  margin: 6px 0 0 !important;
+  font-size: 30px !important;
+  font-weight: 600 !important;
+  letter-spacing: -.03em !important;
+  line-height: 1.25 !important;
+  color: var(--le-ink) !important;
+}
+
+/* ---------- 两栏骨架 ---------- */
+
+#le-app-tabs #learning-review-tab #le-review-flow,
+#le-app-tabs #learning-quiz-tab #le-quiz-flow {
+  display: grid !important;
+  grid-template-columns: minmax(252px, 292px) minmax(0, 1fr) !important;
+  align-items: stretch !important;
+  gap: 30px !important;
+  width: 100% !important;
+  max-width: 1160px !important;
+  margin: 6px auto 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #learning-review-tab #le-review-flow > #le-review-scope,
+#le-app-tabs #learning-review-tab #le-review-flow > #le-review-session,
+#le-app-tabs #learning-quiz-tab #le-quiz-flow > #le-quiz-settings,
+#le-app-tabs #learning-quiz-tab #le-quiz-flow > #le-quiz-answer {
+  box-sizing: border-box !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  gap: 16px !important;
+  padding: 0 !important;
+  align-items: stretch !important;
+  overflow: visible !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #learning-review-tab #le-review-flow > #le-review-scope,
+#le-app-tabs #learning-quiz-tab #le-quiz-flow > #le-quiz-settings {
+  gap: 12px !important;
+  padding: 2px 26px 2px 0 !important;
+  border-right: 1px solid var(--le-line) !important;
+}
+
+#le-app-tabs #learning-review-tab #le-review-flow > #le-review-session,
+#le-app-tabs #learning-quiz-tab #le-quiz-flow > #le-quiz-answer {
+  gap: 18px !important;
+  padding: 2px 0 0 !important;
+}
+
+/* 栏内的 block 一律退成平面，卡片样式只在下面的题目卡与答案区上重建 */
+#le-app-tabs #learning-review-tab #le-review-flow .block,
+#le-app-tabs #learning-quiz-tab #le-quiz-flow .block {
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+/* 空的提示行不占栏距 */
+#le-app-tabs #learning-review-tab #le-review-flow #le-review-session > .block:has(> div > .prose:empty),
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-answer > .block:has(> div > .prose:empty) {
+  display: none !important;
+}
+
+/* ---------- 区块标题 ---------- */
+
+#le-app-tabs #learning-review-tab #le-review-flow .le-section-heading,
+#le-app-tabs #learning-quiz-tab #le-quiz-flow .le-section-heading {
+  display: flex !important;
+  align-items: baseline !important;
+  gap: 10px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+#le-app-tabs #learning-review-tab #le-review-flow .le-section-heading > span,
+#le-app-tabs #learning-quiz-tab #le-quiz-flow .le-section-heading > span {
+  display: inline-block !important;
+  flex: 0 0 auto !important;
+  width: auto !important;
+  height: auto !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--le-ink-3) !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  letter-spacing: .08em !important;
+  line-height: 1.4 !important;
+  font-variant-numeric: tabular-nums;
+}
+
+#le-app-tabs #learning-review-tab #le-review-flow .le-section-heading h2,
+#le-app-tabs #learning-quiz-tab #le-quiz-flow .le-section-heading h2 {
+  margin: 0 !important;
+  font-size: 20px !important;
+  font-weight: 600 !important;
+  letter-spacing: -.02em !important;
+  line-height: 1.4 !important;
+  color: var(--le-ink) !important;
+}
+
+/* ---------- 控件标签 ---------- */
+
+#le-app-tabs #learning-review-tab #le-review-flow label[data-testid="block-label"],
+#le-app-tabs #learning-quiz-tab #le-quiz-flow label[data-testid="block-label"] {
+  margin: 0 0 6px !important;
+  padding: 0 !important;
+  background: transparent !important;
+  color: var(--le-ink-3) !important;
+  font-size: 11.5px !important;
+  font-weight: 550 !important;
+  letter-spacing: .04em !important;
+  line-height: 1.5 !important;
+}
+
+/* ---------- 复习卡（本页唯一的卡片） ---------- */
+
+#le-app-tabs #learning-review-tab #le-review-flow #le-review-session #le-review-card,
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-answer #le-quiz-question {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  min-height: 208px !important;
+  margin: 0 !important;
+  padding: 22px 24px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 18px !important;
+  background: var(--le-surface) !important;
+  box-shadow: var(--le-shadow-1) !important;
+}
+
+#le-app-tabs #learning-review-tab #le-review-flow #le-review-session #le-review-card > div,
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-answer #le-quiz-question > div {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+#le-app-tabs #learning-review-tab #le-review-flow #le-review-session #le-review-card .prose {
+  width: 100% !important;
+  max-width: 560px !important;
+  margin: 0 auto !important;
+  font-size: 19px !important;
+  font-weight: 480 !important;
+  line-height: 1.72 !important;
+  letter-spacing: -.01em !important;
+  text-align: center !important;
+  text-wrap: balance;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #learning-review-tab #le-review-flow #le-review-session #le-review-card .prose > :first-child,
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-answer #le-quiz-question .prose > :first-child {
+  margin-top: 0 !important;
+}
+
+#le-app-tabs #learning-review-tab #le-review-flow #le-review-session #le-review-card .prose > :last-child,
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-answer #le-quiz-question .prose > :last-child {
+  margin-bottom: 0 !important;
+}
+
+/* 答案区：与题目卡同一组的次级面，不再叠一层带边框的卡 */
+#le-app-tabs #learning-review-tab #le-review-flow #le-review-session #le-review-answer {
+  padding: 18px 20px !important;
+  border: 0 !important;
+  border-radius: 16px !important;
+  background: var(--le-surface-2) !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #learning-review-tab #le-review-flow #le-review-session #le-review-answer .prose {
+  font-size: 14.5px !important;
+  line-height: 1.8 !important;
+  text-align: left !important;
+  color: var(--le-ink-2) !important;
+}
+
+#le-app-tabs #learning-review-tab #le-review-flow #le-review-session #le-review-answer .prose > :first-child {
+  margin-top: 0 !important;
+}
+
+#le-app-tabs #learning-review-tab #le-review-flow #le-review-session #le-review-answer .prose > :last-child {
+  margin-bottom: 0 !important;
+}
+
+/* 统计行：一条弱化的数字注脚，不再是一个盒子 */
+#le-app-tabs #learning-review-tab #le-review-flow #le-review-session #le-review-stats {
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #learning-review-tab #le-review-flow #le-review-session #le-review-stats .prose {
+  margin: 0 !important;
+  font-size: 12px !important;
+  line-height: 1.6 !important;
+  letter-spacing: .01em !important;
+  color: var(--le-ink-3) !important;
+  font-variant-numeric: tabular-nums;
+}
+
+#le-app-tabs #learning-review-tab #le-review-flow #le-review-session #le-review-stats .prose :is(p, span) {
+  margin: 0 !important;
+  font-size: inherit !important;
+  color: inherit !important;
+}
+
+#le-app-tabs #learning-review-tab #le-review-flow #le-review-session #le-review-stats .prose strong {
+  color: var(--le-ink) !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  font-variant-numeric: tabular-nums;
+}
+
+#le-app-tabs #learning-review-tab #le-review-flow #le-review-session #le-review-status .prose {
+  margin: 0 !important;
+  font-size: 12.5px !important;
+  line-height: 1.7 !important;
+  color: var(--le-ink-3) !important;
+}
+
+/* ---------- 空状态 ---------- */
+
+#le-app-tabs #learning-review-tab #le-review-flow .le-practice-empty,
+#le-app-tabs #learning-quiz-tab #le-quiz-flow .le-practice-empty {
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  text-align: center !important;
+}
+
+#le-app-tabs #learning-review-tab #le-review-flow .le-practice-empty .le-practice-symbol,
+#le-app-tabs #learning-quiz-tab #le-quiz-flow .le-practice-empty .le-practice-symbol {
+  width: 104px !important;
+  height: auto !important;
+  margin: 0 auto 6px !important;
+  opacity: .45 !important;
+}
+
+#le-app-tabs #learning-review-tab #le-review-flow .le-practice-empty .le-practice-symbol svg,
+#le-app-tabs #learning-quiz-tab #le-quiz-flow .le-practice-empty .le-practice-symbol svg {
+  width: 104px !important;
+  height: 62px !important;
+}
+
+#le-app-tabs #learning-review-tab #le-review-flow .le-practice-empty h3,
+#le-app-tabs #learning-quiz-tab #le-quiz-flow .le-practice-empty h3 {
+  margin: 0 0 8px !important;
+  font-size: 17px !important;
+  font-weight: 560 !important;
+  letter-spacing: -.01em !important;
+  line-height: 1.5 !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #learning-review-tab #le-review-flow .le-practice-empty p,
+#le-app-tabs #learning-quiz-tab #le-quiz-flow .le-practice-empty p {
+  max-width: 360px !important;
+  margin: 0 auto !important;
+  font-size: 13.5px !important;
+  line-height: 1.7 !important;
+  color: var(--le-ink-3) !important;
+}
+
+/* ---------- 测验题目卡 ---------- */
+
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-answer #le-quiz-question {
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+  min-height: 128px !important;
+  padding: 24px 26px !important;
+}
+
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-answer #le-quiz-question .prose {
+  width: 100% !important;
+  margin: 0 !important;
+  font-size: 17px !important;
+  line-height: 1.75 !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-answer #le-quiz-question .prose > p:first-child {
+  margin: 0 0 10px !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  letter-spacing: .08em !important;
+  color: var(--le-ink-3) !important;
+  font-variant-numeric: tabular-nums;
+}
+
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-answer #le-quiz-question .prose > p:first-child strong {
+  color: inherit !important;
+  font-weight: inherit !important;
+}
+
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-answer #le-quiz-question .prose h3 {
+  margin: 0 !important;
+  font-size: 18px !important;
+  font-weight: 560 !important;
+  letter-spacing: -.01em !important;
+  line-height: 1.65 !important;
+  color: var(--le-ink) !important;
+}
+
+/* ---------- 测验选项：整行可点的选项，不是表单行 ---------- */
+
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-answer .block:has(> .wrap > label > input[type="radio"]),
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-settings #le-quiz-scope {
+  min-width: 0 !important;
+  min-inline-size: 0 !important;
+  width: 100% !important;
+}
+
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-answer .block:has(> .wrap > label > input[type="radio"]) > .wrap {
+  display: flex !important;
+  flex-direction: column !important;
+  flex-wrap: nowrap !important;
+  gap: 8px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* 「选择答案」这行灰字由选项本身就能看出来，隐掉 */
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-answer .block:has(> .wrap > label > input[type="radio"]) > label[data-testid="block-label"] {
+  display: none !important;
+}
+
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-answer .wrap > label:has(> input[type="radio"]) {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 10px !important;
+  width: 100% !important;
+  min-height: 44px !important;
+  margin: 0 !important;
+  padding: 11px 14px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 11px !important;
+  background: var(--le-surface) !important;
+  color: var(--le-ink-2) !important;
+  font-size: 14px !important;
+  font-weight: 480 !important;
+  line-height: 1.6 !important;
+  text-align: left !important;
+  cursor: pointer !important;
+  transition: background .16s var(--le-ease), border-color .16s var(--le-ease), color .16s var(--le-ease) !important;
+}
+
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-answer .wrap > label:has(> input[type="radio"]):hover {
+  background: var(--le-surface-3) !important;
+  border-color: var(--le-line-strong) !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-answer .wrap > label.selected {
+  background: var(--le-accent-soft) !important;
+  border-color: var(--le-ink) !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-answer .wrap > label:has(> input[type="radio"]) span {
+  margin: 0 !important;
+  color: inherit !important;
+  font-size: inherit !important;
+  font-weight: inherit !important;
+  line-height: inherit !important;
+}
+
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-answer .wrap > label > input[type="radio"] {
+  position: static !important;
+  flex: 0 0 16px !important;
+  width: 16px !important;
+  height: 16px !important;
+  margin: 2px 0 0 !important;
+  appearance: none !important;
+  border: 1.5px solid var(--le-line-strong) !important;
+  border-radius: 999px !important;
+  background: var(--le-surface) !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-answer .wrap > label > input[type="radio"]:checked {
+  border: 5px solid var(--le-accent) !important;
+  background: var(--le-surface) !important;
+}
+
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-answer .wrap > label:has(> input[type="radio"]:checked) > input[type="radio"] {
+  border-color: var(--le-accent) !important;
+}
+
+/* ---------- 测验范围：四枚分段小胶囊 ---------- */
+
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-settings #le-quiz-scope > .wrap {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 6px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-settings #le-quiz-scope > .wrap > label:has(> input[type="radio"]) {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 34px !important;
+  margin: 0 !important;
+  padding: 6px 8px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 11px !important;
+  background: var(--le-surface) !important;
+  color: var(--le-ink-2) !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  line-height: 1.4 !important;
+  text-align: center !important;
+  cursor: pointer !important;
+  transition: background .16s var(--le-ease), border-color .16s var(--le-ease), color .16s var(--le-ease) !important;
+}
+
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-settings #le-quiz-scope > .wrap > label:has(> input[type="radio"]):hover {
+  background: var(--le-surface-3) !important;
+  border-color: var(--le-line-strong) !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-settings #le-quiz-scope > .wrap > label.selected {
+  background: var(--le-accent) !important;
+  border-color: var(--le-accent) !important;
+  color: var(--le-accent-ink) !important;
+}
+
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-settings #le-quiz-scope > .wrap > label:has(> input[type="radio"]) span {
+  margin: 0 !important;
+  color: inherit !important;
+  font-size: inherit !important;
+  font-weight: inherit !important;
+}
+
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-settings #le-quiz-scope input[type="radio"] {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-settings #le-quiz-scope label:has(> input[type="radio"]:focus-visible) {
+  outline: 2px solid var(--le-focus) !important;
+  outline-offset: 2px !important;
+}
+
+/* ---------- 作答输入 ---------- */
+
+#le-app-tabs #learning-review-tab #le-review-flow .block:has(textarea) .wrap,
+#le-app-tabs #learning-quiz-tab #le-quiz-flow .block:has(textarea) .wrap {
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 11px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-answer .block:has(textarea) textarea {
+  min-height: 118px !important;
+  padding: 14px 16px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 11px !important;
+  background: var(--le-surface) !important;
+  font-size: 14.5px !important;
+  line-height: 1.75 !important;
+  color: var(--le-ink) !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-answer .prose {
+  font-size: 14px !important;
+  line-height: 1.75 !important;
+  color: var(--le-ink-2) !important;
+}
+
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-answer .prose h3 {
+  margin: 0 0 8px !important;
+  font-size: 15px !important;
+  font-weight: 560 !important;
+  letter-spacing: -.01em !important;
+  color: var(--le-ink) !important;
+}
+
+/* ---------- 按钮 ---------- */
+
+#le-app-tabs #learning-review-tab #le-review-flow button,
+#le-app-tabs #learning-quiz-tab #le-quiz-flow button {
+  min-height: 38px !important;
+  padding: 0 16px !important;
+  border-radius: 11px !important;
+  font-size: 13.5px !important;
+  font-weight: 550 !important;
+  letter-spacing: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+  transition: background .16s var(--le-ease), border-color .16s var(--le-ease), color .16s var(--le-ease) !important;
+}
+
+#le-app-tabs #learning-review-tab #le-review-flow button.primary,
+#le-app-tabs #learning-quiz-tab #le-quiz-flow button.primary {
+  background: var(--le-accent) !important;
+  border: 1px solid var(--le-accent) !important;
+  color: var(--le-accent-ink) !important;
+}
+
+#le-app-tabs #learning-review-tab #le-review-flow button.primary:not(:disabled):hover,
+#le-app-tabs #learning-quiz-tab #le-quiz-flow button.primary:not(:disabled):hover {
+  background: var(--le-accent) !important;
+  border-color: var(--le-accent) !important;
+  color: var(--le-accent-ink) !important;
+  filter: brightness(1.08);
+}
+
+#le-app-tabs #learning-review-tab #le-review-flow button.secondary,
+#le-app-tabs #learning-quiz-tab #le-quiz-flow button.secondary {
+  background: transparent !important;
+  border: 1px solid var(--le-line) !important;
+  color: var(--le-ink-2) !important;
+}
+
+#le-app-tabs #learning-review-tab #le-review-flow button.secondary:not(:disabled):hover,
+#le-app-tabs #learning-quiz-tab #le-quiz-flow button.secondary:not(:disabled):hover {
+  background: var(--le-surface-3) !important;
+  border-color: var(--le-line-strong) !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #learning-review-tab #le-review-flow button:disabled,
+#le-app-tabs #learning-quiz-tab #le-quiz-flow button:disabled {
+  opacity: .45 !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+/* 左栏主操作 */
+#le-app-tabs #learning-review-tab #le-review-flow #le-review-start,
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-settings button.primary {
+  width: 100% !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  margin: 4px 0 0 !important;
+  padding: 0 14px !important;
+  font-size: 14px !important;
+  font-weight: 560 !important;
+}
+
+/* 「更新项目列表」是三级纯文字按钮 */
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-settings #le-quiz-refresh {
+  justify-content: flex-start !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  margin: -4px 0 0 !important;
+  padding: 0 8px !important;
+  border: 0 !important;
+  border-radius: 11px !important;
+  background: transparent !important;
+  color: var(--le-ink-3) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+}
+
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-settings #le-quiz-refresh:hover {
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink) !important;
+}
+
+/* 复习动作行 */
+#le-app-tabs #learning-review-tab #le-review-flow #le-review-actions {
+  gap: 10px !important;
+  margin: 0 !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+}
+
+#le-app-tabs #learning-review-tab #le-review-flow #le-review-actions > button {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  height: 40px !important;
+  min-height: 40px !important;
+}
+
+#le-app-tabs #learning-review-tab #le-review-flow #le-review-generate {
+  font-size: 14px !important;
+  font-weight: 560 !important;
+}
+
+/* 答案已翻开、评分已可用之后，「翻开答案」就退场，别夹在答案与评分之间 */
+#le-app-tabs #learning-review-tab #le-review-flow #le-review-session:has(#le-review-ratings button:not(:disabled)) #le-review-actions {
+  display: none !important;
+}
+
+/* 四档评分：同级选择，不让「良好」抢成主按钮 */
+#le-app-tabs #learning-review-tab #le-review-flow #le-review-ratings {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+  margin: 2px 0 0 !important;
+}
+
+/* 还没翻开答案时，四档评分先不占位，视线只落在「翻开答案」上 */
+#le-app-tabs #learning-review-tab #le-review-flow #le-review-ratings:not(:has(button:not(:disabled))) {
+  display: none !important;
+}
+
+#le-app-tabs #learning-review-tab #le-review-flow #le-review-ratings button,
+#le-app-tabs #learning-review-tab #le-review-flow #le-review-ratings button.primary {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 38px !important;
+  padding: 0 10px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 11px !important;
+  background: transparent !important;
+  color: var(--le-ink-2) !important;
+  font-size: 12.5px !important;
+  font-weight: 520 !important;
+}
+
+#le-app-tabs #learning-review-tab #le-review-flow #le-review-ratings button:not(:disabled):hover {
+  border-color: var(--le-line-strong) !important;
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink) !important;
+}
+
+/* 测验动作行 */
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-actions {
+  gap: 10px !important;
+  margin: 2px 0 0 !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+}
+
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-actions > button {
+  flex: 0 0 auto !important;
+  min-width: 96px !important;
+  height: 40px !important;
+  min-height: 40px !important;
+}
+
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-actions > button.primary {
+  padding: 0 20px !important;
+  font-weight: 560 !important;
+}
+
+/* ---------- 下拉与折叠面板 ---------- */
+
+#le-app-tabs #learning-review-tab #le-review-flow .wrap-inner:has(input[role="listbox"]),
+#le-app-tabs #learning-quiz-tab #le-quiz-flow .wrap-inner:has(input[role="listbox"]) {
+  min-height: 40px !important;
+  padding: 8px 12px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 11px !important;
+  background: var(--le-surface) !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #learning-review-tab #le-review-flow .wrap-inner:has(input[role="listbox"]):hover,
+#le-app-tabs #learning-quiz-tab #le-quiz-flow .wrap-inner:has(input[role="listbox"]):hover {
+  border-color: var(--le-line-strong) !important;
+  background: var(--le-surface) !important;
+}
+
+#le-app-tabs #learning-review-tab #le-review-flow .wrap-inner:has(input[role="listbox"]):focus-within,
+#le-app-tabs #learning-quiz-tab #le-quiz-flow .wrap-inner:has(input[role="listbox"]):focus-within {
+  border-color: var(--le-line-strong) !important;
+  box-shadow: 0 0 0 3px var(--le-focus) !important;
+}
+
+#le-app-tabs #learning-review-tab #le-review-flow input[role="listbox"],
+#le-app-tabs #learning-quiz-tab #le-quiz-flow input[role="listbox"] {
+  min-height: 22px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--le-ink) !important;
+  font-size: 13.5px !important;
+  font-weight: 500 !important;
+  line-height: 1.6 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #learning-review-tab #le-review-scope .block:has(> button.label-wrap),
+#le-app-tabs #learning-quiz-tab #le-quiz-settings .block:has(> button.label-wrap) {
+  padding: 0 12px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 11px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #learning-review-tab #le-review-scope .block:has(> button.label-wrap) > button.label-wrap,
+#le-app-tabs #learning-quiz-tab #le-quiz-settings .block:has(> button.label-wrap) > button.label-wrap {
+  justify-content: flex-start !important;
+  gap: 8px !important;
+  min-height: 38px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--le-ink-2) !important;
+  font-size: 12.5px !important;
+  font-weight: 520 !important;
+}
+
+#le-app-tabs #learning-review-tab #le-review-scope .block:has(> button.label-wrap) > button.label-wrap:hover,
+#le-app-tabs #learning-quiz-tab #le-quiz-settings .block:has(> button.label-wrap) > button.label-wrap:hover {
+  background: transparent !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #learning-review-tab #le-review-scope .block:has(> button.label-wrap) > div > * + *,
+#le-app-tabs #learning-quiz-tab #le-quiz-settings .block:has(> button.label-wrap) > div > * + * {
+  margin-top: 10px !important;
+}
+
+#le-app-tabs #learning-review-tab #le-review-scope .block:has(> button.label-wrap) > div,
+#le-app-tabs #learning-quiz-tab #le-quiz-settings .block:has(> button.label-wrap) > div {
+  padding: 0 0 12px !important;
+}
+
+#le-app-tabs #learning-review-tab #le-review-scope textarea {
+  min-height: 66px !important;
+  font-size: 13.5px !important;
+  line-height: 1.7 !important;
+}
+
+/* ---------- 窄屏 ---------- */
+
+@media (max-width: 1000px) {
+  #le-app-tabs #learning-review-tab #le-review-flow,
+  #le-app-tabs #learning-quiz-tab #le-quiz-flow {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 22px !important;
+  }
+
+  #le-app-tabs #learning-review-tab #le-review-flow > #le-review-scope,
+  #le-app-tabs #learning-quiz-tab #le-quiz-flow > #le-quiz-settings {
+    padding: 0 0 22px !important;
+    border-right: 0 !important;
+    border-bottom: 1px solid var(--le-line) !important;
+  }
+
+  #le-app-tabs #learning-review-tab #le-review-flow #le-review-session #le-review-card,
+  #le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-answer #le-quiz-question {
+    min-height: 168px !important;
+    padding: 24px 20px !important;
+  }
+
+  #le-app-tabs #learning-review-tab #le-review-flow #le-review-session #le-review-card .prose {
+    font-size: 17.5px !important;
+  }
+}
+
+/* 测验设置折叠键：透明幽灵按钮，图标跟随文字色 */
+#le-app-tabs #le-quiz-toggle {
+  width: 30px !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  padding: 0 !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-xs) !important;
+  background: transparent !important;
+  color: var(--le-ink-3) !important;
+  box-shadow: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+#le-app-tabs #le-quiz-toggle:hover {
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink) !important;
+  border-color: var(--le-line-strong) !important;
+}
+
+#le-app-tabs #le-quiz-toggle svg {
+  display: block !important;
+  color: inherit !important;
+  stroke: currentColor !important;
+}
+
+#le-app-tabs #le-quiz-toggle svg {
+  width: 14px !important;
+  height: 14px !important;
+  min-width: 14px !important;
+  flex: none !important;
+}
+
+/* 「刷新列表」做成小胶囊，别让它读成一行说明文字 */
+#le-app-tabs #le-quiz-settings #le-quiz-refresh {
+  align-self: flex-start !important;
+  width: auto !important;
+  min-width: 0 !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  padding: 0 12px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  color: var(--le-ink-3) !important;
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #le-quiz-settings #le-quiz-refresh:hover {
+  background: var(--le-surface-3) !important;
+  border-color: var(--le-line-strong) !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #learning-quiz-tab #le-quiz-settings #le-quiz-refresh {
+  align-self: flex-start !important;
+  width: auto !important;
+  min-width: 0 !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  padding: 0 12px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  color: var(--le-ink-3) !important;
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #learning-quiz-tab #le-quiz-settings #le-quiz-refresh:hover {
+  background: var(--le-surface-3) !important;
+  border-color: var(--le-line-strong) !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-settings #le-quiz-refresh {
+  align-self: flex-start !important;
+  width: auto !important;
+  min-width: 0 !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  margin: 0 !important;
+  padding: 0 12px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  color: var(--le-ink-3) !important;
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #learning-quiz-tab #le-quiz-flow #le-quiz-settings #le-quiz-refresh:hover {
+  background: var(--le-surface-3) !important;
+  border-color: var(--le-line-strong) !important;
+  color: var(--le-ink) !important;
+}
+
+@media (min-width: 1800px) {
+  #le-app-tabs #learning-review-tab #le-review-flow,
+  #le-app-tabs #learning-quiz-tab #le-quiz-flow {
+    max-width: 1440px !important;
+  }
+}

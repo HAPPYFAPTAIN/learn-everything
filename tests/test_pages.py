@@ -303,16 +303,20 @@ class TestStudyWorkbenchPageLogic:
         assert "self._app.app.load" in source
         assert "js=WORD_LOOKUP_JS" in source
 
-    def test_word_lookup_static_asset_contains_popup_installer(self):
+    def test_word_lookup_uses_shared_selection_toolbar(self):
         asset = Path("learning_ext/assets/word_lookup.js")
 
         assert asset.exists()
         js = asset.read_text(encoding="utf-8")
         assert "window.__leWordLookupInstalled" in js
-        assert "是否需要名词解释" in js
-        assert "解释这个名词" in js
+        assert "是否需要名词解释" not in js
+        assert "window.__leExplainSelection" in js
+        assert "bar.appendChild(panel)" in js
+        assert 'document.addEventListener("mouseup"' not in js
         assert "le-selected-term" in js
-        assert "le-word-lookup-ready" in js
+        assert "window.__leCloseExplanation" in js
+        toolbar = Path("learning_ext/assets/workbench.js").read_text(encoding="utf-8")
+        assert "['explain', '解释名词']" in toolbar
 
     def test_custom_app_serves_word_lookup_asset_in_initial_template(self):
         source = Path("custom_app.py").read_text(encoding="utf-8")

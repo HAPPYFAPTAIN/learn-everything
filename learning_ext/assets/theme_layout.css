@@ -1,0 +1,528 @@
+/* 知识问答：一条居中的对话栏，模型、输入、快捷提问共用同一条视觉轴。 */
+
+#chat-tab { position: relative !important; }
+
+#chat-tab #chat-area {
+  max-width: 1180px !important;
+}
+
+#chat-tab #chat-area.le-chat-empty {
+  justify-content: flex-start !important;
+  padding-top: clamp(96px, 13vh, 168px) !important;
+  gap: 26px !important;
+}
+
+#chat-tab #le-chat-model-header {
+  position: absolute !important;
+  top: 14px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: min(1180px, calc(100% - 96px)) !important;
+  max-width: 1180px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  z-index: 6;
+}
+
+#chat-tab #le-chat-model-header :is(.block, .form, .wrap, .wrap-inner, .container) {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+#chat-tab #le-chat-model-header #le-chat-connection-controls {
+  display: none !important;
+}
+
+#chat-tab #le-chat-model-header #le-chat-model-trigger {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: auto !important;
+  min-height: 32px !important;
+  padding: 5px 11px 5px 9px !important;
+  border: 1px solid transparent !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  color: var(--le-ink-2) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+
+#chat-tab #le-chat-model-header #le-chat-model-trigger:hover,
+#chat-tab #le-chat-model-header #le-chat-model-trigger[aria-expanded=true] {
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink) !important;
+}
+
+#chat-tab #le-chat-history {
+  position: absolute !important;
+  top: 14px !important;
+  right: 26px !important;
+  z-index: 7;
+}
+
+#chat-tab #le-chat-history > summary {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  min-height: 32px !important;
+  padding: 5px 12px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  color: var(--le-ink-2) !important;
+  font-size: 12.5px !important;
+  box-shadow: none !important;
+}
+
+#chat-tab #le-chat-history > summary:hover {
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink) !important;
+}
+
+#chat-tab #le-chat-welcome {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 14px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  text-align: center !important;
+}
+
+#chat-tab #le-chat-welcome h1 {
+  margin: 0 !important;
+  font-size: clamp(26px, 2.2vw, 34px) !important;
+  font-weight: 560 !important;
+  line-height: 1.4 !important;
+  letter-spacing: -.035em !important;
+  color: var(--le-ink) !important;
+}
+
+#chat-tab .le-chat-hero-art {
+  display: block !important;
+  width: 42px !important;
+  height: 42px !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 13px !important;
+  background: var(--le-surface-3) url('__ASSETS__/coach-mascot-face.png') center / cover no-repeat !important;
+  box-shadow: var(--le-shadow-1);
+}
+
+#chat-tab .le-chat-hero-art::before,
+#chat-tab .le-chat-hero-art::after {
+  display: none !important;
+}
+
+#chat-tab #le-composer {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 24px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transition: border-color .18s var(--le-ease) !important;
+}
+
+#chat-tab #le-composer:focus-within {
+  border-color: var(--le-line-strong) !important;
+  box-shadow: none !important;
+}
+
+#chat-tab #le-composer #chat-input {
+  order: 1 !important;
+  position: static !important;
+  padding: 18px 18px 8px !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+#chat-tab #le-composer #chat-input textarea {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  min-height: 52px !important;
+  font-size: 15.5px !important;
+  line-height: 1.6 !important;
+  resize: none !important;
+}
+
+#chat-tab #le-composer #chat-input textarea:focus {
+  box-shadow: none !important;
+}
+
+.gradio-container #chat-tab #le-composer :is(.block, .form, .wrap, .wrap-inner) {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+#chat-tab #le-composer .le-composer-tools {
+  order: 2 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  flex-wrap: nowrap !important;
+  gap: 6px !important;
+  min-height: 54px !important;
+  margin: 0 !important;
+  padding: 0 12px 12px !important;
+  border-radius: 0 0 24px 24px !important;
+  background: transparent !important;
+}
+
+#chat-tab #le-composer .le-composer-tools > * {
+  flex: 0 0 auto !important;
+  margin: 0 !important;
+}
+
+#chat-tab #le-chat-plus {
+  order: 1 !important;
+  position: static !important;
+  inset: auto !important;
+  transform: none !important;
+  width: 32px !important;
+  min-width: 32px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+  background: transparent !important;
+  color: var(--le-ink-2) !important;
+  font-size: 19px !important;
+  line-height: 1 !important;
+  box-shadow: none !important;
+}
+
+#chat-tab #le-chat-plus:hover {
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink) !important;
+}
+
+#chat-tab .le-source-shortcut,
+#chat-tab .le-library-shortcut {
+  order: 2 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  min-width: 0 !important;
+  max-width: 168px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 0 11px !important;
+  border: 1px solid var(--le-line-strong) !important;
+  border-radius: 999px !important;
+  background: var(--le-surface) !important;
+  color: var(--le-ink-2) !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  box-shadow: none !important;
+}
+
+#chat-tab .le-source-shortcut:hover,
+#chat-tab .le-library-shortcut:hover {
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink) !important;
+}
+
+#chat-tab .le-polish-tools {
+  order: 3 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  width: auto !important;
+  min-height: 32px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  gap: 6px !important;
+  background: transparent !important;
+}
+
+#chat-tab .le-polish-tools button.le-polish-button {
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 0 11px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  color: var(--le-ink-3) !important;
+  font-size: 12.5px !important;
+  box-shadow: none !important;
+}
+
+#chat-tab .le-polish-tools button.le-polish-button:hover {
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink) !important;
+}
+
+#chat-tab #le-composer .le-composer-tools .submit-button {
+  order: 99 !important;
+  margin-left: auto !important;
+  width: 36px !important;
+  min-width: 36px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+  background: var(--le-accent) !important;
+  color: var(--le-accent-ink) !important;
+  box-shadow: none !important;
+  font-size: 16px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+#chat-tab #le-composer .le-composer-tools .submit-button:hover {
+  filter: brightness(1.08);
+}
+
+#chat-tab #le-composer .le-composer-tools .submit-button:disabled {
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink-3) !important;
+  filter: none;
+}
+
+#chat-tab #chat-area > .le-chat-starters {
+  display: flex !important;
+  justify-content: center !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  margin: 0 !important;
+}
+
+#chat-tab .le-chat-starters button {
+  flex: 0 0 auto !important;
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 7px !important;
+  min-height: 34px !important;
+  padding: 0 13px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 999px !important;
+  background: var(--le-surface) !important;
+  color: var(--le-ink-2) !important;
+  box-shadow: var(--le-shadow-1) !important;
+  transition: background .16s var(--le-ease), color .16s var(--le-ease), border-color .16s var(--le-ease) !important;
+}
+
+#chat-tab .le-chat-starters button:hover {
+  background: var(--le-surface-3) !important;
+  border-color: var(--le-line-strong) !important;
+  color: var(--le-ink) !important;
+  transform: none !important;
+}
+
+#chat-tab .le-chat-starters button > span {
+  width: 15px !important;
+  height: 15px !important;
+  font-size: 13px !important;
+  color: var(--le-ink-3) !important;
+}
+
+#chat-tab .le-chat-starters button > strong {
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  color: inherit !important;
+}
+
+#chat-tab .le-chat-starters button > b {
+  display: none !important;
+}
+
+@media (min-width: 1800px) {
+  :root { --le-nav-w: 226px; --le-brand-w: 226px; }
+  #le-app-tabs > .tab-nav { width: 226px !important; }
+  #le-app-tabs > .tabitem { margin-left: 226px !important; width: calc(100% - 226px) !important; }
+  .le-brand { width: 226px !important; }
+  #chat-tab #chat-area { max-width: 1240px !important; }
+  #chat-tab #le-chat-model-header { width: min(1240px, calc(100% - 120px)) !important; max-width: 1240px !important; }
+  #le-guided-home { max-width: 1280px !important; }
+  #le-app-tabs #le-planner, #le-app-tabs #le-route-heading,
+  #le-app-tabs #le-route-files, #le-app-tabs #le-route-management,
+  #le-app-tabs #le-review-flow, #le-app-tabs #le-quiz-flow { max-width: 1120px !important; }
+  #le-app-tabs #le-settings-layout { max-width: 1320px !important; }
+  #le-app-tabs #le-workbench-row { max-width: 1720px !important; }
+  #chat-tab #le-chat-welcome h1 { font-size: 36px !important; }
+}
+
+@media (max-width: 900px) {
+  #chat-tab #le-chat-model-header { width: calc(100% - 40px) !important; }
+  #chat-tab #le-chat-history { right: 14px !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #chat-tab #le-composer,
+  #chat-tab #le-composer .le-composer-tools > *,
+  #chat-tab .le-chat-starters button { transition: none !important; }
+}
+
+/* 对话区改成主流聊天：欢迎页只在空会话出现，消息列收窄，用户气泡在右、助教在左 */
+#chat-tab #chat-area:not(.le-chat-empty) #le-chat-welcome,
+#chat-tab #chat-area:not(.le-chat-empty) > .le-chat-starters {
+  display: none !important;
+}
+
+#chat-tab #chat-area:not(.le-chat-empty) {
+  max-width: 1000px !important;
+  padding-top: 22px !important;
+  gap: 18px !important;
+}
+
+#chat-tab #main-chat-bot {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+#chat-tab #main-chat-bot :is(.wrap, .bubble-wrap) {
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 6px !important;
+}
+
+#chat-tab #main-chat-bot .message-row {
+  margin: 0 0 20px !important;
+  gap: 0 !important;
+}
+
+#chat-tab #main-chat-bot .flex-wrap {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 12px !important;
+}
+
+#chat-tab #main-chat-bot .flex-wrap.user {
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#chat-tab #main-chat-bot .flex-wrap.bot::before {
+  content: '';
+  flex: none;
+  width: 28px;
+  height: 28px;
+  margin-top: 3px;
+  border-radius: 9px;
+  border: 1px solid var(--le-line);
+  background: var(--le-surface-3) url('__ASSETS__/coach-mascot-face.png') center / cover no-repeat;
+}
+
+#chat-tab #main-chat-bot .message {
+  border: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+#chat-tab #main-chat-bot .message.bot {
+  max-width: 800px !important;
+}
+
+#chat-tab #main-chat-bot .message-row.user-row {
+  justify-content: flex-end !important;
+}
+
+#chat-tab #main-chat-bot .message.user {
+  max-width: min(76%, 640px) !important;
+  padding: 11px 16px !important;
+  border: 1px solid var(--le-accent-line) !important;
+  border-radius: 18px 18px 4px 18px !important;
+  background: var(--le-accent-soft) !important;
+  color: var(--le-ink) !important;
+}
+
+#chat-tab #main-chat-bot :is(button[data-testid="user"], button[data-testid="bot"]) {
+  display: block !important;
+  width: 100% !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font: inherit !important;
+  color: inherit !important;
+  text-align: left !important;
+  cursor: text !important;
+  border-radius: inherit !important;
+}
+
+#chat-tab #main-chat-bot .message .prose {
+  font-size: 15px !important;
+  line-height: 1.85 !important;
+  color: var(--le-ink) !important;
+  font-weight: 400 !important;
+}
+
+#chat-tab #main-chat-bot .message .prose > :last-child {
+  margin-bottom: 0 !important;
+}
+
+#chat-tab #main-chat-bot .message .prose > :first-child {
+  margin-top: 0 !important;
+}
+
+#chat-tab #main-chat-bot .message.bot .prose strong {
+  color: var(--le-ink) !important;
+  font-weight: 600 !important;
+}
+
+#chat-tab #main-chat-bot .bot-row.le-streaming .prose > :last-child::after {
+  content: '▋';
+  display: inline-block;
+  margin-left: 2px;
+  color: var(--le-accent);
+  animation: le-caret-blink 1s steps(2, start) infinite;
+}
+
+@keyframes le-caret-blink {
+  50% { opacity: 0; }
+}
+
+#chat-tab #main-chat-bot .bot-row.le-answer-waiting .prose {
+  color: var(--le-ink-3) !important;
+}
+
+#chat-tab #le-chat-stream-status {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  align-self: center !important;
+  margin: 0 0 2px !important;
+  padding: 5px 12px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 999px !important;
+  background: var(--le-surface) !important;
+  color: var(--le-ink-3) !important;
+  font-size: 12px !important;
+  box-shadow: var(--le-shadow-1) !important;
+}
+
+#chat-tab #le-chat-stream-status[hidden] {
+  display: none !important;
+}
+
+#chat-tab #le-chat-stream-status i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--le-accent);
+  animation: le-caret-blink 1.2s ease-in-out infinite;
+}

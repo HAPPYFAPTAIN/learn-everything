@@ -1,0 +1,578 @@
+/* 统一的表面、组件与排版基线。颜色只从 --le-* 语义变量取，明暗共用同一套结构。 */
+
+.gradio-container {
+  background: var(--le-bg) !important;
+  color: var(--le-ink) !important;
+}
+
+.gradio-container {
+  --block-background-fill: var(--le-surface);
+  --block-border-color: var(--le-line);
+  --block-border-width: 0px;
+  --block-label-background-fill: transparent;
+  --block-label-text-color: var(--le-ink-2);
+  --block-title-text-color: var(--le-ink);
+  --block-info-text-color: var(--le-ink-3);
+  --input-background-fill: var(--le-surface);
+  --input-border-color: var(--le-line);
+  --input-text-color: var(--le-ink);
+  --input-placeholder-color: var(--le-ink-3);
+  --body-background-fill: var(--le-bg);
+  --body-text-color: var(--le-ink);
+  --body-text-color-subdued: var(--le-ink-3);
+  --background-fill-primary: var(--le-surface);
+  --background-fill-secondary: var(--le-surface-2);
+  --border-color-primary: var(--le-line);
+  --color-accent: var(--le-accent);
+  --color-accent-soft: var(--le-accent-soft);
+  --button-primary-background-fill: var(--le-accent);
+  --button-primary-text-color: var(--le-accent-ink);
+  --button-primary-border-color: var(--le-accent);
+  --button-secondary-background-fill: transparent;
+  --button-secondary-text-color: var(--le-ink-2);
+  --button-secondary-border-color: var(--le-line);
+  --panel-background-fill: var(--le-surface);
+  --panel-border-color: var(--le-line);
+  --link-text-color: var(--le-ink);
+  --neutral-50: var(--le-surface-2);
+  --neutral-100: var(--le-surface-3);
+  --neutral-200: var(--le-line);
+  --neutral-300: var(--le-line-strong);
+  --neutral-400: var(--le-ink-3);
+  --neutral-500: var(--le-ink-3);
+  --neutral-600: var(--le-ink-2);
+  --neutral-700: var(--le-ink-2);
+  --neutral-800: var(--le-ink);
+  --neutral-900: var(--le-ink);
+  --neutral-950: var(--le-ink);
+}
+
+/* ---------- 顶栏与侧栏 ---------- */
+
+.le-topbar {
+  height: 58px !important;
+  padding: 0 20px 0 18px !important;
+  gap: 14px !important;
+  background: var(--le-glass) !important;
+  border-bottom: 1px solid var(--le-line) !important;
+  backdrop-filter: saturate(1.4) blur(18px);
+}
+
+.le-app-title {
+  font-size: 14px !important;
+  font-weight: 560 !important;
+  letter-spacing: -.01em !important;
+  color: var(--le-ink) !important;
+}
+
+.le-app-title span {
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  color: var(--le-ink-3) !important;
+  margin-left: 8px !important;
+}
+
+.le-local {
+  margin-left: auto !important;
+  padding: 6px 12px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  font-size: 12px !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs > .tab-nav {
+  width: 226px !important;
+  padding: 16px 12px 14px !important;
+  gap: 2px !important;
+  background: var(--le-bg) !important;
+  border-right: 1px solid var(--le-line) !important;
+  backdrop-filter: none !important;
+}
+
+#le-app-tabs > .tab-nav::before {
+  content: '工作空间';
+  padding: 2px 12px 10px !important;
+  font-size: 11px !important;
+  letter-spacing: .06em !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs > .tab-nav::after {
+  content: '';
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+#le-app-tabs > .tab-nav > button {
+  min-height: 38px !important;
+  padding: 8px 12px !important;
+  border-radius: 10px !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--le-ink-2) !important;
+  font-size: 13.5px !important;
+  font-weight: 460 !important;
+  gap: 10px !important;
+  letter-spacing: 0 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs > .tab-nav > button:hover {
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs > .tab-nav > button.selected {
+  background: var(--le-accent-soft) !important;
+  color: var(--le-accent) !important;
+  font-weight: 560 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs > .tab-nav > button:before,
+#le-app-tabs > .tab-nav > button::before {
+  width: 16px !important;
+  height: 16px !important;
+  opacity: .9;
+}
+
+#le-app-tabs > .tab-nav > button.selected:before {
+  opacity: 1;
+}
+
+#le-app-tabs > .tab-nav > #chat-tab-button,
+#le-app-tabs > .tab-nav > #quick-setup-tab-button,
+#le-app-tabs > .tab-nav > #le-more-nav {
+  margin-top: 14px !important;
+}
+
+#chat-tab-button::after,
+#quick-setup-tab-button::after {
+  display: none !important;
+}
+
+#le-nav-toggle {
+  width: 24px !important;
+  height: 24px !important;
+  border: 0 !important;
+  border-radius: 7px !important;
+  background: transparent !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-nav-toggle:hover {
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs > .tabitem {
+  background: transparent !important;
+  color: var(--le-ink) !important;
+}
+
+@media (min-width: 1100px) {
+  .le-brand {
+    width: 226px !important;
+    padding-left: 2px;
+  }
+
+  .le-topbar {
+    padding-left: 16px !important;
+  }
+}
+
+/* ---------- 排版 ---------- */
+
+.gradio-container :is(h1, h2, h3, h4, h5, strong, b) {
+  color: var(--le-ink) !important;
+}
+
+.gradio-container h1 {
+  font-size: 30px !important;
+  font-weight: 620 !important;
+  letter-spacing: -.035em !important;
+  line-height: 1.3 !important;
+}
+
+.gradio-container h2 {
+  font-size: 21px !important;
+  font-weight: 600 !important;
+  letter-spacing: -.025em !important;
+  margin: 0 0 12px !important;
+}
+
+.gradio-container h3 {
+  font-size: 16px !important;
+  font-weight: 580 !important;
+  letter-spacing: -.015em !important;
+  margin: 0 0 8px !important;
+}
+
+.gradio-container :is(.prose, .md) {
+  color: var(--le-ink-2) !important;
+  font-size: 14.5px !important;
+  line-height: 1.75 !important;
+}
+
+.gradio-container :is(p, li) {
+  color: var(--le-ink-2) !important;
+}
+
+.gradio-container small,
+.gradio-container :is(.le-kicker, .le-caption, .le-muted, .le-eyebrow) {
+  color: var(--le-ink-3) !important;
+  font-size: 11.5px !important;
+  letter-spacing: .04em !important;
+}
+
+.gradio-container a {
+  color: var(--le-accent) !important;
+  text-underline-offset: 3px;
+}
+
+/* ---------- 表面 ---------- */
+
+.gradio-container .block {
+  background: var(--le-surface) !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-l) !important;
+  box-shadow: none !important;
+}
+
+.gradio-container :is(.block.padded, .block:has(> .prose), .block:has(> div > .prose), .block:has([data-testid=markdown])) {
+  background: transparent !important;
+  border-color: transparent !important;
+  padding: 0 !important;
+}
+
+.gradio-container .form {
+  background: transparent !important;
+  border: 0 !important;
+}
+
+.gradio-container .accordion {
+  background: transparent !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-m) !important;
+}
+
+.gradio-container .accordion button {
+  color: var(--le-ink-2) !important;
+  font-size: 13.5px !important;
+}
+
+/* ---------- 控件 ---------- */
+
+.gradio-container :is(input:not([type=checkbox]):not([type=radio]):not([type=range]), textarea, select) {
+  background: var(--le-surface) !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-s) !important;
+  color: var(--le-ink) !important;
+  font-size: 14.5px !important;
+  line-height: 1.6 !important;
+  padding: 11px 13px !important;
+  box-shadow: none !important;
+}
+
+.gradio-container :is(input, textarea)::placeholder {
+  color: var(--le-ink-3) !important;
+}
+
+.gradio-container :is(input:not([type=checkbox]):not([type=radio]):not([type=range]), textarea, select):focus {
+  border-color: var(--le-line-strong) !important;
+  box-shadow: 0 0 0 3px var(--le-focus) !important;
+  outline: 0 !important;
+}
+
+.gradio-container button {
+  font-family: inherit !important;
+  font-size: 13.5px !important;
+  font-weight: 520 !important;
+  border-radius: var(--le-radius-s) !important;
+  box-shadow: none !important;
+  transition: background .16s var(--le-ease), color .16s var(--le-ease), border-color .16s var(--le-ease), transform .16s var(--le-ease) !important;
+}
+
+.gradio-container button.primary {
+  background: var(--le-accent) !important;
+  border: 1px solid var(--le-accent) !important;
+  color: var(--le-accent-ink) !important;
+}
+
+.gradio-container button.primary:hover {
+  filter: brightness(1.06);
+}
+
+.gradio-container button.secondary {
+  background: transparent !important;
+  border: 1px solid var(--le-line) !important;
+  color: var(--le-ink-2) !important;
+}
+
+.gradio-container button.secondary:hover {
+  background: var(--le-surface-3) !important;
+  border-color: var(--le-line-strong) !important;
+  color: var(--le-ink) !important;
+}
+
+.gradio-container :is(input, textarea, button, select, a, summary):focus-visible {
+  outline: 2px solid var(--le-focus) !important;
+  outline-offset: 2px !important;
+}
+
+/* ---------- 杂项表面 ---------- */
+
+.gradio-container :is(.options, .options-container) {
+  background: var(--le-surface) !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-m) !important;
+  box-shadow: var(--le-shadow-2) !important;
+  color: var(--le-ink) !important;
+  padding: 6px !important;
+}
+
+.gradio-container .options li {
+  border-radius: 8px !important;
+}
+
+.gradio-container .options li:hover {
+  background: var(--le-surface-3) !important;
+}
+
+.gradio-container .options li[aria-selected=true] {
+  background: var(--le-accent-soft) !important;
+  color: var(--le-ink) !important;
+}
+
+.gradio-container code {
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink-2) !important;
+  border-radius: 6px !important;
+}
+
+.gradio-container pre {
+  background: var(--le-surface-2) !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-m) !important;
+}
+
+.gradio-container table {
+  background: transparent !important;
+  color: var(--le-ink-2) !important;
+}
+
+.gradio-container th {
+  background: var(--le-surface-2) !important;
+  color: var(--le-ink) !important;
+}
+
+.gradio-container :is(td, th) {
+  border-color: var(--le-line) !important;
+}
+
+.gradio-container tr:nth-child(even) {
+  background: var(--le-surface-2) !important;
+}
+
+.gradio-container tbody tr:hover {
+  background: var(--le-surface-3) !important;
+}
+
+.gradio-container hr {
+  background: var(--le-line) !important;
+  height: 1px;
+  border: 0;
+}
+
+.gradio-container blockquote {
+  background: var(--le-surface-2) !important;
+  border-left: 2px solid var(--le-line-strong) !important;
+  color: var(--le-ink-2) !important;
+  border-radius: 0 var(--le-radius-s) var(--le-radius-s) 0 !important;
+}
+
+/* 操作条：主按钮保持拇指宽度靠右，不再拉成整条横幅 */
+#le-app-tabs .le-action-bar {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+  padding: 4px 0 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+}
+
+#le-app-tabs .le-action-bar > button,
+#le-app-tabs .le-action-bar > .block {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: 132px !important;
+}
+
+#le-app-tabs .le-action-bar > button.primary {
+  min-width: 160px !important;
+  padding: 0 22px !important;
+  height: 40px !important;
+  min-height: 40px !important;
+}
+
+#le-app-tabs .le-action-bar > button.secondary {
+  padding: 0 18px !important;
+  height: 40px !important;
+  min-height: 40px !important;
+}
+
+/* 主操作统一成中性墨色：页面里遗留的青蓝按钮不再抢戏 */
+#le-app-tabs :is(button.primary, .primary, #le-step-entry) {
+  background: var(--le-accent) !important;
+  border: 1px solid var(--le-accent) !important;
+  color: var(--le-accent-ink) !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs :is(button.primary, .primary, #le-step-entry):hover:not(:disabled) {
+  filter: brightness(1.06) !important;
+  transform: none !important;
+}
+
+#le-app-tabs :is(button.primary, .primary, #le-step-entry) :is(span, svg, path) {
+  color: inherit !important;
+  stroke: currentColor !important;
+}
+
+/* 编辑风标题下的青蓝高亮条改为一根极淡的线 */
+#le-app-tabs .le-editorial-head::after {
+  background: var(--le-line-strong) !important;
+  opacity: .6 !important;
+  height: 1px !important;
+}
+
+#le-app-tabs :is(input[type=range], input[type=checkbox], input[type=radio]) {
+  accent-color: var(--le-ink) !important;
+}
+
+#le-app-tabs input[type=range]::-webkit-slider-runnable-track {
+  background: var(--le-surface-3) !important;
+  border-radius: 999px !important;
+}
+
+#le-app-tabs input[type=range]::-webkit-slider-thumb {
+  background: var(--le-ink) !important;
+  border-color: var(--le-ink) !important;
+}
+
+/* 折叠行标题：去掉蓝灰底，只留一条发丝线 */
+#le-app-tabs button.label-wrap {
+  background: transparent !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-s) !important;
+  color: var(--le-ink-2) !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs button.label-wrap:hover {
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs button.label-wrap > .icon::after {
+  border-color: var(--le-ink-3) !important;
+}
+
+/* 暗色下会留白的零散小组件 */
+#le-app-tabs .token {
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink-2) !important;
+  border-color: transparent !important;
+}
+
+#le-app-tabs :is(.le-day-bar, .le-lesson-actions, .le-course-admin-trigger, .le-history-empty) {
+  background: var(--le-surface-2) !important;
+  border-color: var(--le-line) !important;
+  color: var(--le-ink-2) !important;
+}
+
+#le-app-tabs .le-history-empty {
+  background: transparent !important;
+  color: var(--le-ink-3) !important;
+}
+
+/* 质感层：更细腻的层次、留白与字体渲染，宽屏不再只有中间一条内容带 */
+.gradio-container {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.gradio-container :is(.prose, .md) {
+  line-height: 1.8 !important;
+}
+
+#le-app-tabs > .tabitem {
+  background-image: radial-gradient(1200px 460px at 82% -8%, var(--le-ambient), transparent 68%) !important;
+  background-repeat: no-repeat !important;
+}
+
+#le-app-tabs :is(#le-resume-row, .le-direction-card, #le-onboarding-card, .le-dashboard-panel, #le-review-card, #le-quiz-question, #le-settings-form, #le-center-col, .le-help-cards > button, .coach-instruction, .coach-stage) {
+  box-shadow: var(--le-shadow-1), inset 0 1px 0 var(--le-inner-line) !important;
+}
+
+#le-app-tabs .le-dashboard-panel {
+  border-radius: var(--le-radius-l) !important;
+}
+
+#le-dashboard-charts {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 22px !important;
+}
+
+#le-dashboard-charts .le-dashboard-week {
+  grid-column: 1 / -1 !important;
+}
+
+@media (min-width: 1800px) {
+  #le-app-tabs #le-review-flow,
+  #le-app-tabs #le-quiz-flow {
+    max-width: 1440px !important;
+  }
+
+  #le-app-tabs #le-workbench-row {
+    max-width: 1560px !important;
+  }
+
+  #le-app-tabs #le-dashboard-toolbar,
+  #le-app-tabs #le-dashboard-charts,
+  #le-app-tabs #learning-dashboard-tab .le-dashboard-next,
+  #le-app-tabs #learning-dashboard-tab .le-metrics,
+  #le-app-tabs #le-dashboard-reflection,
+  #learning-dashboard-tab > div > .le-editorial-head {
+    max-width: 1560px !important;
+  }
+
+  #le-dashboard-charts {
+    grid-template-columns: 1fr 1.5fr 1fr !important;
+  }
+
+  #le-dashboard-charts .le-dashboard-week {
+    grid-column: auto !important;
+  }
+
+  #le-app-tabs #le-planner {
+    max-width: 1100px !important;
+  }
+}
+
+@media (min-width: 1800px) {
+  #le-app-tabs #learning-dashboard-tab > div {
+    max-width: 1560px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  #le-app-tabs #learning-review-tab #le-review-flow,
+  #le-app-tabs #learning-quiz-tab #le-quiz-flow {
+    max-width: 1440px !important;
+  }
+}

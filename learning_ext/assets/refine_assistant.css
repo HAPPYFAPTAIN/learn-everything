@@ -1,0 +1,729 @@
+/* refine_assistant：小助浮层、问答工具弹层与过关/适配弹窗。
+   颜色只取 --le-* 语义变量，圆角与阴影对齐 refine.css：面板 18，块 14，控件 11。
+   暗色规则由 dark_theme.css 运行期注入，选择器统一带 html.le-dark 前缀，
+   所以这里凡是和它撞到同一属性的地方，都加 .gradio-container 与 gr.Column 自带的
+   .gap 类来提高特异性（assistant 面板挂在 Tabs 之外，不在 #le-app-tabs 里）。 */
+
+/* ---------- 悬浮球 ---------- */
+
+#le-assistant-fab[aria-controls][aria-expanded]:not(.le-fab-docked) {
+  width: 56px !important;
+  height: 56px !important;
+  border: 1px solid var(--le-line) !important;
+  box-shadow: var(--le-shadow-2) !important;
+  transition: transform .18s var(--le-ease), box-shadow .18s var(--le-ease),
+    opacity .2s var(--le-ease), visibility 0s linear .2s !important;
+}
+
+#le-assistant-fab[aria-controls][aria-expanded]:not(.le-fab-docked):not(.le-dragging):hover {
+  transform: translateY(-1px) !important;
+  box-shadow: var(--le-shadow-3) !important;
+}
+
+#le-assistant-fab[aria-controls][aria-expanded]:not(.le-fab-docked):focus-visible {
+  outline: 2px solid var(--le-focus) !important;
+  outline-offset: 3px !important;
+}
+
+/* 顶栏里的入口收成一枚胶囊，和 .le-local 同一套描边 */
+#le-assistant-fab.le-fab-docked[aria-controls] {
+  min-width: 76px !important;
+  height: 32px !important;
+  padding: 0 12px 0 34px !important;
+  margin-right: 4px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 999px !important;
+  background-color: var(--le-surface-2) !important;
+  background-position: 8px center !important;
+  background-size: 20px !important;
+  box-shadow: none !important;
+}
+
+#le-assistant-fab.le-fab-docked[aria-controls]::after {
+  content: '小助' !important;
+  color: var(--le-ink-2) !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+}
+
+#le-assistant-fab.le-fab-docked[aria-controls]:hover {
+  border-color: var(--le-line-strong) !important;
+  background-color: var(--le-surface-3) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* ---------- 小助面板：一层卡片 ---------- */
+
+#le-global-assistant {
+  border-radius: var(--le-radius-l) !important;
+  overflow: hidden !important;
+}
+
+.gradio-container #le-global-assistant.gap {
+  border: 1px solid var(--le-line) !important;
+  background: var(--le-surface) !important;
+  box-shadow: var(--le-shadow-3) !important;
+}
+
+.gradio-container #le-global-assistant.gap .le-assistant-heading {
+  gap: 10px !important;
+  padding: 12px 10px 12px 16px !important;
+  border-bottom: 1px solid var(--le-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+.gradio-container #le-global-assistant.gap .le-assistant-heading h3 {
+  margin: 0 !important;
+  font-size: 14.5px !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  letter-spacing: -.01em !important;
+  color: var(--le-ink) !important;
+}
+
+#le-global-assistant .le-assistant-identity {
+  gap: 10px !important;
+  align-items: center !important;
+}
+
+#le-global-assistant .le-assistant-avatar {
+  width: 32px !important;
+  height: 32px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-s) !important;
+  background-size: 88% !important;
+}
+
+#le-global-assistant .le-assistant-heading button {
+  display: grid !important;
+  place-items: center !important;
+  width: 28px !important;
+  min-width: 28px !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: var(--le-radius-s) !important;
+  background: transparent !important;
+  font-size: 17px !important;
+  line-height: 1 !important;
+  box-shadow: none !important;
+}
+
+.gradio-container #le-global-assistant.gap .le-assistant-heading button {
+  color: var(--le-ink-3) !important;
+}
+
+.gradio-container #le-global-assistant.gap .le-assistant-heading button:hover {
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink) !important;
+}
+
+/* 消息区与小助面板同面：不再套第二层边框和底色 */
+.gradio-container #le-global-assistant.gap #le-assistant-empty {
+  margin: 0 !important;
+  padding: 18px 16px 16px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+#le-global-assistant #le-assistant-empty .le-assistant-empty-inner {
+  gap: 18px !important;
+}
+
+.gradio-container #le-global-assistant.gap #le-assistant-empty .le-assistant-context {
+  padding: 14px 16px !important;
+  border: 0 !important;
+  border-radius: var(--le-radius-m) !important;
+  background: var(--le-surface-2) !important;
+}
+
+.gradio-container #le-global-assistant.gap #le-assistant-empty [data-le-assistant-context-label] {
+  margin-bottom: 6px !important;
+  font-size: 11.5px !important;
+  line-height: 1.5 !important;
+  letter-spacing: .04em !important;
+  color: var(--le-ink-3) !important;
+}
+
+.gradio-container #le-global-assistant.gap #le-assistant-empty [data-le-assistant-context-title] {
+  font-size: 14.5px !important;
+  font-weight: 550 !important;
+  line-height: 1.55 !important;
+  color: var(--le-ink) !important;
+}
+
+.gradio-container #le-global-assistant.gap #le-assistant-empty [data-le-assistant-context-detail] {
+  margin: 6px 0 0 !important;
+  font-size: 12.5px !important;
+  line-height: 1.6 !important;
+  color: var(--le-ink-2) !important;
+}
+
+#le-global-assistant #le-assistant-empty .le-assistant-quick-list {
+  gap: 6px !important;
+}
+
+.gradio-container #le-global-assistant.gap #le-assistant-empty [data-le-assistant-suggestion] {
+  min-height: 36px !important;
+  padding: 8px 12px !important;
+  border: 0 !important;
+  border-radius: var(--le-radius-s) !important;
+  background: var(--le-surface-2) !important;
+  color: var(--le-ink-2) !important;
+  font-size: 13px !important;
+  font-weight: 450 !important;
+  line-height: 1.5 !important;
+  text-align: left !important;
+  box-shadow: none !important;
+}
+
+.gradio-container #le-global-assistant.gap #le-assistant-empty [data-le-assistant-suggestion]:hover {
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink) !important;
+}
+
+/* ---------- 对话气泡 ---------- */
+
+.gradio-container #le-global-assistant.gap #le-assistant-chat {
+  margin: 10px 16px 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+#le-global-assistant #le-assistant-chat .bubble-wrap {
+  padding: 2px 4px 0 !important;
+}
+
+#le-global-assistant #le-assistant-chat .message-wrap {
+  margin-bottom: 0 !important;
+  gap: 0 !important;
+}
+
+.gradio-container #le-global-assistant.gap #le-assistant-chat .message-row {
+  margin: 0 !important;
+  padding: 0 0 12px !important;
+  gap: 8px !important;
+}
+
+.gradio-container #le-global-assistant.gap #le-assistant-chat .message-row:last-child {
+  padding-bottom: 0 !important;
+}
+
+.gradio-container #le-global-assistant.gap #le-assistant-chat .flex-wrap {
+  border: 0 !important;
+  box-shadow: none !important;
+  text-align: left !important;
+}
+
+.gradio-container #le-global-assistant.gap #le-assistant-chat .flex-wrap.bot {
+  padding: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+.gradio-container #le-global-assistant.gap #le-assistant-chat .flex-wrap.user {
+  max-width: 88% !important;
+  padding: 8px 12px !important;
+  border-radius: var(--le-radius-m) !important;
+  background: var(--le-accent-soft) !important;
+}
+
+.gradio-container #le-global-assistant.gap #le-assistant-chat .message {
+  width: 100% !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--le-ink-2) !important;
+  font-size: 14px !important;
+  line-height: 1.7 !important;
+  box-shadow: none !important;
+}
+
+.gradio-container #le-global-assistant.gap #le-assistant-chat .message.user {
+  color: var(--le-ink) !important;
+}
+
+#le-global-assistant #le-assistant-chat .message :is(.prose, p, li) {
+  font-size: 14px !important;
+  line-height: 1.7 !important;
+  text-align: left !important;
+}
+
+/* ---------- 输入区 ---------- */
+
+.gradio-container #le-global-assistant.gap #le-chat-compose {
+  align-items: flex-end !important;
+  gap: 8px !important;
+  padding: 12px 16px 14px !important;
+  border-top: 1px solid var(--le-line) !important;
+  background: transparent !important;
+}
+
+.gradio-container #le-global-assistant.gap #le-chat-input {
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: var(--le-radius-m) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.gradio-container #le-global-assistant.gap #le-chat-compose textarea {
+  min-height: 44px !important;
+  max-height: 96px !important;
+  padding: 11px 13px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-m) !important;
+  background: var(--le-surface-2) !important;
+  color: var(--le-ink) !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+  box-shadow: none !important;
+  resize: none !important;
+}
+
+.gradio-container #le-global-assistant.gap #le-chat-compose textarea:focus {
+  border-color: var(--le-line-strong) !important;
+  box-shadow: 0 0 0 3px var(--le-focus) !important;
+  outline: 0 !important;
+}
+
+.gradio-container #le-global-assistant.gap #le-chat-send {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: 62px !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  padding: 0 14px !important;
+  border: 1px solid var(--le-accent) !important;
+  border-radius: var(--le-radius-s) !important;
+  background: var(--le-accent) !important;
+  color: var(--le-accent-ink) !important;
+  font-size: 13px !important;
+  font-weight: 550 !important;
+  box-shadow: none !important;
+}
+
+.gradio-container #le-global-assistant.gap #le-chat-send:hover {
+  filter: brightness(1.06) !important;
+}
+
+.gradio-container #le-global-assistant.gap #le-chat-send:disabled {
+  border-color: var(--le-line) !important;
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink-3) !important;
+  filter: none !important;
+}
+
+/* 缩放手柄：一根 1px 角线，不要粗描边 */
+#le-assistant-resize::after {
+  width: 8px !important;
+  height: 8px !important;
+  border-right-width: 1px !important;
+  border-bottom-width: 1px !important;
+  border-color: var(--le-line-strong) !important;
+  border-radius: 0 0 2px 0 !important;
+}
+
+#le-assistant-resize:hover::after {
+  border-color: var(--le-ink-3) !important;
+}
+
+/* ---------- 问答页：工具菜单 ---------- */
+
+#le-app-tabs #chat-tab #le-chat-tool-menu {
+  padding: 6px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-l) !important;
+  background: var(--le-surface) !important;
+  box-shadow: var(--le-shadow-2) !important;
+  max-height: min(320px, 46vh) !important;
+  overflow: auto !important;
+}
+
+#le-app-tabs #chat-tab #le-chat-tool-menu button {
+  min-height: 36px !important;
+  padding: 7px 11px !important;
+  border: 1px solid transparent !important;
+  border-radius: var(--le-radius-s) !important;
+  background: transparent !important;
+  color: var(--le-ink-2) !important;
+  font-size: 13.5px !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #chat-tab #le-chat-tool-menu button:hover,
+#le-app-tabs #chat-tab #le-chat-tool-menu button[aria-expanded="true"] {
+  border-color: transparent !important;
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #chat-tab #le-chat-tool-menu button > span:last-child {
+  color: var(--le-ink-3) !important;
+  font-size: 12px !important;
+}
+
+/* ---------- 问答页：工具浮层 ---------- */
+
+#le-app-tabs #chat-tab #le-chat-flyout {
+  padding: 16px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-l) !important;
+  background: var(--le-surface) !important;
+  box-shadow: var(--le-shadow-3) !important;
+  color: var(--le-ink-2) !important;
+}
+
+#le-app-tabs #chat-tab #le-chat-flyout .le-flyout-head {
+  position: sticky !important;
+  top: -16px !important;
+  z-index: 2 !important;
+  gap: 8px !important;
+  margin: 0 0 12px !important;
+  padding: 6px 0 12px !important;
+  border-bottom: 1px solid var(--le-line) !important;
+  background: var(--le-surface) !important;
+}
+
+#le-app-tabs #chat-tab #le-chat-flyout .le-flyout-head strong {
+  flex: 1 !important;
+  font-size: 14.5px !important;
+  font-weight: 600 !important;
+  letter-spacing: -.01em !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #chat-tab #le-chat-flyout .le-flyout-head button {
+  min-height: 30px !important;
+  height: 30px !important;
+  padding: 0 9px !important;
+  border: 0 !important;
+  border-radius: var(--le-radius-s) !important;
+  background: transparent !important;
+  color: var(--le-ink-3) !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #chat-tab #le-chat-flyout .le-flyout-head button:hover {
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #chat-tab #le-chat-flyout [data-flyout-close] {
+  width: 30px !important;
+  padding: 0 !important;
+  font-size: 16px !important;
+  line-height: 1 !important;
+}
+
+#le-app-tabs #chat-tab #le-chat-flyout :is(#conv-settings-panel, #chat-settings-expand) {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #chat-tab #le-chat-flyout #conv-settings-panel {
+  gap: 14px !important;
+}
+
+#le-app-tabs #chat-tab #le-chat-flyout :is(.block, .form) {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #chat-tab #le-chat-flyout #chat-settings-expand :is(.stretch > .block, .row > .block) {
+  padding: 12px !important;
+  border: 0 !important;
+  border-radius: var(--le-radius-m) !important;
+  background: var(--le-surface-2) !important;
+}
+
+#le-app-tabs #chat-tab #le-chat-flyout :is([data-testid=block-info], .label-wrap) {
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs #chat-tab #le-chat-flyout .wrap:has(input[role=listbox]) .wrap-inner {
+  min-height: 38px !important;
+  padding: 8px 11px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-s) !important;
+  background: var(--le-surface-2) !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #chat-tab #le-chat-flyout #index-0 .wrap:has(> label) {
+  gap: 2px !important;
+  padding: 3px !important;
+  border-radius: var(--le-radius-m) !important;
+  background: var(--le-surface-2) !important;
+}
+
+#le-app-tabs #chat-tab #le-chat-flyout #index-0 label:has(input[type=radio]) {
+  min-height: 34px !important;
+  padding: 7px 11px !important;
+  border: 1px solid transparent !important;
+  border-radius: var(--le-radius-s) !important;
+  background: transparent !important;
+  color: var(--le-ink-2) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #chat-tab #le-chat-flyout #index-0 label:has(input:checked) {
+  background: var(--le-surface) !important;
+  color: var(--le-ink) !important;
+  box-shadow: var(--le-shadow-1) !important;
+}
+
+/* ---------- 过关检查 / 适配度弹窗 ---------- */
+
+#le-app-tabs :is(#le-gate-overlay, #le-adapt-overlay) {
+  padding: 0 !important;
+  border: 0 !important;
+  background: var(--le-scrim) !important;
+  backdrop-filter: blur(2px) !important;
+}
+
+#le-app-tabs :is(#le-gate-center, #le-adapt-center) {
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 100% !important;
+  padding: 28px 24px !important;
+  gap: 0 !important;
+}
+
+#le-app-tabs :is(#le-gate-modal, #le-adapt-modal) {
+  gap: 14px !important;
+  max-height: 86vh !important;
+  padding: 24px 26px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-xl) !important;
+  background: var(--le-surface) !important;
+  box-shadow: var(--le-shadow-3) !important;
+  overflow: auto !important;
+}
+
+#le-app-tabs :is(#le-gate-head, #le-adapt-head) {
+  position: static !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+#le-app-tabs :is(#le-gate-title, #le-adapt-intro) {
+  flex: 1 !important;
+  min-width: 0 !important;
+  padding-right: 0 !important;
+}
+
+#le-app-tabs :is(#le-gate-title, #le-adapt-intro) h3 {
+  margin: 0 !important;
+  font-size: 20px !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  letter-spacing: -.02em !important;
+  color: var(--le-ink) !important;
+  padding-right: 0 !important;
+}
+
+#le-app-tabs #le-adapt-intro p {
+  margin: 6px 0 0 !important;
+  font-size: 13px !important;
+  line-height: 1.7 !important;
+  color: var(--le-ink-2) !important;
+}
+
+#le-app-tabs :is(#le-gate-close, #le-gate-skip, #le-adapt-close) {
+  position: static !important;
+  flex: 0 0 auto !important;
+  min-width: 0 !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  padding: 0 12px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-s) !important;
+  background: transparent !important;
+  color: var(--le-ink-2) !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs :is(#le-gate-close, #le-gate-skip, #le-adapt-close):hover {
+  border-color: var(--le-line-strong) !important;
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs :is(#le-gate-quiz-actions, #le-adapt-actions) button {
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0 14px !important;
+  border-radius: var(--le-radius-s) !important;
+  font-size: 13px !important;
+  font-weight: 550 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs :is(#le-gate-modal, #le-adapt-modal) button.primary {
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0 16px !important;
+  border: 1px solid var(--le-accent) !important;
+  border-radius: var(--le-radius-s) !important;
+  background: var(--le-accent) !important;
+  color: var(--le-accent-ink) !important;
+  font-size: 13px !important;
+  font-weight: 550 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs :is(#le-gate-answers, #le-gate-quiz-actions, #le-adapt-actions) {
+  gap: 8px !important;
+}
+
+#le-app-tabs #le-gate-tabs > .tab-nav {
+  display: inline-flex !important;
+  gap: 2px !important;
+  margin: 0 0 14px !important;
+  padding: 3px !important;
+  border: 0 !important;
+  border-radius: var(--le-radius-m) !important;
+  background: var(--le-surface-2) !important;
+}
+
+#le-app-tabs #le-gate-tabs > .tab-nav button {
+  height: 30px !important;
+  min-height: 30px !important;
+  padding: 5px 14px !important;
+  border: 0 !important;
+  border-radius: var(--le-radius-s) !important;
+  background: transparent !important;
+  color: var(--le-ink-2) !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #le-gate-tabs > .tab-nav button.selected {
+  background: var(--le-surface) !important;
+  color: var(--le-ink) !important;
+  box-shadow: var(--le-shadow-1) !important;
+}
+
+#le-app-tabs :is(#le-gate-check-md, #le-gate-quiz-md, #le-gate-quiz-result, #le-gate-recite-fb) :is(p, li) {
+  font-size: 13.5px !important;
+  line-height: 1.75 !important;
+  color: var(--le-ink-2) !important;
+}
+
+#le-app-tabs #le-gate-check-md h4 {
+  margin: 0 0 6px !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  letter-spacing: .04em !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs #le-gate-check-md blockquote {
+  margin: 8px 0 !important;
+  border-left: 2px solid var(--le-line-strong) !important;
+  background: var(--le-surface-2) !important;
+  color: var(--le-ink-2) !important;
+}
+
+#le-app-tabs #le-gate-answers textarea {
+  font-size: 13.5px !important;
+  line-height: 1.6 !important;
+}
+
+#le-app-tabs #le-adapt-signal {
+  padding: 14px 16px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-m) !important;
+  background: var(--le-surface-2) !important;
+}
+
+#le-app-tabs #le-adapt-signal p {
+  margin: 0 !important;
+  font-size: 13px !important;
+  line-height: 1.7 !important;
+  color: var(--le-ink-2) !important;
+}
+
+#le-app-tabs #le-adapt-report :is(p, li) {
+  font-size: 13.5px !important;
+  line-height: 1.75 !important;
+  color: var(--le-ink-2) !important;
+}
+
+/* ---------- 小屏 ---------- */
+
+@media (max-width: 800px) {
+  #le-assistant-fab.le-fab-docked[aria-controls] {
+    flex: 0 0 32px !important;
+    width: 32px !important;
+    min-width: 32px !important;
+    height: 32px !important;
+    padding: 0 !important;
+    background-position: center !important;
+    background-size: 26px !important;
+  }
+
+  #le-assistant-fab.le-fab-docked[aria-controls]::after {
+    display: none !important;
+  }
+
+  #le-app-tabs #chat-tab #le-chat-flyout {
+    padding: 14px !important;
+  }
+
+  #le-app-tabs #chat-tab #le-chat-flyout .le-flyout-head {
+    top: -14px !important;
+    padding-top: 4px !important;
+  }
+
+  #le-app-tabs :is(#le-gate-center, #le-adapt-center) {
+    padding: 14px !important;
+  }
+
+  #le-app-tabs :is(#le-gate-modal, #le-adapt-modal) {
+    padding: 18px 16px !important;
+  }
+
+  #le-app-tabs :is(#le-gate-title, #le-adapt-intro) h3 {
+    font-size: 18px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #le-assistant-fab[aria-controls][aria-expanded]:not(.le-fab-docked) {
+    transition: none !important;
+  }
+}
+
+#le-app-tabs #le-adapt-head { display:flex !important; align-items:flex-start !important; flex-wrap:nowrap !important; }
+#le-app-tabs #le-adapt-close { margin:0 !important; width:32px !important; height:32px !important; padding:0 !important; font-size:22px !important; border:0 !important; }
+#le-app-tabs #le-adapt-scope { display:grid !important; grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto; gap:16px !important; align-items:end !important; }
+#le-app-tabs #le-adapt-scope > * { min-width:0 !important; }
+#le-app-tabs #le-adapt-scope button { height:46px !important; min-width:72px !important; margin-bottom:0 !important; }
+#le-app-tabs #le-adapt-scope .wrap-inner { min-height:46px !important; }
+#le-app-tabs #le-adapt-signal blockquote { margin:12px 0 0 !important; padding:8px 12px !important; border-color:var(--le-line) !important; }
+@media(max-width:650px) { #le-app-tabs #le-adapt-scope { grid-template-columns:1fr !important; } }
+#le-app-tabs #le-adapt-scope { grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) 80px !important; }
+#le-app-tabs #le-adapt-scope > button { width:80px !important; min-width:0 !important; }
+@media(max-width:650px) { #le-app-tabs #le-adapt-scope { grid-template-columns:1fr !important; } #le-app-tabs #le-adapt-scope > button { width:100% !important; } }
+#le-app-tabs #le-adapt-scope > .form { display:contents !important; }
+#le-app-tabs #le-adapt-scope > .form > * { min-width:0 !important; width:100% !important; }

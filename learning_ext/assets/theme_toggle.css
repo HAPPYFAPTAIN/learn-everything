@@ -1,0 +1,89 @@
+#le-theme-toggle {
+  position: relative;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  margin: 0 8px 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--le-ink-2);
+  cursor: pointer;
+  display: inline-grid;
+  place-items: center;
+  box-shadow: none;
+  transition: background .18s var(--le-ease), color .18s var(--le-ease), transform .18s var(--le-ease);
+}
+
+#le-theme-toggle:hover,
+#le-theme-toggle[aria-expanded=true] {
+  background: var(--le-surface-3);
+  color: var(--le-accent);
+}
+
+#le-theme-toggle:active { transform: scale(.94); }
+#le-theme-toggle:focus-visible,
+#le-theme-menu button:focus-visible {
+  outline: 2px solid var(--le-accent);
+  outline-offset: 2px;
+}
+
+#le-theme-toggle svg,
+#le-theme-menu svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+  color: inherit !important;
+}
+
+#le-theme-menu {
+  position: fixed;
+  z-index: 2147483000;
+  width: 180px;
+  padding: 6px;
+  border: 1px solid var(--le-line-strong);
+  border-radius: var(--le-radius-m);
+  background: var(--le-surface);
+  color: var(--le-ink);
+  box-shadow: var(--le-shadow-3);
+  font: 600 13px/1.4 var(--le-font, system-ui, sans-serif);
+  animation: le-theme-menu-in .16s var(--le-ease) both;
+}
+
+#le-theme-menu[hidden] { display: none !important; }
+#le-theme-menu button {
+  display: grid;
+  grid-template-columns: 18px 1fr 16px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 10px;
+  margin: 0;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--le-ink-2);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  transition: background .14s var(--le-ease), color .14s var(--le-ease);
+}
+#le-theme-menu button:hover { background: var(--le-surface-3); color: var(--le-ink); }
+#le-theme-menu button[aria-checked=true] { background: var(--le-accent-soft); color: var(--le-accent); }
+#le-theme-menu .le-theme-check { opacity: 0; }
+#le-theme-menu button[aria-checked=true] .le-theme-check { opacity: 1; }
+
+@keyframes le-theme-menu-in {
+  from { opacity: 0; transform: translateY(-4px) scale(.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (max-width: 800px) {
+  #le-theme-toggle { flex-basis: 32px; width: 32px; height: 32px; margin-right: 6px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #le-theme-toggle, #le-theme-menu, #le-theme-menu button { transition: none !important; animation: none !important; }
+}

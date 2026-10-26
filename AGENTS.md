@@ -44,6 +44,7 @@ pack_portable.bat  # 组装完整便携版
 - 新增 Tab: `learning_ext/pages/` 加 BasePage 子类 + `app.py._build_learning_tabs` 注册
 - 提示词放各模块 `prompts.py`
 - 不写注释（除非复杂逻辑必要）
+- 前端样式：全部 CSS 由 `custom_app.py` 的 `/le-presentation.css` 路由按请求重新拼装，模板里只有一个 `<link>`（不走 `Blocks(css=...)`，避免 Gradio 改写选择器）。**改完 CSS 刷新页面即可生效，不要重启应用**。JS 仍是启动时内联进模板，改了要重启。明暗颜色只写在 `theme_tokens.css` 的 `--le-*` 变量里；暗色差异集中在运行期注入的 `dark_theme.css`
 
 ## 架构关键点
 - **双 Python 进程**: launcher.exe (PyWebView) 用子进程跑 Kotaemon venv 的 python

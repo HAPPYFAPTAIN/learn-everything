@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import ctypes
 import json
+import math
 from pathlib import Path
 import re
 import subprocess
@@ -16,6 +17,26 @@ from learning_ext.agent.tools import _ps
 SCRIPT = Path(__file__).with_name("guided_controls.ps1")
 RISKY = re.compile(r"删除|移除|清空|格式化|支付|购买|转账|发送|发布|提交|授权|权限|登录|退出|关闭|安装|卸载|运行|执行|终端|控制台|delete|remove|erase|format|pay|buy|send|publish|submit|allow|permission|sign.?in|log.?in|close|install|uninstall|run|execute|terminal|console", re.I)
 _OVERLAYS = {}
+OBSERVATION_TTL = 180
+_ACTIONS = {
+    "Button": {"invoke"}, "CheckBox": {"toggle"}, "RadioButton": {"select"},
+    "TabItem": {"select"}, "TreeItem": {"select", "expand"}, "ComboBox": {"expand"},
+}
+
+
+def _validate_item(item):
+    observed = item.get("observed_at") if isinstance(item, dict) else None
+    if (type(observed) not in (int, float) or not math.isfinite(observed)
+            or not 0 <= time.time() - observed <= OBSERVATION_TTL):
+        raise ValueError("控件列表已过期，请重新读取并圈出目标。")
+    if not all(isinstance(item.get(key), str) for key in ("key", "name", "type", "action", "automation_id", "class_name")):
+        raise ValueError("控件信息不完整，请重新读取。")
+    if not item["key"] or not item["name"]:
+        raise ValueError("没有明确的目标控件，请重新定位。")
+    valid_states = {"toggle": {"On", "Off", "Indeterminate"}, "select": {"True", "False"},
+                    "expand": {"Expanded", "Collapsed", "PartiallyExpanded", "LeafNode"}}
+    if item["action"] in valid_states and item.get("state") not in valid_states[item["action"]]:
+        raise ValueError("无法确认控件当前状态，请重新读取。")
 
 
 def windows():
@@ -65,26 +86,37 @@ def _payload(window, mode, item=None):
 
 def _call(window, mode, item=None):
     validate_window(window)
+    if mode != "observe":
+        _validate_item(item)
     payload = _payload(window, mode, item)
     path = str(SCRIPT).replace("'", "''")
     code, output = _ps(f"& '{path}' -Payload '{payload}'", timeout=25)
-    if code:
-        raise ValueError("无法读取或操作这个窗口，请重新定位；某些软件不提供标准控件。")
     try:
         result = json.loads(output)
     except (TypeError, json.JSONDecodeError):
-        raise ValueError("窗口没有返回可识别的控件。") from None
+        raise ValueError("无法读取或操作这个窗口，请重新定位；某些软件不提供标准控件。" if code else "窗口没有返回可识别的控件。") from None
+    if not isinstance(result, dict):
+        raise ValueError("窗口没有返回可识别的控件。")
     if result.get("error"):
         raise ValueError(result["error"])
+    if code:
+        raise ValueError("窗口操作未能完成，请重新检查当前状态。")
     return result
 
 
 def observe(window):
+    observed = time.time()
     result = _call(window, "observe")
     items = result.get("items") or []
-    if not items:
+    if not isinstance(items, list) or not items:
         raise ValueError("没有识别到标准控件。可以继续查看文字提示，或换一个窗口。")
-    return dict(window=window, items=items, observed=time.time())
+    if any(not isinstance(item, dict) or not isinstance(item.get("key"), str) for item in items):
+        raise ValueError("控件信息不完整，请重新读取。")
+    keys = [item["key"] for item in items]
+    if len(keys) != len(set(keys)):
+        raise ValueError("控件标识不唯一，请重新读取或手动操作。")
+    return dict(window=dict(window), items=[{**item, "observed_at": observed} for item in items],
+                observed=observed, truncated=bool(result.get("truncated")))
 
 
 def stop_highlight(session_id):
@@ -120,11 +152,14 @@ def highlight(session_id, window, item):
 
 
 def can_operate(window, item):
-    return (bool(item.get("action")) and item.get("type") in {"Button", "CheckBox", "RadioButton", "TabItem", "TreeItem", "ComboBox"}
-            and not RISKY.search(item.get("name", "") + " " + window.get("title", "")))
+    return (item.get("action") in _ACTIONS.get(item.get("type"), set())
+            and not RISKY.search(str(item.get("name", "")) + " " + str(window.get("title", ""))))
 
 
 def operate(window, item):
     if not can_operate(window, item):
         raise ValueError("这个控件只提供定位，请你亲自操作。")
-    return _call(window, "operate", item)
+    result = _call(window, "operate", item)
+    if not isinstance(result.get("message"), str) or type(result.get("verified")) is not bool:
+        raise ValueError("操作回执不完整，尚未确认结果。请先检查窗口，不要重复操作。")
+    return result

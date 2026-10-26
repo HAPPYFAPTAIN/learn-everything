@@ -1,0 +1,313 @@
+:root, body, .gradio-container {
+  color-scheme: dark;
+  --le-panel: var(--le-surface);
+  --le-raised: var(--le-surface-2);
+  --le-card: var(--le-surface);
+  --le-text: var(--le-ink);
+  --le-copy: var(--le-ink-2);
+  --le-muted: var(--le-ink-3);
+  --le-text-muted: var(--le-ink-3);
+  --le-border: var(--le-line);
+  --le-primary: var(--le-accent);
+  --le-primary-dark: var(--le-accent-hover);
+  --body-background-fill: var(--le-bg);
+  --body-text-color: var(--le-ink);
+  --body-text-color-subdued: var(--le-ink-3);
+  --background-fill-primary: var(--le-surface);
+  --background-fill-secondary: var(--le-surface-2);
+  --block-background-fill: var(--le-surface);
+  --block-border-color: var(--le-line);
+  --block-label-background-fill: transparent;
+  --block-label-text-color: var(--le-ink-2);
+  --block-title-text-color: var(--le-ink);
+  --block-info-text-color: var(--le-ink-3);
+  --input-background-fill: var(--le-surface-2);
+  --input-border-color: var(--le-line);
+  --input-text-color: var(--le-ink);
+  --input-placeholder-color: var(--le-ink-3);
+  --border-color-primary: var(--le-line);
+  --border-color-accent: var(--le-line-strong);
+  --link-text-color: var(--le-accent);
+  --color-accent: var(--le-accent);
+  --color-accent-soft: var(--le-accent-soft);
+  --button-primary-background-fill: var(--le-accent);
+  --button-primary-text-color: var(--le-accent-ink);
+  --button-primary-border-color: var(--le-accent);
+  --button-secondary-background-fill: var(--le-surface-2);
+  --button-secondary-text-color: var(--le-ink);
+  --button-secondary-border-color: var(--le-line);
+  --panel-background-fill: var(--le-surface);
+  --panel-border-color: var(--le-line);
+  --table-even-background-fill: var(--le-sunken);
+  --table-odd-background-fill: var(--le-surface);
+  --table-row-focus: var(--le-surface-3);
+}
+html, body, .gradio-container { background: var(--le-bg) !important; color: var(--le-ink) !important; }
+body .gradio-container { background: var(--le-bg) !important; }
+.gradio-container ::selection { background: var(--le-line-strong); color: var(--le-ink); }
+.gradio-container ::-webkit-scrollbar-thumb { background: var(--le-line); }
+#le-brand-bar, .le-topbar, .le-brand { background: var(--le-surface-2) !important; border-color: var(--le-surface-2) !important; }
+.le-brand { position: relative; }
+.le-brand img { filter: none; }
+.le-brand::before {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  left: var(--le-brand-pl, 12px);
+  top: 50%;
+  width: var(--le-brand-img, 172px);
+  height: calc(var(--le-brand-img, 172px) * .3131524);
+  transform: translateY(-50%);
+  background: var(--le-ink);
+  mask: url('__ASSETS__/aethermind-logo.png') center / 100% 100% no-repeat;
+  -webkit-mask: url('__ASSETS__/aethermind-logo.png') center / 100% 100% no-repeat;
+  clip-path: inset(0 0 0 32%);
+  pointer-events: none;
+  transition: width .2s ease, height .2s ease, left .2s ease;
+}
+@media (max-width: 800px) {
+  .le-brand::before { left: 0; width: 162px; height: 50.73px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .le-brand::before { transition: none; }
+}
+.le-topbar::after, .le-brand::after { background: var(--le-surface-2) !important; }
+.le-app-title { color: var(--le-ink) !important; }
+.le-app-title span, .le-local { color: var(--le-ink-2) !important; }
+.le-local { border-color: var(--le-line-strong) !important; }
+#le-nav-toggle { background: var(--le-surface-2) !important; border-color: var(--le-line) !important; color: var(--le-ink) !important; }
+#le-nav-toggle:hover { background: var(--le-surface-3) !important; color: var(--le-ink) !important; }
+#le-app-tabs > .tab-nav { background: var(--le-surface-2) !important; border-right-color: var(--le-surface-2) !important; }
+#le-app-tabs > .tab-nav::before, #le-app-tabs > .tab-nav::after { color: var(--le-ink-3) !important; }
+#le-nav-toggle svg, #le-nav-toggle svg path { stroke: currentColor !important; }
+#le-app-tabs #le-more-nav { border-color: var(--le-line-strong) !important; }
+#le-app-tabs > .tab-nav > button { color: var(--le-ink-3) !important; }
+#le-app-tabs > .tab-nav > button:hover { background: var(--le-surface-2) !important; color: var(--le-ink) !important; }
+#le-app-tabs > .tab-nav > button.selected { background: var(--le-surface-3) !important; border-color: transparent !important; color: var(--le-ink) !important; box-shadow: none !important; }
+#le-app-tabs > .tabitem { background: var(--le-bg) !important; background-image: none !important; color: var(--le-ink) !important; }
+#le-app-tabs :is(h1,h2,h3,h4,strong,b) { color: var(--le-ink) !important; }
+#le-app-tabs :is(p,li,label,small) { color: var(--le-ink-2) !important; }
+#le-app-tabs :is(span,summary) { color: var(--le-ink-2); }
+#le-app-tabs :is(.le-kicker,.le-caption,.le-muted) { color: var(--le-ink-3) !important; }
+.gradio-container .prose, .gradio-container .md { color: var(--le-ink-2) !important; }
+.gradio-container .block { background: var(--le-surface) !important; border-color: var(--le-line) !important; }
+.gradio-container :is(.block.padded, .block:has(> .prose), .block:has(> div > .prose), .block:has([data-testid=markdown]), .block:has(> .wrap > .prose)) { background: transparent !important; border-color: transparent !important; }
+.gradio-container .form { background: transparent !important; }
+.gradio-container :is(input:not([type=checkbox]):not([type=radio]):not([type=range]),textarea,select,.block .wrap) {
+  background: var(--le-surface-2) !important;
+  border-color: var(--le-line) !important;
+  border-radius: 12px !important;
+  color: var(--le-ink) !important;
+  box-shadow: none !important;
+}
+#le-app-tabs :is(input,textarea)::placeholder { color: var(--le-ink-3) !important; opacity: 1 !important; }
+.gradio-container :is(input:not([type=checkbox]):not([type=radio]):not([type=range]),textarea,select):focus {
+  border-color: var(--le-line-strong) !important;
+  box-shadow: 0 0 0 3px var(--le-focus) !important;
+}
+.gradio-container :is(input,textarea,button,select,a,summary):focus-visible { outline-color: var(--le-ink-2) !important; }
+.gradio-container button.primary { background: var(--le-accent) !important; border-color: var(--le-accent) !important; color: var(--le-accent-ink) !important; box-shadow: none !important; }
+.gradio-container button.primary:hover { background: var(--le-accent-hover) !important; border-color: var(--le-accent-hover) !important; }
+.gradio-container button.primary:disabled { background: var(--le-line-strong) !important; border-color: var(--le-line-strong) !important; color: var(--le-ink-3) !important; }
+.gradio-container button.secondary { background: var(--le-surface-2) !important; border-color: var(--le-line) !important; color: var(--le-ink) !important; box-shadow: none !important; }
+.gradio-container button.secondary:hover { background: var(--le-surface-3) !important; border-color: var(--le-line-strong) !important; }
+.gradio-container button.stop { background: var(--le-danger-soft) !important; border-color: var(--le-danger-line) !important; color: var(--le-danger) !important; }
+.gradio-container .accordion { background: var(--le-surface) !important; border-color: var(--le-line) !important; border-radius: 12px !important; }
+.gradio-container .accordion .accordion { background: var(--le-surface-2) !important; }
+#le-app-tabs button.label-wrap { background: var(--le-surface-2) !important; color: var(--le-ink) !important; }
+#le-app-tabs button.label-wrap:hover { background: var(--le-surface-3) !important; }
+#le-app-tabs button.label-wrap > .icon::after { border-color: var(--le-ink-3); }
+.gradio-container .options, .gradio-container .options-container { background: var(--le-surface-2) !important; border-color: var(--le-line) !important; color: var(--le-ink) !important; box-shadow: 0 14px 36px var(--le-shadow-color) !important; }
+.gradio-container .options li:hover { background: var(--le-surface-3) !important; }
+.gradio-container .options li[aria-selected=true] { background: var(--le-line) !important; color: var(--le-ink) !important; }
+.gradio-container a { color: var(--le-accent) !important; }
+.gradio-container a:hover { color: var(--le-ink) !important; }
+.gradio-container code { background: var(--le-surface-3) !important; color: var(--le-ink) !important; }
+.gradio-container pre { background: var(--le-surface) !important; border-color: var(--le-line) !important; }
+.gradio-container table { background: var(--le-surface) !important; color: var(--le-ink-2) !important; }
+.gradio-container th { background: var(--le-surface-2) !important; color: var(--le-ink) !important; }
+.gradio-container td, .gradio-container th { border-color: var(--le-line) !important; }
+.gradio-container tr:nth-child(even) { background: var(--le-sunken) !important; }
+.gradio-container tbody tr:hover { background: var(--le-surface-3) !important; }
+#le-app-tabs :is(#le-plan-preview,#le-center-col,#le-review-flow,#le-quiz-flow,#le-settings-form,.le-dashboard-panel,#le-review-scope,#le-review-session,#le-quiz-settings,#le-quiz-answer,.le-help-card) {
+  background: var(--le-surface) !important;
+  border-color: var(--le-line) !important;
+  box-shadow: 0 8px 26px var(--le-shadow-color-soft) !important;
+}
+.gradio-container .le-editorial-head { background: transparent !important; border-bottom-color: var(--le-line) !important; }
+.gradio-container .le-editorial-head::after { background: var(--le-line-strong) !important; }
+.gradio-container .le-editorial-head .le-section-label { color: var(--le-ink-3) !important; }
+.gradio-container .le-section-heading > span { background: var(--le-surface-3) !important; color: var(--le-ink) !important; }
+.gradio-container .le-editorial-art { opacity: .8; }
+#le-guided-home:not(:has(.le-resume-strip)) .le-discovery-hero {
+  background: linear-gradient(125deg,var(--le-surface-2),var(--le-surface)) !important;
+  border-color: var(--le-line) !important;
+  box-shadow: 0 20px 44px var(--le-shadow-color-soft) !important;
+}
+#le-guided-home .le-hero-copy h1 > span::after { background: var(--le-line-strong) !important; opacity: 1; }
+#le-guided-home .le-hero-actions button:first-child { background: var(--le-accent) !important; border-color: var(--le-accent) !important; color: var(--le-accent-ink) !important; }
+#le-guided-home .le-hero-actions button:first-child span { color: var(--le-accent-ink) !important; }
+#le-guided-home .le-hero-actions button + button { color: var(--le-ink-2) !important; }
+#le-guided-home .le-hero-art { background: radial-gradient(ellipse at 50% 55%,var(--le-ambient),transparent 70%) !important; }
+#le-guided-home #le-resume-row { background: linear-gradient(120deg,var(--le-surface-2),var(--le-surface)) !important; border-color: var(--le-line) !important; box-shadow: 0 12px 30px var(--le-shadow-color-soft) !important; }
+#le-guided-home #le-resume-row::before { border-color: var(--le-accent-line); box-shadow: 0 0 0 34px var(--le-ambient),0 0 0 70px var(--le-ambient); }
+#le-guided-home .le-resume-heading small,
+#le-guided-home .le-resume-progress > div:first-child,
+#le-guided-home :is(.le-resume-next small,.le-resume-review small) { color: var(--le-ink-3) !important; }
+#le-guided-home .le-resume-icon { background: var(--le-line) !important; border-color: var(--le-line-strong) !important; color: var(--le-ink) !important; }
+#le-guided-home .le-resume-progress-track { background: var(--le-line) !important; }
+#le-guided-home .le-resume-progress-track i { background: var(--le-ink-2) !important; }
+#le-guided-home .le-resume-next strong > span { background: var(--le-line) !important; color: var(--le-ink) !important; }
+#le-guided-home .le-resume-review strong { color: var(--le-warning) !important; }
+#le-guided-home #le-resume-row > button { background: var(--le-accent) !important; border-color: var(--le-accent) !important; color: var(--le-accent-ink) !important; }
+#le-guided-home #le-onboarding-card { background: var(--le-surface) !important; border-color: var(--le-line) !important; }
+#le-guided-home .le-custom-heading h3 { color: var(--le-ink) !important; }
+#le-guided-home #le-onboarding-topic textarea { background: var(--le-surface-2) !important; color: var(--le-ink) !important; }
+#le-guided-home #le-learning-preferences { background: var(--le-surface-2) !important; border-color: var(--le-line) !important; }
+#le-guided-home #le-time-preference { background: var(--le-surface-3) !important; }
+#le-guided-home #le-time-preference input[type=number] { background: var(--le-surface-2) !important; color: var(--le-ink) !important; }
+#le-guided-home #le-home-confirm { background: var(--le-surface) !important; border-color: var(--le-line) !important; }
+#le-guided-home .le-onboarding-summary h2 { color: var(--le-ink) !important; }
+#le-guided-home .le-sample > summary strong { color: var(--le-ink) !important; }
+#le-guided-home .le-sample-options button { background: var(--le-surface-2) !important; border-color: var(--le-line-strong) !important; color: var(--le-ink) !important; }
+#le-guided-home .le-sample-options button[aria-pressed=true] { background: var(--le-accent) !important; color: var(--le-accent-ink) !important; }
+#le-guided-home .le-sample-table table { background: var(--le-surface) !important; color: var(--le-ink-2) !important; }
+#le-guided-home .le-sample-table th { background: var(--le-surface-3) !important; }
+#le-guided-home .le-sample-table td, #le-guided-home .le-sample-table th { border-color: var(--le-line) !important; }
+#le-discovery-cards > .le-direction-card { background: var(--le-surface) !important; border-color: var(--le-line-strong) !important; }
+#le-discovery-cards > .le-direction-card:hover, #le-discovery-cards > .le-direction-card:focus-within { background: var(--le-surface-2) !important; border-color: var(--le-line-strong) !important; }
+#le-guided-home #le-discovery-cards .le-direction-art { background: var(--le-surface-2) !important; }
+#le-guided-home .le-direction-button { color: var(--le-ink-2) !important; }
+#le-guided-home .le-direction-button:first-line { color: var(--le-ink) !important; }
+#le-guided-home .le-direction-button::after { color: var(--le-ink-2) !important; }
+#le-guided-home .le-direction-button[data-le-selected=true] { background: var(--le-surface-3) !important; }
+#le-guided-home .le-discovery-heading h2 { color: var(--le-ink) !important; }
+#le-guided-home .le-guided-footer button { color: var(--le-ink-2) !important; }
+#le-workbench-row #le-left-col { background: var(--le-surface) !important; border-color: var(--le-line) !important; }
+#le-workbench-row #le-center-col { background: var(--le-surface) !important; }
+#le-workbench-row .le-lesson-heading { border-bottom-color: var(--le-line) !important; }
+#le-guide-md .prose { color: var(--le-ink-2) !important; }
+#le-guide-md .le-lesson-intro { background: var(--le-surface-2) !important; border-color: var(--le-line) !important; }
+#le-guide-md .le-learning-outcomes > li { background: var(--le-surface-2) !important; border-color: var(--le-line) !important; }
+#le-guide-md .le-learning-outcomes > li::before { color: var(--le-ink-2) !important; }
+#le-content-tabs > .tab-nav { background: transparent !important; border-bottom-color: var(--le-line) !important; }
+#le-content-tabs > .tab-nav button.selected { background: var(--le-surface-3) !important; color: var(--le-ink) !important; }
+#le-plan-preview .le-route-result, #le-route-output .le-route-intro { background: var(--le-surface-2) !important; border-color: var(--le-line) !important; }
+#le-route-output .le-route-course { background: var(--le-surface-2) !important; border-color: var(--le-line) !important; }
+#le-route-output .le-route-course:hover, #le-route-output .le-route-course[open] { background: var(--le-surface-3) !important; }
+#le-route-output .le-route-course > summary { border-bottom-color: var(--le-line) !important; }
+.le-stage-number, .le-route-stage > header .le-stage-number { background: var(--le-surface-3) !important; color: var(--le-ink) !important; }
+.le-route-metrics > div { border-right-color: var(--le-line) !important; }
+.le-stage-courses { border-left-color: var(--le-line-strong) !important; }
+.le-route-wait, .le-prep-panel { background: var(--le-surface-2) !important; border-color: var(--le-line) !important; }
+.le-prep-steps li > span { background: var(--le-surface-3) !important; color: var(--le-ink) !important; }
+.le-prep-steps li.is-done > span { background: var(--le-accent) !important; color: var(--le-surface) !important; }
+#review-card, #quiz-question, #le-review-card, #le-quiz-question { background: var(--le-surface-2) !important; border-color: var(--le-line) !important; }
+#le-review-answer, #le-quiz-answer { background: var(--le-surface-3) !important; border-color: var(--le-line) !important; }
+#le-review-scope, #le-quiz-settings { background: var(--le-surface) !important; }
+#le-review-stats strong { color: var(--le-warning) !important; }
+.gradio-container .le-metric { background: var(--le-surface-2) !important; border-color: var(--le-line) !important; box-shadow: none !important; }
+.gradio-container .le-metric .val { color: var(--le-ink) !important; }
+.gradio-container .le-metric .lbl { color: var(--le-ink-3) !important; }
+.gradio-container .le-metric-mastered:not(.is-empty) { background: var(--le-surface-3) !important; border-color: var(--le-line-strong) !important; }
+.gradio-container .le-metric-mastered:not(.is-empty) .val { color: var(--le-ink) !important; }
+.gradio-container .le-metric-mastered:not(.is-empty) .lbl { color: var(--le-ink-2) !important; }
+#le-app-tabs .le-help-cards button { background: var(--le-surface) !important; border-color: var(--le-line) !important; }
+#le-app-tabs .le-help-cards button:hover { border-color: var(--le-line-strong) !important; }
+#le-app-tabs :is(.le-settings-deck,#le-chat-tool-menu,#le-chat-flyout,.le-library-dialog) { background: var(--le-surface-2) !important; border-color: var(--le-line-strong) !important; box-shadow: 0 24px 70px var(--le-shadow-color) !important; }
+#le-app-tabs .le-library-dialog::backdrop { background: var(--le-scrim) !important; backdrop-filter: blur(4px) !important; }
+#indices-tab .le-library-collection, #indices-tab .le-library-add { background: var(--le-surface) !important; }
+#indices-tab .le-library-search input { background-color: var(--le-surface-2) !important; color: var(--le-ink) !important; }
+#indices-tab .le-library-search input:focus { background: var(--le-surface-3) !important; border-color: var(--le-line-strong) !important; }
+#indices-tab .le-library-dialog { background: var(--le-surface-2) !important; color: var(--le-ink) !important; }
+#indices-tab .le-library-close { background: var(--le-surface-3) !important; color: var(--le-ink) !important; }
+#indices-tab .le-library-close:hover { background: var(--le-surface-3) !important; }
+#le-app-tabs #indices-tab .le-original-title { color: var(--le-ink-2) !important; }
+#indices-tab .le-library-add .block:has(input[type=file]), .le-library-dialog .block:has(input[type=file]) { background: var(--le-surface-3) !important; border-color: var(--le-line-strong) !important; }
+#indices-tab [id=file_list_view] th { background: var(--le-surface-2) !important; color: var(--le-ink-2) !important; }
+#indices-tab [id=file_list_view] td { background: var(--le-surface) !important; color: var(--le-ink) !important; }
+#indices-tab [id=file_list_view] tbody tr:hover td { background: var(--le-surface-3) !important; }
+#indices-tab details.evidence { background: var(--le-surface-2) !important; border-color: var(--le-line) !important; color: var(--le-ink-2) !important; }
+#chat-tab #le-chat-model-header .wrap-inner { background: transparent !important; color: var(--le-ink) !important; }
+#le-app-tabs #le-chat-model-trigger .le-entry-icon:has(img) { padding: 3px !important; border-radius: 7px; background: var(--le-logo-surface) !important; }
+#le-app-tabs #le-chat-model-trigger .le-entry-icon img { width: 20px; height: 20px; }
+#le-app-tabs #quick-setup-tab #le-platform-picker label::before { background-color: var(--le-logo-surface) !important; }
+#le-app-tabs #quick-setup-tab .le-platform-mark:has(img) { background: var(--le-logo-surface) !important; }
+#chat-tab #le-chat-flyout .le-flyout-head strong { color: var(--le-ink) !important; }
+#chat-tab #le-chat-flyout [data-flyout-close] { background: var(--le-surface-3) !important; color: var(--le-ink) !important; }
+#chat-tab #le-chat-flyout #index-0 label:has(input[type=radio]) { background: var(--le-surface-3) !important; border-color: var(--le-line-strong) !important; }
+#chat-tab #le-chat-flyout #index-0 label:has(input:checked) { background: var(--le-surface-3) !important; border-color: var(--le-line-strong) !important; }
+#chat-tab .le-source-intro strong { color: var(--le-ink) !important; }
+#chat-tab .le-source-intro > span { background: var(--le-surface-3) !important; color: var(--le-ink) !important; }
+#chat-tab .le-source-advanced { border-top-color: var(--le-line) !important; }
+#le-answer-references #html-info-panel summary .pdf-link { background: var(--le-surface-3) !important; border-color: var(--le-line-strong) !important; color: var(--le-ink) !important; }
+#le-global-assistant { background: var(--le-surface) !important; border-color: var(--le-line-strong) !important; box-shadow: 0 24px 70px var(--le-shadow-color-deep) !important; }
+#le-global-assistant .le-assistant-heading { background: var(--le-surface-2) !important; border-bottom-color: var(--le-line) !important; }
+#le-global-assistant .le-assistant-heading h3 { color: var(--le-ink) !important; }
+#le-global-assistant .le-assistant-heading button { color: var(--le-ink-2) !important; }
+#le-global-assistant .le-assistant-heading button:hover { background: var(--le-surface-3) !important; color: var(--le-ink) !important; }
+#le-global-assistant .le-assistant-avatar { background-color: var(--le-surface-2) !important; border-color: var(--le-line-strong) !important; }
+#le-global-assistant #le-assistant-empty, #le-global-assistant #le-assistant-chat { background: var(--le-surface) !important; border-color: var(--le-line) !important; }
+#le-assistant-empty .le-assistant-context { background: var(--le-surface-2) !important; border-color: var(--le-line) !important; }
+#le-assistant-empty [data-le-assistant-context-title] { color: var(--le-ink) !important; }
+#le-assistant-empty [data-le-assistant-context-detail], #le-assistant-empty [data-le-assistant-context-label], #le-assistant-empty .le-assistant-quick-title { color: var(--le-ink-3) !important; }
+#le-assistant-empty [data-le-assistant-suggestion] { background: var(--le-surface-2) !important; border-color: var(--le-line-strong) !important; color: var(--le-ink) !important; }
+#le-assistant-empty [data-le-assistant-suggestion]:hover { background: var(--le-surface-3) !important; border-color: var(--le-line-strong) !important; }
+#le-global-assistant #le-chat-compose textarea { background: var(--le-surface-2) !important; color: var(--le-ink) !important; border-color: var(--le-line-strong) !important; }
+#le-global-assistant .message { background: var(--le-surface-3) !important; color: var(--le-ink) !important; border-color: var(--le-line) !important; }
+#le-assistant-fab { background-color: var(--le-surface-2) !important; border-color: var(--le-accent-line) !important; }
+#le-assistant-fab:hover { background-color: var(--le-accent-soft) !important; border-color: var(--le-accent) !important; }
+#le-assistant-fab.le-fab-docked[aria-controls] {
+  background-image: url('__ASSETS__/coach-mascot-face.png') !important;
+  background-size: 23px !important;
+  border-color: var(--le-line-strong) !important;
+}
+#le-assistant-fab.le-fab-docked[aria-controls]::after { color: var(--le-ink) !important; font-weight: 600 !important; }
+@media (max-width: 800px) {
+  #le-assistant-fab.le-fab-docked[aria-controls] { background-size: 28px !important; }
+}
+#le-app-tabs :is(input[type=range],input[type=checkbox],input[type=radio]) { accent-color: var(--le-accent); }
+#le-app-tabs :is(.error,[role=alert]) { color: var(--le-danger) !important; }
+#le-app-tabs [data-state=attention], #le-app-tabs .le-import-item.needs-attention p { color: var(--le-warning) !important; }
+.gradio-container #le-app-tabs > .tab-nav > button { color: var(--le-ink-2) !important; }
+.gradio-container #le-app-tabs :is(p,li,label,small) { color: var(--le-ink-2) !important; }
+.gradio-container #le-app-tabs :is(span,summary) { color: var(--le-ink-2) !important; }
+#le-app-tabs :is(input:not([type=checkbox]):not([type=radio]):not([type=range]),textarea,select,.block .wrap,.wrap-inner) {
+  background: var(--le-surface-2) !important;
+  border-color: var(--le-line) !important;
+  color: var(--le-ink) !important;
+}
+#le-app-tabs button.primary { background: var(--le-accent) !important; border-color: var(--le-accent) !important; color: var(--le-accent-ink) !important; }
+#le-app-tabs button.primary:hover { background: var(--le-accent-hover) !important; border-color: var(--le-accent-hover) !important; }
+#le-app-tabs button.primary:disabled { background: var(--le-line-strong) !important; border-color: var(--le-line-strong) !important; color: var(--le-ink-3) !important; }
+#le-app-tabs button.primary :is(span,svg) { color: var(--le-accent-ink) !important; }
+#le-app-tabs button.secondary { background: var(--le-surface-2) !important; border-color: var(--le-line) !important; color: var(--le-ink) !important; }
+#le-app-tabs button.secondary:hover { background: var(--le-surface-3) !important; border-color: var(--le-line-strong) !important; }
+#le-app-tabs :is(.le-dashboard-next,.le-saved-summary,.le-next-explainer) { background: var(--le-surface-2) !important; border-color: var(--le-line) !important; }
+#le-app-tabs .le-dashboard-next button,
+#indices-tab button.le-library-new,
+#le-app-tabs .le-soon .soon-study-link { background: var(--le-accent) !important; color: var(--le-accent-ink) !important; }
+#le-app-tabs .le-dashboard-next button:hover,
+#indices-tab button.le-library-new:hover,
+#le-app-tabs .le-soon .soon-study-link:hover { background: var(--le-accent-hover) !important; color: var(--le-accent-ink) !important; }
+#le-review-stats { background: var(--le-surface-2) !important; color: var(--le-ink-2) !important; }
+#le-review-stats p, #le-review-stats strong { color: var(--le-ink) !important; }
+#le-app-tabs .le-lesson-meta span, #le-app-tabs .le-course-state { background: var(--le-surface-3) !important; color: var(--le-ink-2) !important; }
+#le-app-tabs .le-settings-entry { background: var(--le-surface-2) !important; border-color: var(--le-line) !important; color: var(--le-ink) !important; }
+#le-app-tabs .le-settings-entry:hover { background: var(--le-surface-3) !important; }
+#le-app-tabs #quick-setup-tab .le-settings-entry { border-color: var(--le-line-strong) !important; }
+#le-app-tabs .le-preview-heading button { background: var(--le-surface-2) !important; border-color: var(--le-line-strong) !important; color: var(--le-ink) !important; }
+
+#le-app-tabs > .tab-nav > button.selected {
+  background: var(--le-accent-soft) !important;
+  color: var(--le-accent) !important;
+  box-shadow: inset 2px 0 var(--le-accent) !important;
+}
+.gradio-container :is(input,textarea,button,select,a,summary):focus-visible { outline-color: var(--le-accent) !important; }
+.gradio-container input[type=range]:focus-visible { outline-offset: 4px; }
+.gradio-container :is(.le-rich-code,pre) code { background: transparent !important; color: var(--le-ink) !important; }
+.gradio-container :is(.hljs-keyword,.hljs-selector-tag,.token.keyword) { color: var(--le-code-keyword) !important; }
+.gradio-container :is(.hljs-string,.hljs-attr,.token.string) { color: var(--le-code-string) !important; }
+.gradio-container :is(.hljs-number,.hljs-literal,.token.number) { color: var(--le-code-number) !important; }
+.gradio-container :is(.hljs-comment,.token.comment) { color: var(--le-ink-3) !important; }
+.gradio-container [aria-busy=true] { cursor: progress; }

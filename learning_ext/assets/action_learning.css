@@ -82,3 +82,11 @@
 .le-env-skips li span,.le-env-footnote,.le-env-boundary { color:#627d89; font-size:13px!important; }
 .le-env-boundary { border-left:3px solid #22bcd2; padding:8px 12px; background:#eef8fa; border-radius:0 8px 8px 0; }
 .le-env-limited { color:#8c6c37!important; }
+
+#le-app-tabs #learning-workbench-tab:has([data-le-focus]) #le-workbench-row {
+ min-height:calc(100dvh - 110px) !important; display:flex !important; flex-direction:column !important;
+}
+#le-app-tabs #learning-workbench-tab:has([data-le-focus]) #le-center-col {
+ flex:0 0 auto !important; width:100% !important; margin-block:auto !important;
+}
+@media(max-width:700px) { #le-app-tabs #learning-workbench-tab:has([data-le-focus]) #le-workbench-row { min-height:calc(100dvh - 140px) !important; } }

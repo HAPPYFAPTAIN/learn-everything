@@ -49,10 +49,18 @@ def presentation_css():
     css += "\n" + (ASSETS / "consumer.css").read_text(encoding="utf-8")
     css += "\n" + (ASSETS / "settings_panels.css").read_text(encoding="utf-8")
     css += "\n" + (ASSETS / "compact.css").read_text(encoding="utf-8")
+    css += "\n" + (ASSETS / "theme_layout.css").read_text(encoding="utf-8")
+    css += "\n" + (ASSETS / "refine.css").read_text(encoding="utf-8")
+    css += "\n" + (ASSETS / "refine_home.css").read_text(encoding="utf-8")
+    for page_layer in ("refine_route", "refine_review", "refine_workbench",
+                       "refine_settings", "refine_library", "refine_assistant"):
+        css += "\n" + (ASSETS / f"{page_layer}.css").read_text(encoding="utf-8")
+    for workspace_layer in ("fullscreen_shell", "fullscreen_content", "chat_follow_latest", "route_browser", "chat_surface", "chat_references", "chat_thinking"):
+        css += "\n" + (ASSETS / f"{workspace_layer}.css").read_text(encoding="utf-8")
     return css.replace("__ASSETS__", "/file=" + ASSETS.as_posix())
 
 
-BRAND = f"""<header class="le-topbar"><div class="le-brand"><img src="/file={ASSETS.as_posix()}/aethermind-logo.png" alt="以太智元 AetherMind" width="479" height="150" /></div><div class="le-app-title">Learn Everything <span>/ 学习首页</span></div><span class="le-local">本地工作空间</span></header>"""
+BRAND = f"""<header class="le-topbar"><div class="le-brand"><img src="/file={ASSETS.as_posix()}/aethermind-logo.png" alt="以太智元 AetherMind" width="479" height="150" /></div><div class="le-app-title">Learn Everything <span>/ 学习首页</span></div></header>"""
 
 
 _BOOK_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6c-3-2-6-2-10-1v15c4-1 7-1 10 1 3-2 6-2 10-1V5c-4-1-7-1-10 1v15"/></svg>'
@@ -121,7 +129,10 @@ def welcome_html(has_course: bool = True) -> str:
 
 
 def polish_chat_ui(app):
+    from learning_ext.chat_presentation import configure_chat_presentation
+
     page = app.chat_page
+    configure_chat_presentation(page)
     page.chat_panel.chatbot.placeholder = (
         "从一个问题开始。直接提问，或点下方「资料」选择参考文件。"
     )

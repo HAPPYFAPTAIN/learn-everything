@@ -1,5 +1,6 @@
 from functools import wraps
 
+from learning_ext import chat_thinking
 from learning_ext.chat_messages import prepare_messages, sanitize_messages
 from learning_ext.model_platforms import adapt_chat_params
 
@@ -16,6 +17,23 @@ def _guard_params(original):
         return adapt_chat_params(getattr(self, "base_url", None), original(self, **kwargs))
 
     return guarded
+
+
+def _thinking_response(original):
+    @wraps(original)
+    def response(self, client, **kwargs):
+        preferences = chat_thinking.current_preferences()
+        effort = chat_thinking.effort_for(
+            getattr(self, "model", None), preferences["effort"]
+        )
+        if effort and not kwargs.get("reasoning_effort"):
+            kwargs["reasoning_effort"] = effort
+        result = original(self, client, **kwargs)
+        if kwargs.get("stream") is True and preferences["show_thinking"]:
+            return chat_thinking.stream_with_thinking(result)
+        return result
+
+    return response
 
 
 def _endpoint_run(self, messages, **kwargs):
@@ -57,6 +75,8 @@ def configure_chat_compat():
     BaseChatOpenAI.prepare_message = _prepare_message
     for cls in (ChatOpenAI, StructuredOutputChatOpenAI, AzureChatOpenAI):
         cls.prepare_params = _guard_params(cls.prepare_params)
+    for cls in (ChatOpenAI, AzureChatOpenAI):
+        cls.openai_response = _thinking_response(cls.openai_response)
     EndpointChatLLM.run = _endpoint_run
     BaseChatOpenAI._learning_message_guard = True
     print("[learning_ext] Chat message validation enabled (OpenAI/Azure/Endpoint)", flush=True)

@@ -81,6 +81,12 @@ def set_node_status(session: Session, node_id: int, status: str) -> KnowledgeNod
     node = session.get(KnowledgeNode, node_id)
     if node is None:
         raise ValueError(f"知识点 {node_id} 不存在")
+    if node.status != status:
+        from learning_ext.db.models import ProgressRecord
+        project = session.get(LearningProject, node.project_id)
+        if project:
+            session.add(ProgressRecord(user_id=project.user_id, project_id=node.project_id,
+                                       node_id=node.id, metric="lesson_" + status, value=1))
     node.status = status
     session.commit()
     session.refresh(node)
@@ -266,6 +272,9 @@ def generate_node_summary(
 7. 如果知识点确实简单（如基础概念），也要通过**丰富的例子和练习**充实内容，而不是敷衍
 
 直接输出 Markdown 内容，不要任何前言或解释。"""
+
+    from .prompts import LESSON_PRESENTATION
+    prompt += "\n" + LESSON_PRESENTATION
 
     return chat(
         prompt,

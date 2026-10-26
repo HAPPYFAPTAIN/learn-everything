@@ -115,6 +115,8 @@ def chat(
     stream: bool = False,
     max_tokens: Optional[int] = None,
     retries: int = 2,
+    effort: Optional[str] = None,
+    show_thinking: bool = False,
 ) -> str | Iterator[str]:
     """单轮对话 (带超时 + 自动重试)。
 
@@ -126,12 +128,21 @@ def chat(
         stream: 流式返回
         max_tokens: 最大输出 token
         retries: 失败重试次数 (网络瞬断/限流时)
+        effort: 思考强度 low/high/max，仅支持的模型发送该参数
+        show_thinking: 是否把模型返回的 reasoning_content 显示为思考过程
     """
     import logging
     import time
 
+    from learning_ext import chat_thinking
+    from learning_ext.model_platforms import adapt_chat_params
+
     log = logging.getLogger("learning_ext.llm")
 
+    preferences = chat_thinking.normalize_preferences({
+        "effort": chat_thinking.DEFAULT_EFFORT if effort is None else effort,
+        "show_thinking": show_thinking,
+    })
     client, cfg = _get_client()
     model = model_name or cfg["chat_model"]
     messages = []
@@ -144,14 +155,12 @@ def chat(
         "messages": messages,
         "temperature": temperature,
     }
-    if model.lower().startswith("glm-5.3"):
-        kwargs["extra_body"] = {"reasoning_effort": "low"}
     if max_tokens:
         kwargs["max_tokens"] = max_tokens
         if model.lower().startswith("glm-5"):
             kwargs["max_tokens"] = max(8192, max_tokens * 3)
 
-    from learning_ext.model_platforms import adapt_chat_params
+    kwargs = chat_thinking.apply_effort(kwargs, model, preferences["effort"])
     kwargs = adapt_chat_params(cfg["base_url"], kwargs)
 
     if stream:
@@ -163,7 +172,7 @@ def chat(
                 try:
                     with _REQUEST_SLOT:
                         with client.chat.completions.create(stream=True, **kwargs) as response:
-                            for piece in _stream_iter(response):
+                            for piece in _stream_iter(response, preferences["show_thinking"]):
                                 emitted = True
                                 yield piece
                     return
@@ -201,6 +210,12 @@ def chat(
                     "模型输出达到长度上限，内容尚未完整生成。请减少本次任务范围或提高输出额度后重试。"
                 )
             content = resp.choices[0].message.content or ""
+            if preferences["show_thinking"]:
+                block = chat_thinking.thinking_html(
+                    getattr(resp.choices[0].message, "reasoning_content", None)
+                )
+                if block:
+                    content = f"{block}\n\n{content}" if content.strip() else block
             if not content.strip():
                 raise RuntimeError(
                     f"模型 `{model}` 返回了空回复。可能是模型名错误或内容被过滤。"
@@ -232,12 +247,10 @@ def chat(
     raise RuntimeError(friendly_error(last_err) if last_err else "模型调用失败")
 
 
-def _stream_iter(resp) -> Iterator[str]:
-    for chunk in resp:
-        if chunk.choices and chunk.choices[0].finish_reason == "length":
-            raise RuntimeError("模型输出达到长度上限，请缩小问题范围后重试。")
-        if chunk.choices and chunk.choices[0].delta.content:
-            yield chunk.choices[0].delta.content
+def _stream_iter(resp, show_thinking: bool = False) -> Iterator[str]:
+    from learning_ext.chat_thinking import render_text_stream
+
+    yield from render_text_stream(resp, show_thinking)
 
 
 # ---- 错误归类：把底层报错翻译成用户看得懂的一句话 ----
@@ -291,15 +304,36 @@ def friendly_error(exc: Exception) -> str:
     return f"模型调用失败：{type(exc).__name__}: {str(exc)[:200]}"
 
 
-def stream_tool_response(messages, tools):
+def stream_tool_response(messages, tools, *, selection=None):
     from learning_ext.chat_messages import sanitize_messages
     from learning_ext.model_platforms import adapt_chat_params
-    client, cfg = _get_client()
+    from learning_ext import chat_connections, chat_thinking, connection_store
+    preferences = chat_thinking.default_preferences()
+    if selection:
+        record_id, model, preferences = chat_connections.parse_selection(selection)
+    else:
+        record_id = ""
+    if record_id:
+        from openai import OpenAI
+        from learning_ext.model_platforms import request_key
+        record = connection_store.find_connection(record_id=record_id)
+        if not record:
+            raise ValueError("连接已被删除，请重新选择模型。")
+        cfg = {"base_url": record["base_url"], "chat_model": model}
+        client = OpenAI(api_key=request_key(record["base_url"], record["api_key"]),
+                        base_url=record["base_url"], timeout=120.0, max_retries=0)
+    else:
+        client, cfg = _get_client()
     params = adapt_chat_params(cfg["base_url"], {"model": cfg["chat_model"],
         "messages": sanitize_messages(messages), "tools": tools, "tool_choice": "auto", "temperature": 0.3})
-    with _REQUEST_SLOT:
-        with client.chat.completions.create(stream=True, **params) as response:
-            yield from response
+    if selection:
+        params = chat_thinking.apply_effort(params, cfg["chat_model"], preferences["effort"])
+    try:
+        with _REQUEST_SLOT:
+            with client.chat.completions.create(stream=True, **params) as response:
+                yield from response
+    finally:
+        client.close()
 
 
 def chat_json(

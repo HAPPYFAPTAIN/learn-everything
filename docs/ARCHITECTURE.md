@@ -210,3 +210,13 @@ LearnEverything.exe  ──>   launcher.py 主进程  ──>  custom_app.py 子
 - **新增 Tab**：在 `learning_ext/pages/` 加 BasePage 子类，在 `app.py._build_learning_tabs` 注册
 - **数据迁移**：当前用 `SQLModel.metadata.create_all` 自动建表；量大后引入 Alembic
 - **打包**：改完 launcher.py 需重新 `build_exe.bat`；改 learning_ext 或 custom_app.py 不用重打（venv 内直接生效）
+
+## 9. 动手学对话与引导
+
+`pages/coach.py` 使用 `agent/runtime.py` 的事件流。工具执行记录默认折叠，标题只呈现动作和状态；完整输入与结果保留在详情中。写入及桌面操作继续使用单次确认，提问选项不授予操作权限。
+
+`ask_user` 每次提出一个问题和 2–4 个选项，暂停运行时，支持点选或自由回答。问题 ID 随浏览器点击提交，不能使用执行时读取最新值的 `gr.State`，否则排队的旧点击可能误答下一题。回答后的问题保留在可见对话中。`agent_question_asked`、`agent_question_answered` 与已有工具操作记录共用本地 Journal。
+
+流式传输使用隐藏的 `le-coach-stream`：每帧是带递增序号的完整 JSON 消息快照，以容忍 Gradio 合并中间帧。历史 Markdown 缓存复用；浏览器只对改变的消息解析 HTML 并原位更新可见节点，保留文本选择、代码滚动、详情展开和阅读位置。新会话也拒绝晚到的旧序号。未变化的 Gradio 控件使用 `gr.skip()`。润色、设置、下拉和小助的全局观察器忽略这两个对话容器内部变化，但继续处理组件挂载与输入状态变化。
+
+回归覆盖在 `test_agent_questions.py`、`test_agent_runtime.py`、`test_coach_page.py`、`test_coach_frontend.py` 和 `test_coach_observers.py`，包括真实 Chromium 下的亮暗主题、宽窄布局、多帧更新与过期点击。

@@ -42,7 +42,7 @@ class AdaptPanel:
                             elem_id="le-adapt-intro",
                         )
                         self.close_btn = gr.Button(
-                            "关闭", size="sm", elem_id="le-adapt-close"
+                            "×", size="sm", elem_id="le-adapt-close"
                         )
                     with gr.Row(elem_id="le-adapt-scope"):
                         self.project = gr.Dropdown(
@@ -53,7 +53,7 @@ class AdaptPanel:
                             choices=[],
                             interactive=True,
                             scale=3,
-                            info="这一节之前的全部保留，只改这一节及之后。",
+
                         )
                         self.reload_btn = gr.Button("读取", scale=1, size="sm")
                     self.signal = gr.Markdown("", elem_id="le-adapt-signal")

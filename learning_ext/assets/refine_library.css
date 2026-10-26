@@ -1,0 +1,2394 @@
+/* refine_library：资料库（#indices-tab）与动手学（#le-action-*）的页面层。
+   放在 refine.css 之后加载，只做页面级修正：一屏一层卡片、只用 1px 分隔线、颜色全部取 --le-*。
+   圆角只用三档：11px 控件 / 18px 卡片·外壳 / 22px 弹层，胶囊用 999px。 */
+
+/* ============================================================
+   一、资料库 · 页面与外壳
+   ============================================================ */
+
+#le-app-tabs #indices-tab {
+  padding: 14px 22px 22px !important;
+  background: var(--le-bg) !important;
+}
+
+#le-app-tabs #indices-tab .le-library-layout {
+  gap: 0 !important;
+  align-items: stretch !important;
+}
+
+#le-app-tabs #indices-tab .le-library-layout.le-notebook {
+  background: var(--le-surface) !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-l) !important;
+  box-shadow: var(--le-shadow-1) !important;
+  overflow: hidden !important;
+}
+
+@media (min-width: 1050px) {
+  #le-app-tabs #indices-tab .le-library-layout.le-notebook {
+    grid-template-columns: minmax(228px, 262px) minmax(0, 1fr) 232px !important;
+  }
+}
+
+#le-app-tabs #indices-tab .le-notebook > :is(.le-library-collection, .le-notebook-reader, .le-notebook-studio) {
+  padding: 18px 16px 20px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  min-width: 0 !important;
+}
+
+/* ============================================================
+   二、左栏：来源清单
+   ============================================================ */
+
+#le-app-tabs #indices-tab .le-notebook > .le-library-collection {
+  background: var(--le-surface-2) !important;
+  border-right: 1px solid var(--le-line) !important;
+  padding: 16px 14px 18px !important;
+  gap: 12px !important;
+  flex-wrap: nowrap !important;
+  overflow-x: hidden !important;
+}
+
+#le-app-tabs #indices-tab .le-library-toolbar {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 10px 8px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+#le-app-tabs #indices-tab .le-library-toolbar h2.le-library-section-title,
+#le-app-tabs #indices-tab h2.le-library-section-title {
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 20px !important;
+  font-weight: 600 !important;
+  line-height: 1.3 !important;
+  letter-spacing: -.02em !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #indices-tab button.le-library-new {
+  grid-column: 1 / -1 !important;
+  grid-row: 2 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  width: 100% !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 0 12px !important;
+  border: 0 !important;
+  border-radius: var(--le-radius-s) !important;
+  background: var(--le-accent) !important;
+  color: var(--le-accent-ink) !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  letter-spacing: .01em !important;
+  box-shadow: none !important;
+  transition: filter .16s var(--le-ease) !important;
+}
+
+#le-app-tabs #indices-tab button.le-library-new:hover {
+  background: var(--le-accent) !important;
+  filter: brightness(1.08) !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #indices-tab button.le-library-new span {
+  font-size: 15px !important;
+  line-height: 1 !important;
+  color: var(--le-accent-ink) !important;
+}
+
+/* 资料库切换入口：安静的胶囊，不再是彩色按钮 */
+#le-app-tabs #indices-tab .le-library-toolbar .le-library-kind {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  width: auto !important;
+  max-width: 116px !important;
+  height: 26px !important;
+  min-height: 26px !important;
+  margin: 0 !important;
+  padding: 0 9px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  color: var(--le-ink-3) !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #indices-tab .le-library-kind:hover {
+  background: var(--le-surface-3) !important;
+  border-color: var(--le-line-strong) !important;
+}
+
+#le-app-tabs #indices-tab .le-library-kind .le-entry-icon {
+  display: none !important;
+}
+
+#le-app-tabs #indices-tab .le-library-kind .le-entry-title {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs #indices-tab .le-library-kind .le-entry-chevron {
+  width: 11px !important;
+  height: 11px !important;
+  flex: none !important;
+  opacity: .7 !important;
+}
+
+/* 搜索：普通输入框，去掉药丸和蓝色放大镜 */
+#le-app-tabs #indices-tab .le-library-searchbar {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin: 0 0 8px !important;
+  padding: 0 !important;
+}
+
+#le-app-tabs #indices-tab .le-library-searchbar > .form,
+#le-app-tabs #indices-tab .le-library-collection .form:has(.le-library-search) {
+  flex: 1 1 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+#le-app-tabs #indices-tab .le-library-search {
+  flex: 1 1 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+#le-app-tabs #indices-tab .le-library-search label > span {
+  display: none !important;
+}
+
+#le-app-tabs #indices-tab .le-library-search input {
+  width: 100% !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 0 10px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-s) !important;
+  background: var(--le-surface) !important;
+  background-image: none !important;
+  color: var(--le-ink) !important;
+  font-size: 12.5px !important;
+  line-height: 1.5 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #indices-tab .le-library-search input:focus {
+  border-color: var(--le-line-strong) !important;
+  background: var(--le-surface) !important;
+  box-shadow: 0 0 0 3px var(--le-focus) !important;
+}
+
+#le-app-tabs #indices-tab .le-library-search input::placeholder {
+  color: var(--le-ink-3) !important;
+}
+
+/* 技术信息开关：三级文字按钮 */
+#le-app-tabs #indices-tab .le-library-list-tools {
+  display: flex !important;
+  justify-content: flex-end !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  flex: 0 0 auto !important;
+}
+
+#le-app-tabs #indices-tab .le-library-collection .le-library-list-tools button {
+  height: 26px !important;
+  min-height: 26px !important;
+  padding: 0 8px !important;
+  border: 0 !important;
+  border-radius: var(--le-radius-s) !important;
+  background: transparent !important;
+  color: var(--le-ink-3) !important;
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
+  white-space: nowrap !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #indices-tab .le-library-collection .le-library-list-tools button:hover {
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink-2) !important;
+}
+
+/* 左栏内的成品按钮统一成二级样式（避免十几种蓝底按钮） */
+#le-app-tabs #indices-tab .le-library-collection button:not(.le-library-new) {
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 0 12px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-s) !important;
+  background: transparent !important;
+  color: var(--le-ink-2) !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #indices-tab .le-library-collection button:not(.le-library-new):hover {
+  background: var(--le-surface-3) !important;
+  border-color: var(--le-line-strong) !important;
+  color: var(--le-ink) !important;
+}
+
+/* 左栏内的「文件 / 资料集」切换：安静的文字标签 */
+#le-app-tabs #indices-tab .le-library-collection .tab-nav {
+  display: flex !important;
+  gap: 4px !important;
+  margin: 0 0 10px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+#le-app-tabs #indices-tab .le-library-collection .tab-nav > button {
+  height: 28px !important;
+  min-height: 28px !important;
+  padding: 0 10px !important;
+  border: 0 !important;
+  border-radius: var(--le-radius-s) !important;
+  background: transparent !important;
+  color: var(--le-ink-3) !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #indices-tab .le-library-collection .tab-nav > button:hover {
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink-2) !important;
+}
+
+#le-app-tabs #indices-tab .le-library-collection .tab-nav > button.selected {
+  background: var(--le-surface) !important;
+  color: var(--le-ink) !important;
+  font-weight: 600 !important;
+  box-shadow: var(--le-shadow-1) !important;
+}
+
+#le-app-tabs #indices-tab .le-library-collection .tabitem {
+  padding: 0 !important;
+  border: 0 !important;
+}
+
+/* 左栏与弹层里的 Tabs 容器本身不再带一层卡片 */
+#le-app-tabs #indices-tab .le-library-collection .tabs,
+#le-app-tabs #indices-tab .le-library-dialog .tabs {
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* ============================================================
+   三、文件清单：内容列表，不是数据表格
+   ============================================================ */
+
+#le-app-tabs #indices-tab [id=file_list_view] {
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #indices-tab [id=file_list_view] > div:not(.wrap) {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #indices-tab [id=file_list_view] .table-wrap {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+#le-app-tabs #indices-tab [id=file_list_view] table {
+  width: 100% !important;
+  border: 0 !important;
+  border-collapse: separate !important;
+  border-spacing: 0 2px !important;
+  table-layout: fixed !important;
+  background: transparent !important;
+}
+
+#le-app-tabs #indices-tab [id=file_list_view] thead {
+  display: none !important;
+}
+
+#le-app-tabs #indices-tab [id=file_list_view] th {
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+#le-app-tabs #indices-tab [id=file_list_view] td {
+  height: 40px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--le-ink-2) !important;
+  font-size: 13px !important;
+  font-weight: 450 !important;
+  line-height: 1.5 !important;
+  vertical-align: middle !important;
+}
+
+#le-app-tabs #indices-tab [id=file_list_view] td:nth-child(2) {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  padding: 6px 8px 6px 36px !important;
+  border-radius: var(--le-radius-s) !important;
+  color: var(--le-ink-2) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+}
+
+#le-app-tabs #indices-tab [id=file_list_view] tbody tr:hover td {
+  background: var(--le-surface-3) !important;
+}
+
+#le-app-tabs #indices-tab [id=file_list_view] td.selected {
+  background: var(--le-accent-soft) !important;
+  color: var(--le-ink) !important;
+  font-weight: 600 !important;
+}
+
+/* 文件类型标签：中性小卡片，跟随明暗主题 */
+#le-app-tabs #indices-tab [id=file_list_view] td[data-le-type]::before {
+  content: attr(data-le-type) !important;
+  left: 4px !important;
+  width: 24px !important;
+  height: 26px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-s) !important;
+  background: var(--le-surface) !important;
+  color: var(--le-ink-3) !important;
+  font-size: 7.5px !important;
+  font-weight: 600 !important;
+  letter-spacing: .02em !important;
+}
+
+#le-app-tabs #indices-tab [id=file_list_view] td[data-le-type="PDF"]::before {
+  border-color: var(--le-line) !important;
+  background: var(--le-surface) !important;
+  color: var(--le-ink-3) !important;
+}
+
+/* 技术信息展开时才出现真正的表格语言 */
+#le-app-tabs #indices-tab [id=file_list_view].le-library-technical td,
+#le-app-tabs #indices-tab [id=file_list_view].le-library-technical th {
+  height: 34px !important;
+  padding: 0 8px !important;
+  border-bottom: 1px solid var(--le-line) !important;
+  font-size: 11.5px !important;
+  color: var(--le-ink-3) !important;
+  font-weight: 450 !important;
+}
+
+#le-app-tabs #indices-tab [id=file_list_view].le-library-technical thead {
+  display: table-header-group !important;
+}
+
+#le-app-tabs #indices-tab [id=file_list_view].le-library-technical th {
+  color: var(--le-ink-3) !important;
+  font-weight: 500 !important;
+}
+
+#le-app-tabs #indices-tab [id=file_list_view].le-library-technical td:nth-child(2) {
+  width: auto !important;
+  min-width: 140px !important;
+  padding: 0 8px !important;
+  border-radius: 0 !important;
+  font-weight: 450 !important;
+  white-space: nowrap !important;
+  overflow-wrap: normal !important;
+}
+
+#le-app-tabs #indices-tab [id=file_list_view].le-library-technical td[data-le-type]::before {
+  display: none !important;
+}
+
+@media (min-width: 1050px) {
+  #le-app-tabs #indices-tab .le-notebook [id=file_list_view] .table-wrap {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+}
+
+/* 技术信息是表格语言：允许横向滚动，不要把小字段挤没 */
+#le-app-tabs #indices-tab .le-notebook [id=file_list_view].le-library-technical .table-wrap {
+  max-height: 46vh !important;
+  overflow: auto !important;
+}
+
+#le-app-tabs #indices-tab .le-notebook [id=file_list_view].le-library-technical table {
+  table-layout: auto !important;
+  min-width: 520px !important;
+  border-spacing: 0 !important;
+}
+
+/* 资料集表格：与文件清单同一套行语言 */
+#le-app-tabs #indices-tab .le-library-collection .le-source-groups {
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #indices-tab .le-source-groups td {
+  height: 40px !important;
+  padding: 0 8px !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--le-ink-2) !important;
+  font-size: 13px !important;
+}
+
+#le-app-tabs #indices-tab .le-source-groups th {
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--le-ink-3) !important;
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
+}
+
+#le-app-tabs #indices-tab .le-source-groups tbody tr:hover td {
+  background: var(--le-surface-3) !important;
+}
+
+/* 表头只在需要重排时出现，做成文字按钮而不是浮起的小方块 */
+#le-app-tabs #indices-tab .le-notebook .le-source-groups th :is(button, [role=button]) {
+  height: 24px !important;
+  min-height: 24px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: var(--le-radius-s) !important;
+  background: transparent !important;
+  color: var(--le-ink-3) !important;
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+
+/* ============================================================
+   四、阅读栏
+   ============================================================ */
+
+#le-app-tabs #indices-tab .le-notebook-reader {
+  padding: 24px 28px 28px !important;
+  background: transparent !important;
+}
+
+#le-app-tabs #indices-tab .le-notebook-reader :is(.block, .form) {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #indices-tab .le-notebook-panel-head {
+  display: flex !important;
+  align-items: baseline !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  padding: 0 0 12px !important;
+  border-bottom: 1px solid var(--le-line) !important;
+}
+
+#le-app-tabs #indices-tab .le-notebook-panel-head h2 {
+  margin: 0 !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  letter-spacing: -.01em !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #indices-tab .le-notebook-panel-head > span {
+  display: none !important;
+}
+
+/* 空状态：去掉渐变插画，只留文字与一层浅面 */
+#le-app-tabs #indices-tab .le-notebook-empty {
+  min-height: 300px !important;
+  padding: 24px 0 !important;
+  gap: 0 !important;
+}
+
+#le-app-tabs #indices-tab .le-notebook-empty h3 {
+  margin: 22px 0 8px !important;
+  font-size: 21px !important;
+  font-weight: 600 !important;
+  letter-spacing: -.02em !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #indices-tab .le-notebook-empty p {
+  margin: 0 !important;
+  font-size: 13.5px !important;
+  line-height: 1.7 !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs #indices-tab .le-notebook-book {
+  filter: none !important;
+  opacity: .9 !important;
+}
+
+#le-app-tabs #indices-tab .le-notebook-book span {
+  border: 1px solid var(--le-line) !important;
+  background: var(--le-surface-2) !important;
+}
+
+#le-app-tabs #indices-tab .le-notebook-book span:last-child {
+  background: var(--le-surface) !important;
+}
+
+#le-app-tabs #indices-tab .le-notebook-book::after {
+  color: var(--le-ink-3) !important;
+  font-size: 20px !important;
+  right: -14px !important;
+  top: -16px !important;
+}
+
+#le-app-tabs #indices-tab .le-notebook .le-source-title h3 {
+  margin: 18px 0 6px !important;
+  font-size: 22px !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  letter-spacing: -.02em !important;
+  color: var(--le-ink) !important;
+  overflow-wrap: anywhere !important;
+}
+
+#le-app-tabs #indices-tab .le-notebook .le-source-summary h3 {
+  margin: 18px 0 10px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: var(--le-ink-2) !important;
+}
+
+#le-app-tabs #indices-tab .le-notebook .le-source-filter {
+  max-width: 168px !important;
+  margin: 8px 0 !important;
+}
+
+#le-app-tabs #indices-tab .le-notebook .le-source-filter .wrap-inner {
+  min-height: 32px !important;
+  padding: 4px 10px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-s) !important;
+  background: var(--le-surface) !important;
+}
+
+#le-app-tabs #indices-tab .le-notebook .le-source-filter input {
+  font-size: 12.5px !important;
+  color: var(--le-ink) !important;
+}
+
+/* 原文工具条与画布 */
+#le-app-tabs #indices-tab .le-original-toolbar {
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+  padding: 8px 8px !important;
+  border: 1px solid var(--le-line) !important;
+  border-bottom: 0 !important;
+  border-radius: var(--le-radius-s) var(--le-radius-s) 0 0 !important;
+  background: transparent !important;
+}
+
+#le-app-tabs #indices-tab .le-original-toolbar span {
+  flex: 1 !important;
+  font-size: 11.5px !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs #indices-tab .le-original-toolbar button {
+  height: 26px !important;
+  min-height: 26px !important;
+  min-width: 26px !important;
+  padding: 0 8px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-s) !important;
+  background: transparent !important;
+  color: var(--le-ink-2) !important;
+  font-size: 11.5px !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #indices-tab .le-original-toolbar button:hover {
+  background: var(--le-surface-3) !important;
+  border-color: var(--le-line-strong) !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #indices-tab .le-original-canvas {
+  padding: 12px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 0 0 var(--le-radius-s) var(--le-radius-s) !important;
+  background: var(--le-surface-2) !important;
+}
+
+#le-app-tabs #indices-tab .le-original-canvas img {
+  box-shadow: var(--le-shadow-1) !important;
+}
+
+#le-app-tabs #indices-tab .le-preview-pagination {
+  gap: 6px !important;
+  margin: 8px 0 !important;
+}
+
+#le-app-tabs #indices-tab .le-preview-pagination button {
+  height: 28px !important;
+  min-height: 28px !important;
+  min-width: 32px !important;
+  padding: 0 8px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-s) !important;
+  background: transparent !important;
+  color: var(--le-ink-2) !important;
+  font-size: 11.5px !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #indices-tab .le-preview-pagination input {
+  height: 28px !important;
+  min-height: 28px !important;
+  padding: 0 4px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-s) !important;
+  background: var(--le-surface) !important;
+  font-size: 11.5px !important;
+  text-align: center !important;
+}
+
+#le-app-tabs #indices-tab .le-preview-pagination p {
+  margin: 0 !important;
+  font-size: 11.5px !important;
+  color: var(--le-ink-3) !important;
+  white-space: nowrap !important;
+}
+
+#le-app-tabs #indices-tab .le-preview-loading {
+  padding: 40px 16px !important;
+  border-radius: var(--le-radius-s) !important;
+  background: var(--le-surface-2) !important;
+  color: var(--le-ink-3) !important;
+  font-size: 12.5px !important;
+  animation: none !important;
+}
+
+#le-app-tabs #indices-tab .le-preview-message {
+  padding: 16px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-s) !important;
+  background: var(--le-surface-2) !important;
+  color: var(--le-ink-3) !important;
+  font-size: 12.5px !important;
+}
+
+/* 解析片段：用 1px 分隔线排版，不做一张张卡片 */
+#le-app-tabs #indices-tab .le-extracted-content {
+  margin: 18px 0 0 !important;
+  padding: 14px 0 0 !important;
+  border: 0 !important;
+  border-top: 1px solid var(--le-line) !important;
+}
+
+#le-app-tabs #indices-tab .le-extracted-content > summary {
+  padding: 2px 0 !important;
+  color: var(--le-ink-3) !important;
+  font-size: 11.5px !important;
+  letter-spacing: .02em !important;
+  cursor: pointer !important;
+}
+
+#le-app-tabs #indices-tab .le-notebook details.evidence {
+  margin: 0 !important;
+  padding: 12px 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--le-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--le-ink-2) !important;
+}
+
+#le-app-tabs #indices-tab .le-notebook details.evidence > summary {
+  color: var(--le-ink-2) !important;
+  font-size: 12.5px !important;
+  line-height: 1.7 !important;
+}
+
+#le-app-tabs #indices-tab .le-notebook details.evidence[open] > summary {
+  margin-bottom: 10px !important;
+  padding-bottom: 8px !important;
+  border-bottom: 1px solid var(--le-line) !important;
+}
+
+#le-app-tabs #indices-tab .le-preview-page {
+  margin-right: 8px !important;
+  color: var(--le-ink-3) !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+}
+
+#le-app-tabs #indices-tab .le-preview-kind {
+  display: inline-block !important;
+  margin-right: 6px !important;
+  padding: 1px 7px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  color: var(--le-ink-3) !important;
+  font-size: 10.5px !important;
+  font-weight: 500 !important;
+}
+
+/* 选中资料后的操作：一条分隔线 + 一组安静按钮（显示状态交给 .le-source-selected） */
+#le-app-tabs #indices-tab .le-notebook .le-source-actions {
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+  margin: 18px 0 0 !important;
+  padding: 14px 0 0 !important;
+  border: 0 !important;
+  border-top: 1px solid var(--le-line) !important;
+  background: transparent !important;
+}
+
+#le-app-tabs #indices-tab .le-notebook .le-source-actions :is(button, a) {
+  flex: 0 1 auto !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  min-width: 0 !important;
+  padding: 0 10px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-s) !important;
+  background: transparent !important;
+  color: var(--le-ink-2) !important;
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
+  line-height: 30px !important;
+  box-shadow: none !important;
+  text-decoration: none !important;
+}
+
+#le-app-tabs #indices-tab .le-notebook .le-source-actions :is(button, a):hover {
+  background: var(--le-surface-3) !important;
+  border-color: var(--le-line-strong) !important;
+  color: var(--le-ink) !important;
+}
+
+/* 更多操作（导出/删除全部）：收在一条分隔线下面 */
+#le-app-tabs #indices-tab .le-library-collection .accordion {
+  margin: 4px 0 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-top: 1px solid var(--le-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+#le-app-tabs #indices-tab .le-library-collection .accordion > button {
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--le-ink-3) !important;
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
+}
+
+#le-app-tabs #indices-tab .le-library-collection .accordion .wrap {
+  border: 0 !important;
+  background: transparent !important;
+  padding: 0 0 6px !important;
+}
+
+/* ============================================================
+   五、探索栏
+   ============================================================ */
+
+#le-app-tabs #indices-tab .le-notebook > .le-notebook-studio {
+  display: flex !important;
+  flex-direction: column !important;
+  align-self: stretch !important;
+  gap: 10px !important;
+  padding: 18px 14px 18px !important;
+  border-left: 1px solid var(--le-line) !important;
+  background: transparent !important;
+}
+
+#le-app-tabs #indices-tab .le-notebook-studio :is(.block, .form) {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #indices-tab .le-notebook-studio-intro {
+  display: none !important;
+}
+
+#le-app-tabs #indices-tab .le-notebook-prompts {
+  display: grid !important;
+  gap: 6px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+#le-app-tabs #indices-tab .le-notebook-prompts button {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  padding: 0 10px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-s) !important;
+  background: transparent !important;
+  color: var(--le-ink-2) !important;
+  box-shadow: none !important;
+  transform: none !important;
+  text-align: left !important;
+  transition: background .16s var(--le-ease), border-color .16s var(--le-ease) !important;
+}
+
+#le-app-tabs #indices-tab .le-notebook-prompts button:hover:not(:disabled) {
+  background: var(--le-surface-3) !important;
+  border-color: var(--le-line-strong) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+#le-app-tabs #indices-tab .le-notebook-prompts button:disabled {
+  opacity: .45 !important;
+  cursor: default !important;
+}
+
+#le-app-tabs #indices-tab .le-notebook-prompts button > span {
+  flex: none !important;
+  font-size: 14px !important;
+  line-height: 1 !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs #indices-tab .le-notebook-prompts strong {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  color: var(--le-ink-2) !important;
+}
+
+#le-app-tabs #indices-tab .le-notebook-prompts b {
+  margin-left: auto !important;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs #indices-tab .le-notebook .le-source-chat {
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  margin: auto 0 0 !important;
+  padding: 0 12px !important;
+  border: 1px solid var(--le-accent) !important;
+  border-radius: var(--le-radius-s) !important;
+  background: var(--le-accent) !important;
+  color: var(--le-accent-ink) !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #indices-tab .le-notebook .le-source-chat:hover {
+  background: var(--le-accent) !important;
+  border-color: var(--le-accent) !important;
+  filter: brightness(1.08) !important;
+}
+
+/* ============================================================
+   六、添加资料弹层
+   ============================================================ */
+
+#le-app-tabs #indices-tab .le-library-dialog {
+  width: min(452px, calc(100vw - 24px)) !important;
+  max-height: calc(100dvh - 32px) !important;
+  padding: 0 !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-xl) !important;
+  background: var(--le-surface) !important;
+  color: var(--le-ink) !important;
+  box-shadow: var(--le-shadow-3) !important;
+  overflow: auto !important;
+}
+
+/* 和其它 LEPanels 弹层一致：不做全屏遮罩，点外部即关闭 */
+#le-app-tabs #indices-tab .le-library-dialog::backdrop {
+  background: transparent !important;
+  backdrop-filter: none !important;
+}
+
+#le-app-tabs #indices-tab .le-library-dialog .le-library-close {
+  top: 14px !important;
+  right: 14px !important;
+  width: 26px !important;
+  height: 26px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  color: var(--le-ink-3) !important;
+  font-size: 17px !important;
+  line-height: 1 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #indices-tab .le-library-dialog .le-library-close:hover {
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #indices-tab .le-library-dialog .le-library-add {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  padding: 22px 22px 24px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #indices-tab .le-library-dialog h2,
+#le-app-tabs #indices-tab .le-library-add h2.le-library-section-title {
+  margin: 0 34px 2px 0 !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  letter-spacing: -.02em !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #indices-tab .le-library-dialog .tab-nav {
+  display: flex !important;
+  gap: 4px !important;
+  margin: 0 0 10px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+#le-app-tabs #indices-tab .le-library-dialog .tab-nav > button {
+  height: 28px !important;
+  min-height: 28px !important;
+  padding: 0 10px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  color: var(--le-ink-3) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #indices-tab .le-library-dialog .tab-nav > button.selected {
+  background: var(--le-accent-soft) !important;
+  color: var(--le-ink) !important;
+  font-weight: 600 !important;
+}
+
+#le-app-tabs #indices-tab .le-library-dialog .tabitem {
+  padding: 0 !important;
+  border: 0 !important;
+}
+
+/* 拖放区：一层浅面 + 虚线，只在 hover 时加深 */
+#le-app-tabs #indices-tab .le-library-dialog .block:has(input[type=file]) {
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: 1px dashed var(--le-line-strong) !important;
+  border-radius: var(--le-radius-s) !important;
+  background: var(--le-surface-2) !important;
+  box-shadow: none !important;
+  transition: border-color .16s var(--le-ease), background .16s var(--le-ease) !important;
+}
+
+#le-app-tabs #indices-tab .le-library-dialog .block:has(input[type=file]):hover {
+  border-color: var(--le-ink-3) !important;
+  background: var(--le-surface-3) !important;
+}
+
+#le-app-tabs #indices-tab .le-library-dialog .block:has(input[type=file]) > button {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  min-height: 148px !important;
+  padding: 18px 14px !important;
+  border: 0 !important;
+  border-radius: var(--le-radius-s) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #indices-tab .le-upload-prompt {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 7px !important;
+  padding: 0 !important;
+}
+
+#le-app-tabs #indices-tab .le-upload-prompt strong {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  letter-spacing: -.01em !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #indices-tab .le-upload-prompt > span:not(.le-upload-stack) {
+  font-size: 12px !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs #indices-tab .le-upload-prompt small {
+  display: none !important;
+}
+
+#le-app-tabs #indices-tab .le-upload-stack {
+  height: 50px !important;
+  padding-bottom: 2px !important;
+}
+
+#le-app-tabs #indices-tab .le-upload-stack i {
+  width: 32px !important;
+  height: 40px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-s) !important;
+  background: var(--le-surface) !important;
+  color: var(--le-ink-3) !important;
+  font-size: 7.5px !important;
+  font-weight: 600 !important;
+  box-shadow: var(--le-shadow-1) !important;
+}
+
+#le-app-tabs #indices-tab .le-upload-stack i:nth-child(2) {
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink-2) !important;
+}
+
+#le-app-tabs #indices-tab .le-upload-stack i:last-child {
+  background: var(--le-surface) !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs #indices-tab .le-file-requirements {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+#le-app-tabs #indices-tab .le-file-requirements summary {
+  padding: 2px 0 !important;
+  color: var(--le-ink-3) !important;
+  font-size: 11.5px !important;
+  cursor: pointer !important;
+}
+
+#le-app-tabs #indices-tab .le-file-requirements p {
+  margin: 6px 0 0 !important;
+  padding: 10px 12px !important;
+  border: 0 !important;
+  border-radius: var(--le-radius-s) !important;
+  background: var(--le-surface-2) !important;
+  color: var(--le-ink-3) !important;
+  font-size: 11px !important;
+  line-height: 1.8 !important;
+}
+
+#le-app-tabs #indices-tab .le-library-dialog .le-library-add .le-import-options {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-top: 1px solid var(--le-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+#le-app-tabs #indices-tab .le-library-dialog .le-library-add .le-import-options > button {
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--le-ink-3) !important;
+  font-size: 11.5px !important;
+}
+
+#le-app-tabs #indices-tab .le-library-dialog .le-library-add .block,
+#le-app-tabs #indices-tab .le-library-dialog .le-library-add .form {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #indices-tab .le-library-dialog textarea {
+  min-height: 96px !important;
+  padding: 10px 12px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-s) !important;
+  background: var(--le-surface) !important;
+  font-size: 13px !important;
+  line-height: 1.7 !important;
+}
+
+#le-app-tabs #indices-tab .le-library-dialog button.primary {
+  height: 40px !important;
+  min-height: 40px !important;
+  margin-top: 2px !important;
+  border: 1px solid var(--le-accent) !important;
+  border-radius: var(--le-radius-s) !important;
+  background: var(--le-accent) !important;
+  color: var(--le-accent-ink) !important;
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #indices-tab .le-library-dialog button.primary:hover {
+  filter: brightness(1.08) !important;
+}
+
+/* 处理进度：条目之间用分隔线，不做卡片套卡片（显隐由 Gradio 控制，这里不碰 display） */
+#le-app-tabs #indices-tab .le-library-dialog .le-library-add .le-library-progress {
+  gap: 10px !important;
+  margin: 4px 0 0 !important;
+  padding: 16px 0 0 !important;
+  border: 0 !important;
+  border-top: 1px solid var(--le-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #indices-tab .le-library-dialog .le-library-progress > h2 {
+  display: none !important;
+}
+
+#le-app-tabs #indices-tab .le-import-feedback {
+  display: grid !important;
+  gap: 10px !important;
+  padding: 0 !important;
+}
+
+#le-app-tabs #indices-tab .le-import-feedback header {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  margin: 0 !important;
+}
+
+#le-app-tabs #indices-tab .le-import-feedback h3 {
+  margin: 0 !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #indices-tab .le-import-feedback header p {
+  margin: 2px 0 0 !important;
+  font-size: 11.5px !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs #indices-tab .le-import-orbit {
+  flex: none !important;
+  width: 18px !important;
+  height: 18px !important;
+  border: 2px solid var(--le-line-strong) !important;
+  border-top-color: var(--le-ink-2) !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  color: var(--le-ink-2) !important;
+  font-size: 10px !important;
+}
+
+#le-app-tabs #indices-tab .le-import-feedback:not([data-state=working]) .le-import-orbit {
+  display: grid !important;
+  place-items: center !important;
+  border: 0 !important;
+  background: var(--le-surface-3) !important;
+}
+
+#le-app-tabs #indices-tab .le-import-items {
+  display: grid !important;
+  gap: 0 !important;
+}
+
+#le-app-tabs #indices-tab .le-import-item {
+  display: grid !important;
+  grid-template-columns: 18px minmax(0, 1fr) auto !important;
+  align-items: start !important;
+  gap: 10px !important;
+  padding: 10px 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--le-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+#le-app-tabs #indices-tab .le-import-item:last-child {
+  border-bottom: 0 !important;
+}
+
+#le-app-tabs #indices-tab .le-import-item strong {
+  display: block !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  color: var(--le-ink) !important;
+  overflow-wrap: anywhere !important;
+}
+
+#le-app-tabs #indices-tab .le-import-item p {
+  margin: 2px 0 0 !important;
+  font-size: 11.5px !important;
+  line-height: 1.6 !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs #indices-tab .le-import-icon {
+  display: grid !important;
+  place-items: center !important;
+  width: 18px !important;
+  height: 18px !important;
+  border-radius: 999px !important;
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink-2) !important;
+  font-size: 10px !important;
+}
+
+#le-app-tabs #indices-tab .le-import-tag {
+  padding: 2px 8px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: 999px !important;
+  color: var(--le-ink-3) !important;
+  font-size: 10.5px !important;
+  white-space: nowrap !important;
+}
+
+#le-app-tabs #indices-tab .le-import-details > summary {
+  padding: 4px 0 !important;
+  color: var(--le-ink-3) !important;
+  font-size: 11.5px !important;
+  cursor: pointer !important;
+}
+
+#le-app-tabs #indices-tab .le-import-log textarea {
+  min-height: 72px !important;
+  padding: 10px 12px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-s) !important;
+  background: var(--le-surface-2) !important;
+  color: var(--le-ink-3) !important;
+  font-size: 11px !important;
+  line-height: 1.7 !important;
+}
+
+/* 资料库切换面板里的列表项 */
+#le-app-tabs #indices-tab .le-settings-deck .le-library-nav {
+  display: grid !important;
+  grid-auto-flow: row !important;
+  gap: 2px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+}
+
+#le-app-tabs #indices-tab .le-settings-deck .le-library-nav > button {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  width: 100% !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 0 10px !important;
+  border: 0 !important;
+  border-radius: var(--le-radius-s) !important;
+  background: transparent !important;
+  color: var(--le-ink-2) !important;
+  font-size: 13px !important;
+  text-align: left !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #indices-tab .le-settings-deck .le-library-nav > button:hover {
+  background: var(--le-surface-3) !important;
+}
+
+#le-app-tabs #indices-tab .le-settings-deck .le-library-nav > button.selected {
+  background: var(--le-accent-soft) !important;
+  color: var(--le-ink) !important;
+  font-weight: 600 !important;
+}
+
+#le-app-tabs #indices-tab .le-settings-deck .le-library-nav .le-library-switch {
+  justify-content: flex-start !important;
+  width: 100% !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  margin: 4px 0 0 !important;
+  padding: 0 10px !important;
+  border: 0 !important;
+  border-radius: var(--le-radius-s) !important;
+  background: transparent !important;
+  color: var(--le-ink-3) !important;
+  font-size: 11.5px !important;
+}
+
+#le-app-tabs #indices-tab .le-settings-deck .le-library-nav .le-library-switch:hover {
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink-2) !important;
+}
+
+/* ============================================================
+   七、资料库 · 窄屏：外壳改成上下堆叠
+   ============================================================ */
+
+@media (max-width: 1049px) {
+  #le-app-tabs #indices-tab {
+    padding: 12px 14px 18px !important;
+  }
+
+  #le-app-tabs #indices-tab .le-notebook > .le-notebook-studio {
+    border-left: 0 !important;
+    border-top: 1px solid var(--le-line) !important;
+    padding: 14px !important;
+  }
+
+  #le-app-tabs #indices-tab .le-notebook-prompts {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  #le-app-tabs #indices-tab .le-notebook .le-source-chat {
+    margin-top: 10px !important;
+  }
+}
+
+@media (max-width: 760px) {
+  #le-app-tabs #indices-tab .le-notebook > .le-library-collection {
+    border-right: 0 !important;
+    border-bottom: 1px solid var(--le-line) !important;
+    padding: 14px 12px !important;
+  }
+
+  #le-app-tabs #indices-tab .le-notebook-reader {
+    padding: 18px 16px 22px !important;
+  }
+
+  #le-app-tabs #indices-tab .le-notebook-prompts {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  #le-app-tabs #indices-tab .le-library-dialog {
+    width: min(420px, calc(100vw - 16px)) !important;
+    border-radius: var(--le-radius-l) !important;
+  }
+
+  #le-app-tabs #indices-tab .le-library-dialog .le-library-add {
+    padding: 18px 16px 20px !important;
+  }
+}
+
+/* ============================================================
+   八、动手学：入口条与步骤卡
+   ============================================================ */
+
+/* 入口条：不再是一张彩色卡片；聚焦模式下的隐藏交给既有规则 */
+#le-app-tabs #le-center-col > #le-learning-mode {
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  margin: 0 0 18px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #le-center-col > #le-learning-mode > .html-container {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+}
+
+#le-app-tabs .le-mode-intro {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  color: var(--le-ink-2) !important;
+  font-size: 12.5px !important;
+  line-height: 1.5 !important;
+}
+
+#le-app-tabs .le-mode-intro strong {
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  color: var(--le-ink-2) !important;
+}
+
+#le-app-tabs .le-mode-icon {
+  display: grid !important;
+  place-items: center !important;
+  width: 22px !important;
+  height: 22px !important;
+  border-radius: 999px !important;
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink-3) !important;
+  font-size: 12px !important;
+  flex: none !important;
+}
+
+#le-app-tabs #le-step-entry {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  margin: 0 !important;
+  padding: 0 12px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-s) !important;
+  background: transparent !important;
+  color: var(--le-ink-2) !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #le-step-entry:hover {
+  background: var(--le-surface-3) !important;
+  border-color: var(--le-line-strong) !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #le-step-notice {
+  margin: 0 0 16px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--le-ink-3) !important;
+  font-size: 12.5px !important;
+  line-height: 1.7 !important;
+}
+
+/* 逐步行动：一屏一张卡（显隐由 Gradio 控制，这里不碰 display） */
+#le-app-tabs #le-action-learning {
+  gap: 0 !important;
+  max-width: 760px !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #le-action-learning :is(.html-container, .block) {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #le-action-topbar {
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+  margin: 0 0 20px !important;
+  padding: 0 !important;
+  border: 0 !important;
+}
+
+#le-app-tabs #le-action-topbar > .html-container {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+}
+
+#le-app-tabs #le-action-learning .le-action-progress {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: baseline !important;
+  gap: 6px 12px !important;
+}
+
+#le-app-tabs #le-action-learning .le-action-progress strong {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  letter-spacing: -.01em !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #le-action-learning .le-action-progress span {
+  font-size: 11.5px !important;
+  font-weight: 400 !important;
+  color: var(--le-ink-3) !important;
+  white-space: nowrap !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+#le-app-tabs #le-action-learning .le-action-progress progress {
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+  height: 3px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: var(--le-surface-3) !important;
+  accent-color: var(--le-accent) !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  overflow: hidden !important;
+}
+
+#le-app-tabs #le-action-learning .le-action-progress progress::-webkit-progress-bar {
+  background: var(--le-surface-3) !important;
+  border-radius: 999px !important;
+}
+
+#le-app-tabs #le-action-learning .le-action-progress progress::-webkit-progress-value {
+  background: var(--le-accent) !important;
+  border-radius: 999px !important;
+  transition: width .25s var(--le-ease) !important;
+}
+
+#le-app-tabs #le-action-close {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  margin: 0 !important;
+  padding: 0 10px !important;
+  border: 0 !important;
+  border-radius: var(--le-radius-s) !important;
+  background: transparent !important;
+  color: var(--le-ink-3) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  white-space: nowrap !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #le-action-close:hover {
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs :is(#le-action-previous, #le-action-next) {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  padding: 0 12px !important;
+  border: 0 !important;
+  border-radius: var(--le-radius-s) !important;
+  background: transparent !important;
+  color: var(--le-ink-3) !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  text-align: center !important;
+  white-space: normal !important;
+  opacity: 1 !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  transition: background .16s var(--le-ease), color .16s var(--le-ease) !important;
+}
+
+#le-app-tabs #le-action-previous {
+  margin: 0 0 6px !important;
+}
+
+#le-app-tabs #le-action-next {
+  margin: 8px 0 0 !important;
+}
+
+#le-app-tabs :is(#le-action-previous, #le-action-next):hover:not(:disabled) {
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink) !important;
+  transform: none !important;
+}
+
+#le-app-tabs :is(#le-action-previous, #le-action-next):disabled {
+  opacity: .45 !important;
+  color: var(--le-ink-3) !important;
+}
+
+/* 步骤卡 */
+#le-app-tabs #le-action-learning .le-action-card {
+  margin: 0 !important;
+  padding: 24px 26px 26px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-l) !important;
+  background: var(--le-surface) !important;
+  box-shadow: var(--le-shadow-1) !important;
+  animation: none !important;
+}
+
+#le-app-tabs #le-action-learning .le-action-kicker {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: baseline !important;
+  gap: 12px !important;
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
+  letter-spacing: .04em !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs #le-action-learning .le-action-kicker span:first-child {
+  font-weight: 600 !important;
+  color: var(--le-ink-2) !important;
+}
+
+#le-app-tabs #le-action-learning .le-action-card h2 {
+  margin: 10px 0 14px !important;
+  font-size: 21px !important;
+  font-weight: 600 !important;
+  line-height: 1.45 !important;
+  letter-spacing: -.02em !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #le-action-learning .le-action-instruction {
+  font-size: 14.5px !important;
+  font-weight: 400 !important;
+  line-height: 1.75 !important;
+  color: var(--le-ink-2) !important;
+  overflow-wrap: anywhere !important;
+}
+
+#le-app-tabs #le-action-learning .le-action-instruction .le-rich-text p {
+  margin: 0 0 10px !important;
+}
+
+#le-app-tabs #le-action-learning .le-action-instruction .le-rich-text > :last-child {
+  margin-bottom: 0 !important;
+}
+
+/* 完成标准：一层浅面，不描边 */
+#le-app-tabs #le-action-learning .le-action-check {
+  margin: 20px 0 0 !important;
+  padding: 14px 16px !important;
+  border: 0 !important;
+  border-radius: var(--le-radius-s) !important;
+  background: var(--le-surface-2) !important;
+}
+
+#le-app-tabs #le-action-learning .le-action-check > span {
+  display: block !important;
+  margin: 0 0 2px !important;
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
+  letter-spacing: .04em !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs #le-action-learning .le-action-check .le-rich-text {
+  color: var(--le-ink-2) !important;
+  font-size: 13.5px !important;
+  line-height: 1.75 !important;
+}
+
+#le-app-tabs #le-action-learning .le-action-check .le-rich-text p {
+  margin: 4px 0 0 !important;
+  font-size: 13.5px !important;
+  line-height: 1.75 !important;
+  color: var(--le-ink-2) !important;
+}
+
+#le-app-tabs #le-action-learning .le-action-source {
+  margin: 16px 0 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--le-ink-3) !important;
+  font-size: 12px !important;
+}
+
+#le-app-tabs #le-action-learning .le-action-source > summary {
+  width: fit-content !important;
+  padding: 2px 0 !important;
+  color: var(--le-ink-3) !important;
+  font-size: 12px !important;
+  cursor: pointer !important;
+}
+
+#le-app-tabs #le-action-learning .le-action-source > summary:hover {
+  color: var(--le-ink-2) !important;
+}
+
+#le-app-tabs #le-action-learning .le-action-source blockquote {
+  margin: 8px 0 0 !important;
+  padding: 0 0 0 12px !important;
+  border: 0 !important;
+  border-left: 1px solid var(--le-line-strong) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--le-ink-3) !important;
+  font-size: 12.5px !important;
+  line-height: 1.75 !important;
+}
+
+/* 工具条：三档按钮，统一 34px（显隐由 Gradio 控制，这里不碰 display） */
+#le-app-tabs #le-action-tools {
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin: 22px 0 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+}
+
+#le-app-tabs #le-action-tools button {
+  flex: 0 1 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  margin: 0 !important;
+  padding: 0 14px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-s) !important;
+  background: transparent !important;
+  color: var(--le-ink-2) !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #le-action-tools button:hover {
+  background: var(--le-surface-3) !important;
+  border-color: var(--le-line-strong) !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #le-action-tools button.primary {
+  border-color: var(--le-accent) !important;
+  background: var(--le-accent) !important;
+  color: var(--le-accent-ink) !important;
+  font-weight: 600 !important;
+}
+
+#le-app-tabs #le-action-tools button.primary:hover {
+  background: var(--le-accent) !important;
+  border-color: var(--le-accent) !important;
+  color: var(--le-accent-ink) !important;
+  filter: brightness(1.08) !important;
+}
+
+#le-app-tabs #le-action-tools button:disabled {
+  opacity: .45 !important;
+}
+
+#le-app-tabs #le-action-learning #le-action-help {
+  margin: 22px 0 0 !important;
+  padding: 18px 0 0 !important;
+  border: 0 !important;
+  border-top: 1px solid var(--le-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--le-ink-2) !important;
+  font-size: 13.5px !important;
+  line-height: 1.75 !important;
+}
+
+#le-app-tabs #le-action-learning #le-action-help .le-rich-text {
+  font-size: 13.5px !important;
+  line-height: 1.75 !important;
+  color: var(--le-ink-2) !important;
+}
+
+/* 助手面板：贴一层浅面，不再套第二张卡片（显隐由 Gradio 控制，这里不碰 display） */
+#le-app-tabs #le-action-learning #le-action-assistant {
+  gap: 10px !important;
+  margin: 18px 0 0 !important;
+  padding: 16px !important;
+  border: 0 !important;
+  border-radius: var(--le-radius-s) !important;
+  background: var(--le-surface-2) !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #le-action-assistant .le-action-assistant-title {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #le-action-assistant .le-action-assistant-title span {
+  margin-left: 8px !important;
+  font-size: 11.5px !important;
+  font-weight: 400 !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs #le-action-assistant .row {
+  gap: 8px !important;
+}
+
+#le-app-tabs #le-action-assistant :is(button, textarea, input[type=text]) {
+  min-height: 32px !important;
+  font-size: 12.5px !important;
+}
+
+#le-app-tabs #le-action-assistant button {
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-s) !important;
+  background: transparent !important;
+  color: var(--le-ink-2) !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #le-action-assistant button:hover {
+  background: var(--le-surface-3) !important;
+  border-color: var(--le-line-strong) !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #le-action-assistant button.primary {
+  border-color: var(--le-accent) !important;
+  background: var(--le-accent) !important;
+  color: var(--le-accent-ink) !important;
+}
+
+#le-app-tabs #le-action-assistant :is(input, textarea) {
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-s) !important;
+  background: var(--le-surface) !important;
+  font-size: 12.5px !important;
+}
+
+#le-app-tabs #le-action-assistant label {
+  font-size: 12px !important;
+  line-height: 1.7 !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs #le-action-assistant :is(input[type=checkbox], label span) {
+  color: var(--le-ink-3) !important;
+}
+
+/* 载入态 */
+#le-app-tabs #le-action-learning .le-action-loading {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  margin: 0 !important;
+  padding: 46px 28px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-l) !important;
+  background: var(--le-surface) !important;
+  text-align: center !important;
+  box-shadow: var(--le-shadow-1) !important;
+}
+
+#le-app-tabs #le-action-learning .le-action-loading h2 {
+  margin: 20px 0 6px !important;
+  font-size: 20px !important;
+  font-weight: 600 !important;
+  letter-spacing: -.02em !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #le-action-learning .le-action-loading p {
+  margin: 0 !important;
+  color: var(--le-ink-3) !important;
+  font-size: 12.5px !important;
+  line-height: 1.7 !important;
+}
+
+#le-app-tabs #le-action-learning .le-action-loader {
+  width: 26px !important;
+  height: 26px !important;
+  border: 2px solid var(--le-line) !important;
+  border-top-color: var(--le-ink-2) !important;
+  border-right-color: var(--le-ink-3) !important;
+  border-radius: 999px !important;
+}
+
+#le-app-tabs #le-action-learning .le-action-skeleton {
+  gap: 10px !important;
+  margin-top: 24px !important;
+}
+
+#le-app-tabs #le-action-learning .le-action-skeleton i {
+  height: 8px !important;
+  border-radius: 999px !important;
+  background: var(--le-surface-3) !important;
+  background-image: none !important;
+  animation: le-refine-library-pulse 1.6s ease-in-out infinite !important;
+}
+
+@keyframes le-refine-library-pulse {
+  0%, 100% { opacity: .5; }
+  50% { opacity: 1; }
+}
+
+/* 环境确认：清单式，不是一排小卡片 */
+#le-app-tabs #le-action-learning .le-env-intro > p {
+  margin: 0 !important;
+  font-size: 13px !important;
+  line-height: 1.7 !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs .le-env-intro .le-env-evidence {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 0 !important;
+  margin: 14px 0 0 !important;
+  padding: 0 !important;
+  border-top: 1px solid var(--le-line) !important;
+  list-style: none !important;
+}
+
+#le-app-tabs .le-env-intro .le-env-item {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: baseline !important;
+  gap: 2px 12px !important;
+  margin: 0 !important;
+  padding: 11px 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--le-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+#le-app-tabs .le-env-item > div {
+  display: flex !important;
+  align-items: baseline !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+}
+
+#le-app-tabs .le-env-item strong {
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs .le-env-item span {
+  font-size: 12px !important;
+  color: var(--le-ink-3) !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+#le-app-tabs .le-env-item b {
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  letter-spacing: .02em !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs .le-env-item[data-status="ready"] b,
+#le-app-tabs .le-env-item[data-status="present"] b {
+  color: var(--le-ink-2) !important;
+}
+
+#le-app-tabs .le-env-item p {
+  grid-column: 1 / -1 !important;
+  margin: 4px 0 0 !important;
+  font-size: 12px !important;
+  line-height: 1.65 !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs .le-env-skips {
+  margin: 0 !important;
+  padding: 12px 0 0 !important;
+  border: 0 !important;
+  border-top: 1px solid var(--le-line) !important;
+  background: transparent !important;
+}
+
+#le-app-tabs .le-env-skips > summary {
+  padding: 2px 0 !important;
+  color: var(--le-ink-3) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+}
+
+#le-app-tabs .le-env-skips ul {
+  margin: 6px 0 0 !important;
+  padding: 0 !important;
+  list-style: none !important;
+}
+
+#le-app-tabs .le-env-skips li {
+  display: flex !important;
+  align-items: baseline !important;
+  gap: 10px !important;
+  padding: 5px 0 !important;
+  flex-wrap: wrap !important;
+}
+
+#le-app-tabs .le-env-skips li strong {
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  color: var(--le-ink-2) !important;
+}
+
+#le-app-tabs .le-env-skips li span {
+  font-size: 12px !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs .le-env-footnote {
+  margin: 12px 0 0 !important;
+  font-size: 12px !important;
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs .le-env-boundary {
+  margin: 16px 0 0 !important;
+  padding: 0 0 0 12px !important;
+  border: 0 !important;
+  border-left: 1px solid var(--le-line-strong) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--le-ink-3) !important;
+  font-size: 12px !important;
+  line-height: 1.75 !important;
+}
+
+#le-app-tabs .le-env-limited {
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  color: var(--le-ink-3) !important;
+}
+
+/* 动手学里的代码块：跟着语义色走，命令区不再是一片浅蓝 */
+#le-app-tabs #le-action-learning .le-action-card .le-code-block {
+  margin: 12px 0 4px !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-s) !important;
+  background: var(--le-surface-2) !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #le-action-learning .le-action-card .le-code-toolbar {
+  padding: 6px 6px 6px 12px !important;
+  border-bottom: 1px solid var(--le-line) !important;
+  background: transparent !important;
+}
+
+#le-app-tabs #le-action-learning .le-action-card .le-code-language {
+  color: var(--le-ink-3) !important;
+  font-size: 10.5px !important;
+  font-weight: 600 !important;
+  letter-spacing: .04em !important;
+}
+
+#le-app-tabs #le-action-learning .le-action-card .le-code-copy {
+  min-height: 24px !important;
+  padding: 2px 8px !important;
+  border-radius: var(--le-radius-s) !important;
+  background: transparent !important;
+  color: var(--le-ink-3) !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+}
+
+#le-app-tabs #le-action-learning .le-action-card .le-code-copy:hover {
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #le-action-learning .le-action-card .le-code-block pre {
+  padding: 12px 14px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--le-ink-2) !important;
+  font-size: 12.5px !important;
+  line-height: 1.8 !important;
+}
+
+#le-app-tabs #le-action-learning .le-action-card .le-code-block pre code {
+  color: var(--le-ink-2) !important;
+  font-size: inherit !important;
+}
+
+#le-app-tabs #le-action-learning .le-action-card .le-code-block :is(.k, .kc, .kd, .kn, .kp, .kr, .kt, .ow) {
+  color: var(--le-ink) !important;
+  font-weight: 600 !important;
+}
+
+#le-app-tabs #le-action-learning .le-action-card .le-code-block :is(.nb, .nf, .nc, .nt, .nv, .vc, .vg, .vi) {
+  color: var(--le-ink-2) !important;
+}
+
+#le-app-tabs #le-action-learning .le-action-card .le-code-block :is(.s, .s1, .s2, .sa, .sb, .sc, .sd, .se, .sh, .si, .sr, .ss) {
+  color: var(--le-ink-2) !important;
+}
+
+#le-app-tabs #le-action-learning .le-action-card .le-code-block :is(.m, .mi, .mf, .mh, .mo, .il) {
+  color: var(--le-ink-2) !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+#le-app-tabs #le-action-learning .le-action-card .le-code-block :is(.c, .c1, .cm, .cp, .cs) {
+  color: var(--le-ink-3) !important;
+  font-style: italic !important;
+}
+
+#le-app-tabs #le-action-learning .le-action-card .le-rich-text :not(pre) > code {
+  padding: 1px 6px !important;
+  border: 0 !important;
+  border-radius: var(--le-radius-s) !important;
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink) !important;
+  font-size: .92em !important;
+}
+
+#le-app-tabs #le-action-learning .le-action-card .le-rich-text a {
+  color: var(--le-ink) !important;
+  text-decoration: underline !important;
+  text-underline-offset: 3px !important;
+}
+
+/* ============================================================
+   九、动手学 · 窄屏与降级
+   ============================================================ */
+
+@media (max-width: 760px) {
+  #le-app-tabs #le-center-col > #le-learning-mode {
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+    margin-bottom: 14px !important;
+  }
+
+  #le-app-tabs #le-step-entry {
+    width: 100% !important;
+  }
+
+  #le-app-tabs #le-action-learning .le-action-card {
+    padding: 18px 16px 20px !important;
+    border-radius: var(--le-radius-l) !important;
+  }
+
+  #le-app-tabs #le-action-learning .le-action-card h2 {
+    font-size: 19px !important;
+  }
+
+  #le-app-tabs #le-action-tools {
+    gap: 8px !important;
+  }
+
+  #le-app-tabs #le-action-tools button {
+    flex: 1 1 44% !important;
+    width: auto !important;
+    justify-content: center !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #le-app-tabs #le-action-learning .le-action-skeleton i {
+    animation: none !important;
+  }
+
+  #le-app-tabs #indices-tab .le-library-dialog .block:has(input[type=file]),
+  #le-app-tabs #indices-tab .le-notebook-prompts button,
+  #le-app-tabs #le-action-learning .le-action-progress progress::-webkit-progress-value {
+    transition: none !important;
+  }
+}
+
+/* 文件清单：Gradio 的虚拟表格被压在一个 32px 行里，导致多行文字叠在一起。
+   这里让列表按内容高度铺开，行高交给每一条目自己决定。 */
+#indices-tab .table-wrap,
+#indices-tab [id=file_list_view] .table-wrap {
+  max-height: none !important;
+  min-height: 320px !important;
+  height: auto !important;
+}
+
+#indices-tab .table-wrap > button,
+#indices-tab .table-wrap button.svelte-j5bxrl {
+  height: auto !important;
+  min-height: 38px !important;
+}
+
+#indices-tab .table-wrap table {
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+#indices-tab .table-wrap tbody tr {
+  height: auto !important;
+}
+
+#indices-tab .table-wrap td {
+  max-height: none !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  line-height: 1.5 !important;
+}
+
+/* 动手学：课程卡与检查按钮回到中性配色 */
+#le-app-tabs #le-coach .coach-courses button {
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-m) !important;
+  background: var(--le-surface) !important;
+  color: var(--le-ink) !important;
+  font-weight: 550 !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #le-coach .coach-courses button:hover {
+  border-color: var(--le-line-strong) !important;
+  transform: none !important;
+}
+
+#le-app-tabs #le-coach .coach-courses button span {
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs #le-coach .coach-courses button[aria-pressed="true"] {
+  background: var(--le-accent) !important;
+  border-color: var(--le-accent) !important;
+  color: var(--le-accent-ink) !important;
+  box-shadow: none !important;
+}
+
+#le-app-tabs #le-coach .coach-courses button[aria-pressed="true"] span {
+  color: var(--le-accent-ink) !important;
+  opacity: .68 !important;
+}
+
+#le-app-tabs #le-coach .coach-actions button,
+#le-app-tabs #le-coach #coach-check {
+  background: var(--le-accent) !important;
+  border: 1px solid var(--le-accent) !important;
+  color: var(--le-accent-ink) !important;
+  border-radius: var(--le-radius-m) !important;
+  box-shadow: none !important;
+  font-weight: 550 !important;
+}
+
+#le-app-tabs #le-coach .coach-actions button:disabled {
+  background: var(--le-surface-3) !important;
+  border-color: var(--le-line) !important;
+  color: var(--le-ink-3) !important;
+}
+
+/* 动手学里残留的青蓝文字 */
+#le-app-tabs #le-coach .coach-eyebrow,
+#le-app-tabs #le-coach #coach-hint-wrap summary,
+#le-app-tabs #le-coach #coach-stage-state,
+#le-app-tabs #le-desktop-coach .le-desktop-head span {
+  color: var(--le-ink-3) !important;
+}
+
+#le-app-tabs #le-coach #coach-stage-state {
+  background: var(--le-surface-3) !important;
+  border-radius: 999px !important;
+  padding: 3px 9px !important;
+}
+
+#le-app-tabs #le-coach #coach-hint-wrap summary:hover {
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #le-coach a {
+  color: var(--le-ink-2) !important;
+  text-underline-offset: 3px;
+}
+
+#le-app-tabs #le-coach a:hover {
+  color: var(--le-ink) !important;
+}
+
+/* 暗色下这几块原本写死白底，文字跟着主题变浅后完全看不见 */
+#le-app-tabs #le-coach :is(.coach-instruction, .coach-stage) {
+  background: var(--le-surface) !important;
+  border: 1px solid var(--le-line) !important;
+  border-radius: var(--le-radius-l) !important;
+}
+
+#le-app-tabs #le-coach .coach-stage-label {
+  background: var(--le-surface-3) !important;
+  color: var(--le-ink-2) !important;
+  border-radius: 999px !important;
+}
+
+#le-app-tabs #le-coach .coach-switch-row {
+  background: var(--le-surface-2) !important;
+  border: 1px solid var(--le-line) !important;
+  color: var(--le-ink) !important;
+}
+
+#le-app-tabs #le-coach .coach-mascot {
+  background: var(--le-surface-2) !important;
+  border: 1px solid var(--le-line) !important;
+}

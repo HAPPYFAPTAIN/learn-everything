@@ -5,7 +5,7 @@ ROOT = Path(__file__).resolve().parents[1]
 THEME = (ROOT / "learning_ext" / "assets" / "signature.css").read_text(encoding="utf-8")
 
 
-def test_signature_theme_is_the_last_gradio_style_layer():
+def test_signature_theme_is_loaded_after_base_route_styles():
     source = (ROOT / "learning_ext" / "presentation.py").read_text(encoding="utf-8")
     raw = (ROOT / "custom_app.py").read_text(encoding="utf-8")
     signature = '(ASSETS / "signature.css")'

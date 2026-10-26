@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import logging
+import re
 import subprocess
 import sys
 import time
@@ -11,9 +12,11 @@ from pathlib import Path
 from learning_ext.agent.tools import (
     _find_window,
     _ps,
+    _read_ui,
     _ui_items,
     execute_tool,
 )
+from learning_ext.agent.outcomes import ToolOutput, tool_succeeded
 
 
 class DesktopCoach:
@@ -154,13 +157,22 @@ class DesktopCoach:
         self.step = 3
         return self._result(True, "任务文字已输入，可以执行检查。", "已读取并核对输入框内容")
 
+    def _click_owned_button(self, name):
+        if name not in {"检查", "撤销"} or not self._hwnd():
+            return ToolOutput("练习器未启动或目标按钮无效。", ok=False)
+        observation = _read_ui(self.window_title)
+        token = re.search(r"(?m)^observation=([a-f0-9]{20})", str(observation))
+        if not tool_succeeded(observation) or not token:
+            return ToolOutput("尚未确认练习器当前状态，请重新读取控件。", ok=False)
+        return execute_tool("click_ui", {"text": name, "window": self.window_title, "observation": token.group(1)})
+
     def check(self, approved):
         if not self._approved(approved):
             return self._result(False, "先勾选允许，再点击检查按钮")
         if self.step < 3:
             return self._result(False, "先输入任务文字")
-        result = execute_tool("click_ui", {"text": "检查", "window": self.window_title})
-        if "已点击" not in result:
+        result = self._click_owned_button("检查")
+        if not tool_succeeded(result):
             return self._result(False, result)
         items, error = self._items()
         if error:
@@ -176,8 +188,8 @@ class DesktopCoach:
             return self._result(False, "先勾选允许，再点击撤销")
         if self.step < 4:
             return self._result(False, "先完成一次检查，再撤销")
-        result = execute_tool("click_ui", {"text": "撤销", "window": self.window_title})
-        if "已点击" not in result:
+        result = self._click_owned_button("撤销")
+        if not tool_succeeded(result):
             return self._result(False, result)
         items, error = self._items()
         if error:

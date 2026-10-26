@@ -27,11 +27,12 @@ def test_thirty_course_route_only_expands_next_stage_and_keeps_every_course():
     assert len(stages) == 3
     assert ["open" in attrs for _, attrs in stages] == [False, True, False]
     assert ["is-current" in classes for classes, _ in stages] == [False, True, False]
-    assert content.count('class="le-route-course"') == 30
-    assert content.index('aria-label="当前阶段与下一节"') < content.index('class="le-route-metrics"')
-    focus = content.split('<div class="le-route-metrics">', 1)[0]
-    assert "下一节 · 学习中" in focus
-    assert "[2.1] Course 2.1" in focus
+    assert len(re.findall(r'class="le-route-course(?: is-next)?"', content)) == 30
+    assert content.count('aria-selected="true"') == 1
+    assert 'data-stage-index="2" aria-selected="true"' in content
+    assert content.count('class="le-route-course is-next"') == 1
+    assert 'class="le-route-focus"' not in content
+    assert 'role="tablist"' in content and 'aria-orientation="vertical" hidden' in content
     for node in nodes:
         assert f'[{node["code"]}]' in content
         assert node["description"] in content
@@ -62,12 +63,30 @@ def test_completed_and_empty_routes_have_explicit_focus_states():
 
     assert "全部完成" in completed
     assert "下一节 ·" not in completed
-    assert not re.search(r'class="le-route-stage[^"]*" open', completed)
+    assert len(re.findall(r'class="le-route-stage[^"]*" open', completed)) == 1
+    assert 'data-stage-index="1" aria-selected="true"' in completed
     assert route_action_label({"nodes": [{"status": "mastered"}]}) == "打开课程，回顾已学内容 →"
     empty = render_route({})
     assert "暂无学习路线" in empty
     assert "从学习首页创建一个目标" in empty
     assert 'role="status"' in empty
+
+
+def test_custom_stage_names_and_titles_are_escaped_without_losing_courses():
+    content = render_route({
+        "topic": '<script>alert("title")</script>',
+        "nodes": [{
+            "code": "1.1",
+            "title": "Course",
+            "stage": '<img src=x onerror=alert(1)>',
+            "status": "learning",
+        }],
+    })
+    assert '<script>' not in content and '<img' not in content
+    assert '&lt;script&gt;' in content and '&lt;img' in content
+    assert content.count('role="tab"') == 1
+    assert content.count('role="tabpanel"') == 1
+    assert 'class="le-route-course is-next"' in content
 
 
 def test_existing_open_course_action_uses_the_same_next_course():

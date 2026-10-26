@@ -417,18 +417,11 @@ def fetch_preview(url: str) -> str:
 
 def explain_term(term: str, node: KnowledgeNode, project_topic: str) -> str:
     """AI 解释选中名词 (快速术语解释, 区别于追问)。"""
-    prompt = f"""学习者正在学习「{project_topic}」的「{node.title}」这一节。
-阅读教学内容时，遇到了一个不懂的名词/术语：**{term}**
+    from .prompts import TERM_PROMPT, TERM_SYSTEM
 
-请简洁地解释这个名词：
-1. 它是什么 (1-2句直白解释)
-2. 在当前学习背景下它为什么重要 / 怎么用 (1-2句)
-3. 举一个通俗的例子 (如果适用)
-
-用 Markdown，**控制在 200 字以内**。直接给解释，不要前言。"""
     return chat(
-        prompt,
-        system="你是术语词典 + 耐心导师, 擅长用最简单的话解释专业名词。",
+        TERM_PROMPT.format(topic=project_topic, lesson=node.title, term=term),
+        system=TERM_SYSTEM,
         temperature=0.3,
-        max_tokens=500,
+        max_tokens=1000,
     )

@@ -22,6 +22,7 @@ nul
 # 测试截图：本地留档，不进仓库（体积大且每次都能重拍）
 output/_shots/
 vendor/preview/
+vendor/everything/
 output/zcode-upstream/
 
 # 运行时调试产物：截图/日志/临时库/模型目录快照，本地留档，不进仓库
