@@ -28,6 +28,14 @@ from learning_ext.llm.request_gate import RequestGate
 _REQUEST_SLOT = RequestGate()
 
 
+class OutputTruncatedError(RuntimeError):
+    """模型输出撞到 max_tokens 上限，内容被截断。
+
+    单独一个类型，是为了让上层的重试逻辑认出来：同样的提示词再跑一遍，
+    大概率还是在同一个地方截断，重试只是白等一次生成的时间。
+    """
+
+
 def invalidate_cache() -> None:
     """强制清空配置缓存, 让 .env 改动立即生效。配置页保存后调用。"""
     _cache["data"] = {}
@@ -209,7 +217,7 @@ def chat(
             with _REQUEST_SLOT:
                 resp = client.chat.completions.create(**kwargs)
             if resp.choices[0].finish_reason == "length":
-                raise RuntimeError(
+                raise OutputTruncatedError(
                     "模型输出达到长度上限，内容尚未完整生成。请减少本次任务范围或提高输出额度后重试。"
                 )
             content = resp.choices[0].message.content or ""

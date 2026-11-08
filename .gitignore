@@ -29,3 +29,6 @@ output/zcode-upstream/
 output/runtime/
 # 第三方图标包压缩件：可从上游重新获取，已解压进 assets/vendor/platform-icons
 output/icons-package.tgz
+
+# 本机专用启动器（绕开被系统策略拦掉的 venv 解释器），不进仓库
+start_local.bat

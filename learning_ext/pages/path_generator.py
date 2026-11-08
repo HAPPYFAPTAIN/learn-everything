@@ -509,7 +509,9 @@ class PathGeneratorPage(BasePage):
         with Session(engine) as session:
             nodes = session.exec(select(KnowledgeNode).where(KnowledgeNode.project_id == pid)).all()
             ordered_ids = [n.id for n in sort_nodes_by_code(list(nodes))]
-        prep.start(pid, ordered_ids, topic or "", goal=goal or "", env=env_md)
+        # 只预生成开头几节，别一次把三四十节全排进队列：
+        # 用户点开后面某一节时会走 priority 插队，不用等前面全部跑完。
+        prep.start(pid, ordered_ids[:6], topic or "", goal=goal or "", env=env_md)
         content = self._preparation_view(context)
         yield pid, content, "", {**context, "last": content}
 

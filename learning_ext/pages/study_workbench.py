@@ -1250,7 +1250,7 @@ class StudyWorkbenchPage(BasePage):
             topic = proj.topic if proj else ""
         self._pending_nodes[nid] = self._writing_placeholder()
         self._pending_node = nid
-        prep.start(pid, [nid], topic)
+        prep.start(pid, [nid], topic, priority=True)
 
     def _kick_project_prep(self, pid, topic: str) -> None:
         """打开某个项目时，把还没备课的章节全部丢后台，不用用户操心。"""
@@ -1268,7 +1268,9 @@ class StudyWorkbenchPage(BasePage):
         try:
             with Session(engine) as session:
                 nodes = session.exec(
-                    select(KnowledgeNode).where(KnowledgeNode.project_id == pid)
+                    select(KnowledgeNode)
+                    .where(KnowledgeNode.project_id == pid)
+                    .order_by(KnowledgeNode.code)
                 ).all()
                 missing = [n.id for n in nodes if not is_content_valid(n.description)]
         except Exception:
@@ -1276,8 +1278,14 @@ class StudyWorkbenchPage(BasePage):
             return
         kicked.add(pid)
         if missing:
-            prep.start(pid, missing, topic)
-            logger.info("[工作台] 项目#%s 后台补备 %d 节", pid, len(missing))
+            # 只预生成前几节。原来是整批（30 多节）一次全排，用户点开靠后的节
+            # 得等二十多节跑完；现在靠后的节用户打开时走 priority 插队。
+            head = missing[:6]
+            prep.start(pid, head, topic)
+            logger.info(
+                "[工作台] 项目#%s 后台预生成 %d/%d 节（其余按需）",
+                pid, len(head), len(missing),
+            )
 
     def _poll_writing(self):
         """定时检查：正在写的这一节写好了没，好了就替换正文。
