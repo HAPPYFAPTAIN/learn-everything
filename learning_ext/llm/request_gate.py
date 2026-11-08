@@ -69,3 +69,43 @@ class RequestGate:
             self._active = False
             self._condition.notify_all()
 
+
+class RequestSlots:
+    """前台（用户提问）与后台（备课）各占一个槽位，互不排队。
+
+    原来全进程只有一个槽位：备课后台在写某一节时（每节约 20 秒）一直占着它，
+    用户这时提问只能干等，界面上一个字都没有，看起来就是「卡住了」。
+    拆成两档后，后台永远拦不住前台；前台之间仍然串行，避免同时打爆上游。
+    """
+
+    def __init__(self):
+        self.foreground = RequestGate()
+        self.background = RequestGate()
+        self._held = ContextVar("le_request_slot", default=None)
+
+    def _gate(self) -> RequestGate:
+        return self.background if _background.get() else self.foreground
+
+    def acquire(self, blocking=True, timeout=None) -> bool:
+        gate = self._gate()
+        if not gate.acquire(blocking=blocking, timeout=timeout):
+            return False
+        self._held.set(gate)
+        return True
+
+    def __enter__(self):
+        if not self.acquire():
+            raise RuntimeError("模型请求槽位不可用")
+        return self
+
+    def __exit__(self, *exc):
+        self.release()
+
+    def release(self) -> None:
+        # 按 acquire 时拿到的那一档释放，避免期间上下文切换导致放错闸门
+        gate = self._held.get()
+        if gate is None:
+            raise ValueError("request slot released too many times")
+        self._held.set(None)
+        gate.release()
+

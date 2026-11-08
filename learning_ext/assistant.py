@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import logging
+import time
 
 import gradio as gr
 from ktem.app import BasePage
@@ -51,6 +52,11 @@ SYSTEM_PROMPT = (
 )
 
 WORKBENCH_TAB = "learning-workbench-tab"
+
+# 等模型首字、以及排在备课后面等槽位时，界面不能是空的
+THINKING_TEXT = "正在思考…"
+# 逐字重绘太密会把前端拖住，约 40ms 刷一次既跟手又不卡
+STREAM_INTERVAL = 0.04
 
 
 class GlobalAssistant(BasePage):
@@ -106,9 +112,12 @@ class GlobalAssistant(BasePage):
 
         chat_io = [self.chatbot, self.history, self.chat_input]
         inputs = [self.chat_input, self.history, *self._context_inputs()]
-        self.chat_send_btn.click(self._send, inputs, chat_io)
-        self.chat_input.submit(self._send, inputs, chat_io)
-        self.clear_btn.click(lambda: ([], [], ""), outputs=chat_io)
+        # 单独分组：默认分组只有 1 个并发位，页面上的长任务（备课轮询、生成路线等）
+        # 会把「发送」排在后面，这段排队在界面同样是空白。
+        send_opts = {"concurrency_id": "le-assistant", "concurrency_limit": 1}
+        self.chat_send_btn.click(self._send, inputs, chat_io, **send_opts)
+        self.chat_input.submit(self._send, inputs, chat_io, **send_opts)
+        self.clear_btn.click(lambda: ([], [], ""), outputs=chat_io, show_progress="hidden")
 
         # 「加入课程」仍由工作台实现（它要写回节点正文），这里只换绑输入
         wb = getattr(self._app, "learning_workbench_page", None)
@@ -144,27 +153,50 @@ class GlobalAssistant(BasePage):
             yield history, history, ""
             return
         user_msg = message.strip()
-        new_history = (history or []) + [{"role": "user", "content": user_msg}]
-        yield new_history, new_history, ""
+        base = (history or []) + [{"role": "user", "content": user_msg}]
+        # 先把占位气泡推上去：等槽位、等模型首字的这段时间界面是空的，
+        # Gradio 的处理计时一收，看起来就像卡死了。
+        yield base + [{"role": "assistant", "content": THINKING_TEXT}], base, ""
+        reply = ""
+        shown_at = 0.0
         try:
             from learning_ext.llm import chat
 
-            ctx = self._resolve_context(active_tab, wb_node, rv_card, qz_ids, qz_index)
-            ctx += "【对话历史】\n"
-            for h in (history or [])[-6:]:
-                role = "学习者" if h.get("role") == "user" else "助教"
-                ctx += f"{role}: {(h.get('content') or '')[:300]}\n"
-            ctx += (
-                f"\n【学习者最新消息】{user_msg}\n\n"
-                "请基于上面的内容回答。如材料有误或需补充，明确指出。Markdown，500 字内。"
-            )
-            reply = chat(ctx, system=SYSTEM_PROMPT, temperature=0.4, purpose="qa")
-            final = new_history + [{"role": "assistant", "content": reply}]
+            for piece in chat(
+                self._prompt(active_tab, wb_node, rv_card, qz_ids, qz_index, user_msg, history),
+                system=SYSTEM_PROMPT,
+                temperature=0.4,
+                purpose="qa",
+                stream=True,
+            ):
+                reply += piece
+                now = time.monotonic()
+                if now - shown_at < STREAM_INTERVAL:
+                    continue
+                shown_at = now
+                yield base + [{"role": "assistant", "content": reply}], base, ""
+            if not reply.strip():
+                raise RuntimeError("模型没有返回内容，请再试一次。")
+            final = base + [{"role": "assistant", "content": reply}]
             yield final, final, ""
         except Exception as e:
             logger.exception("助教回复失败")
-            err = new_history + [{"role": "assistant", "content": f"❌ 出错了: {e}"}]
+            note = f"❌ 出错了: {e}"
+            content = f"{reply}\n\n{note}" if reply.strip() else note
+            err = base + [{"role": "assistant", "content": content}]
             yield err, err, ""
+
+    def _prompt(self, active_tab, wb_node, rv_card, qz_ids, qz_index, user_msg, history) -> str:
+        ctx = self._resolve_context(active_tab, wb_node, rv_card, qz_ids, qz_index)
+        ctx += "【对话历史】\n"
+        for h in (history or [])[-6:]:
+            role = "学习者" if h.get("role") == "user" else "助教"
+            ctx += f"{role}: {(h.get('content') or '')[:300]}\n"
+        ctx += (
+            f"\n【学习者最新消息】{user_msg}\n\n"
+            "请基于上面的内容回答。如材料有误或需补充，明确指出。Markdown，500 字内。"
+        )
+        return ctx
 
     def _resolve_context(self, active_tab, wb_node, rv_card, qz_ids, qz_index) -> str:
         """按当前页面取上下文；识别不出来或该页暂无内容时，按可用顺序兜底。"""

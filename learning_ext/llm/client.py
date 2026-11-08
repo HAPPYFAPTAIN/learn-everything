@@ -23,9 +23,9 @@ _ENV_FILE = Path(__file__).resolve().parent.parent.parent / "kotaemon" / ".env"
 # 配置缓存 (5 秒内复用，配置页保存后最多 5 秒生效)
 _cache: dict = {"ts": 0.0, "data": {}}
 _CACHE_TTL = 5.0
-from learning_ext.llm.request_gate import RequestGate
+from learning_ext.llm.request_gate import RequestSlots
 
-_REQUEST_SLOT = RequestGate()
+_REQUEST_SLOT = RequestSlots()
 
 
 class OutputTruncatedError(RuntimeError):
