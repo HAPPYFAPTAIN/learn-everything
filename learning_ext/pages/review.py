@@ -333,9 +333,14 @@ class ReviewPage(BasePage):
 
     def _generate(self, pid, nid):
         """按当前选中的这一节提炼卡片，生成完直接出第一张。"""
+        node_title = ""
         try:
             with Session(engine) as session:
                 node = self._get_node(session, nid)
+                # 先把标题取出来：generate_cards_from_node 内部会 commit，
+                # 那样 node 的属性就过期了，出了 with 块再访问 node.title 会抛
+                # DetachedInstanceError（session 已关闭，没法刷新）。
+                node_title = node.title
                 cards = generate_cards_from_node(
                     session, node.id, "default", node.description, count=5
                 )
@@ -345,7 +350,7 @@ class ReviewPage(BasePage):
             return self._render(
                 pid, nid, notice="生成失败：请先选具体某一节，并检查模型配置。", peek=True
             )
-        notice = f"已为「{node.title}」生成 {made} 张卡。" if made else "模型没有返回有效卡片，可以重试或手写一张。"
+        notice = f"已为「{node_title}」生成 {made} 张卡。" if made else "模型没有返回有效卡片，可以重试或手写一张。"
         return self._load_next(pid, nid, notice) if made else self._render(
             pid, nid, notice=notice, peek=True
         )
